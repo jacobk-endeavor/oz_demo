@@ -158,6 +158,23 @@ describe('OzAssistantPanel tabs', () => {
     await user.click(screen.getByRole('button', { name: /Close chat: First chat question/ }))
     expect(within(tablist).getAllByTestId('chat-tab')).toHaveLength(1)
   })
+
+  it('closing the last open tab spawns a fresh empty chat', async () => {
+    const user = userEvent.setup()
+    renderPanel()
+
+    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'Solo chat question')
+    await user.click(screen.getByRole('button', { name: 'Send message' }))
+    await screen.findByLabelText('Conversation title')
+
+    await user.click(screen.getByRole('button', { name: /Close chat: Solo chat question/ }))
+
+    const tablist = screen.getByRole('tablist', { name: 'Chat tabs' })
+    const tabs = within(tablist).getAllByTestId('chat-tab')
+    expect(tabs).toHaveLength(1)
+    expect(tabs[0]).toHaveTextContent('New chat')
+    expect(screen.queryByLabelText('Conversation title')).not.toBeInTheDocument()
+  })
 })
 
 describe('OzAssistantPanel send + sticky title', () => {

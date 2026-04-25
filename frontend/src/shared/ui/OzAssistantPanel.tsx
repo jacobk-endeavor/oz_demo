@@ -360,8 +360,16 @@ export function OzAssistantPanel({
 
   function handleCloseTab(sessionId: string) {
     setSessions((current) => {
-      if (current.length <= 1) return current
       const remaining = current.filter((session) => session.id !== sessionId)
+      // Closing the only open tab creates a fresh empty session in its place.
+      // The chat surface always has at least one tab to talk into.
+      if (remaining.length === 0) {
+        const fresh = makeSession()
+        setActiveSessionId(fresh.id)
+        setDraft('')
+        setHistoryCursor(null)
+        return [fresh]
+      }
       if (sessionId === activeSessionId) {
         const fallback = remaining[remaining.length - 1]
         setActiveSessionId(fallback.id)
@@ -490,7 +498,6 @@ function Header({
           const isRunning = session.pendingMessageId !== null
           const tabTitle =
             session.messages.length === 0 ? NEW_CHAT_TITLE : session.title
-          const canClose = tabSessions.length > 1
           return (
             <div
               key={session.id}
@@ -529,35 +536,33 @@ function Header({
                 )}
                 <span className="truncate font-medium">{tabTitle}</span>
               </button>
-              {canClose && (
-                <button
-                  type="button"
-                  onClick={() => onCloseTab(session.id)}
-                  aria-label={`Close chat: ${tabTitle}`}
-                  title="Close chat"
-                  className={joinClasses(
-                    'rounded p-0.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700',
-                    !isActive && 'opacity-0 group-hover:opacity-100',
-                  )}
-                >
-                  <CloseIcon className="h-3 w-3" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => onCloseTab(session.id)}
+                aria-label={`Close chat: ${tabTitle}`}
+                title="Close chat"
+                className={joinClasses(
+                  'rounded p-0.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700',
+                  !isActive && 'opacity-0 group-hover:opacity-100',
+                )}
+              >
+                <CloseIcon className="h-3 w-3" />
+              </button>
             </div>
           )
         })}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-0.5 border-l border-zinc-200 px-2">
         <button
           type="button"
           onClick={onNewChat}
           aria-label="New chat"
           title="New chat"
-          className="flex shrink-0 items-center justify-center px-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
         >
-          <PlusIcon className="h-3.5 w-3.5" />
+          <PlusIcon className="h-4 w-4" />
         </button>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-0.5 border-l border-zinc-200 px-2">
         <button
           type="button"
           onClick={onToggleHistory}

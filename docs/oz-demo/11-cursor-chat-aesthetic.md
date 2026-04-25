@@ -19,8 +19,7 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 - Single thin row, ~44px tall, with a bottom border. Everything fits in this row — there is no separate tab strip below.
 - Left: the **`Oz` wordmark** in quiet zinc-900 text, separated from the rest by a thin vertical divider.
 - Middle: the **chat tab strip** flowing horizontally, scrollable when there are many open chats. Each tab shows a leading icon, the chat title (truncated to ~160px), and a close button that appears on hover or while active. The active tab uses a white background; inactive tabs are zinc-50 and lighten on hover. Tabs are separated by 1px zinc-200 dividers, like a code editor's tab strip.
-- A small `+` button sits at the end of the tab strip and starts a fresh chat in a new tab.
-- Right: an icon-only **clock** button that opens the chat history dropdown, and an icon-only overflow button. The clock+overflow live behind another vertical divider.
+- Right: a locked action cluster behind a vertical divider — `+` (new chat), the **clock** (history), and the overflow `⋯`. The `+` is anchored next to the clock so the chat surface always has a stable place to spawn a new tab, no matter how the tab strip scrolls.
 - When a chat has a pending Oz reply, its tab swaps the leading icon for an animated **spinner** so the user can see what's running across tabs at a glance. The same spinner appears next to the sticky title and in the history dropdown row.
 
 ### Sticky Title (First Prompt)
@@ -44,7 +43,8 @@ The panel exposes a `showFloatingMark` boolean prop. `App.tsx` sets it to `page 
 - The chat supports **multiple concurrent sessions**, surfaced as the tab strip described above. Tabs are the primary way to move between chats.
 - The **clock-icon history dropdown** in the header is the secondary surface: it lists every session sorted by most recent, with title, message count, and relative timestamp. Sessions that are currently generating a reply show a small spinner in the right-hand metadata.
 - Clicking a row in history switches to that session and scrolls its tab into view if needed. Clicking a tab does the same thing more directly.
-- `+` in the tab strip creates a fresh empty session. If the active tab is already empty, a second `+` is a no-op (no piled-up empties).
+- `+` in the right action cluster creates a fresh empty session. If the active tab is already empty, a second `+` is a no-op (no piled-up empties).
+- Closing a tab is always allowed. Closing the **last** open tab spawns a fresh empty chat in its place, so the surface is never tab-less.
 - Each session tracks its own pending reply. Switching tabs while Oz is "thinking" does not cancel the pending reply; when it resolves, the originating tab updates and its spinner clears.
 - Sessions are panel-local (not persisted across reloads). They reset when the seeded `messages` prop changes — each page has its own chat history.
 
