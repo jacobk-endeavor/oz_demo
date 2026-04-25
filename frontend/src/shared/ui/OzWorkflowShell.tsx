@@ -200,7 +200,7 @@ export function OzWorkflowShell({
   const showAssistant = hasAssistant && !assistantCollapsed
 
   return (
-    <div className={joinClasses('flex h-screen bg-zinc-50 text-zinc-900', className)}>
+    <div className={joinClasses('relative flex h-screen bg-zinc-50 text-zinc-900', className)}>
       <nav
         aria-label="Primary navigation"
         className={joinClasses(
@@ -269,26 +269,9 @@ export function OzWorkflowShell({
                   <p className="mt-1 max-w-3xl text-sm text-zinc-600">{subtitle}</p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {headerActions}
-                {hasAssistant && (
-                  <button
-                    type="button"
-                    onClick={() => setAssistantCollapsed(!assistantCollapsed)}
-                    aria-pressed={!assistantCollapsed}
-                    aria-label={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
-                    title={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
-                    className={joinClasses(
-                      'rounded-md p-1.5 transition-colors',
-                      assistantCollapsed
-                        ? 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
-                        : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200/60',
-                    )}
-                  >
-                    <PanelRightIcon className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+              {headerActions !== undefined && (
+                <div className="flex shrink-0 items-center gap-2 pr-12">{headerActions}</div>
+              )}
             </header>
             <div className="min-h-0 flex-1 overflow-auto">
               <div className="mx-auto max-w-[1400px] px-6 py-6">{children}</div>
@@ -304,6 +287,24 @@ export function OzWorkflowShell({
         >
           {assistant ?? (assistantProps ? <OzAssistantPanel {...assistantProps} /> : null)}
         </aside>
+      )}
+
+      {hasAssistant && (
+        <button
+          type="button"
+          onClick={() => setAssistantCollapsed(!assistantCollapsed)}
+          aria-pressed={!assistantCollapsed}
+          aria-label={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
+          title={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
+          className={joinClasses(
+            'absolute right-2.5 top-2.5 z-50 rounded-md p-1.5 transition-colors',
+            assistantCollapsed
+              ? 'bg-white/90 text-zinc-500 ring-1 ring-zinc-200 hover:bg-zinc-100 hover:text-zinc-900'
+              : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900',
+          )}
+        >
+          <PanelRightIcon className="h-4 w-4" />
+        </button>
       )}
     </div>
   )

@@ -117,9 +117,11 @@ The panel exposes a `showFloatingMark` boolean prop. `App.tsx` sets it to `page 
 
 ### Always Present, Toggleable
 
-- The right-side rail is fixed at 360px when open. It is **toggleable** via a panel-right icon in the workflow header (top-right, next to any per-page header actions). Closed state is persisted in `localStorage` (`oz-demo-assistant-collapsed`).
-- The toggle is the only chat affordance in the workflow header; closing the rail hides it entirely so the workflow canvas can take the full width. Reopening it from the same toggle restores the rail in whatever state the user left it (active session, draft text, mode).
-- The toggle is always visible when the page would otherwise show the chat. Pages that explicitly opt out via `hideAssistant` get neither the rail nor the toggle.
+- The right-side rail is fixed at 360px when open. It is **toggleable** via a small panel-right icon button anchored to the absolute top-right of the shell (fixed position, ~8px from each edge).
+- The toggle is anchored — not tucked inside any flex container — so it does not move when the chat opens or closes. Open or closed, the user always finds it in the same screen position.
+- When the chat is open, the toggle floats over the chat header's right slot (the chat header reserves padding so the clock/history icons don't sit underneath it). When the chat is closed, the toggle floats over the workflow header's right slot. Same coordinates either way.
+- Closed state is persisted in `localStorage` (`oz-demo-assistant-collapsed`).
+- Pages that explicitly opt out via `hideAssistant` get neither the rail nor the toggle.
 
 ### Sending Messages
 

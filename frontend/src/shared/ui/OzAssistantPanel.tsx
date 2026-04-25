@@ -17,7 +17,6 @@ import {
   ClockIcon,
   CloseIcon,
   InfinityIcon,
-  MoreHorizontalIcon,
   PaperclipIcon,
   PencilIcon,
   PlusIcon,
@@ -553,7 +552,7 @@ function Header({
         })}
       </div>
 
-      <div className="flex shrink-0 items-center gap-0.5 border-l border-zinc-200 px-2">
+      <div className="flex shrink-0 items-center gap-0.5 border-l border-zinc-200 px-2 pr-12">
         <button
           type="button"
           onClick={onNewChat}
@@ -578,14 +577,6 @@ function Header({
           )}
         >
           <ClockIcon className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-          aria-label="More chat actions"
-          title="More"
-        >
-          <MoreHorizontalIcon className="h-4 w-4" />
         </button>
       </div>
 
