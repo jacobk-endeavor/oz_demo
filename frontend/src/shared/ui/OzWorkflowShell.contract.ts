@@ -12,9 +12,20 @@ import {
 
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>
 
+/**
+ * Sidebar groups follow the Ramp pattern:
+ * - When a group has no `label` and a single item, it renders as a flat
+ *   top-level entry (like `Oz` or `Nebula` in this app, or `Vendors` in Ramp).
+ * - When a group has a `label`, it renders as a labeled section. The header
+ *   shows the icon + label. Sub-items render below. When the active page is
+ *   inside the group, the entire group gets a soft zinc-100 wrapper card and
+ *   the active sub-item gets a white card with a subtle shadow.
+ */
 export interface OzNavGroup {
   id: string
-  label: string
+  label?: string
+  /** Group-level icon shown next to the label header. */
+  icon?: IconComponent
   items: OzNavItem[]
 }
 
@@ -47,16 +58,17 @@ export type OzWorkflowNavId =
 
 export const navGroups: OzNavGroup[] = [
   {
-    id: 'assistant',
-    label: 'Assistant',
-    items: [
-      { id: 'oz', label: 'Oz', icon: SparkleIcon },
-      { id: 'nebula', label: 'Nebula', icon: NebulaIcon },
-    ],
+    id: 'oz',
+    items: [{ id: 'oz', label: 'Oz', icon: SparkleIcon }],
+  },
+  {
+    id: 'nebula',
+    items: [{ id: 'nebula', label: 'Nebula', icon: NebulaIcon }],
   },
   {
     id: 'workflows',
     label: 'Workflows',
+    icon: DashboardIcon,
     items: [
       { id: 'field-notes', label: 'Field Notes', icon: NotebookIcon },
       { id: 'call-mining', label: 'Call Mining', icon: CallsIcon },
