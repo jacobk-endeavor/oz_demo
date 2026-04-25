@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -98,5 +98,61 @@ describe('DashboardGeneratorPage', () => {
     await user.upload(screen.getByLabelText('Upload Excel source file'), file)
 
     expect(screen.getByText('oz-demo-call-mining.xlsx')).toBeInTheDocument()
+  })
+
+  it('runs the mock publish workflow from configure to published', async () => {
+    const user = userEvent.setup()
+    render(<DashboardGeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /Publish dashboard/i }))
+
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText(/Mock publishing flow/i)).toBeInTheDocument()
+    expect(within(dialog).getByText(/Demo only: clicking publish/i)).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Publish dashboard' }))
+
+    expect(within(dialog).getByLabelText(/Publishing steps/i)).toBeInTheDocument()
+
+    expect(
+      await within(dialog).findByText(/Dashboard is published/i, undefined, { timeout: 4000 }),
+    ).toBeInTheDocument()
+
+    expect(
+      within(dialog).getByTestId('published-share-url').textContent ?? '',
+    ).toMatch(/^https:\/\/oz\.demo\/d\//)
+    expect(within(dialog).getAllByText(/sami@example.com/i).length).toBeGreaterThan(0)
+
+    await user.click(within(dialog).getByRole('button', { name: 'Done' }))
+
+    expect(screen.getByTestId('dashboard-published-banner')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Manage dashboard sharing/i })).toBeInTheDocument()
+    expect(screen.getAllByText('Published').length).toBeGreaterThan(0)
+  })
+
+  it('lets the user unpublish from the manage sharing modal', async () => {
+    const user = userEvent.setup()
+    render(<DashboardGeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /Publish dashboard/i }))
+    const dialog = screen.getByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Publish dashboard' }))
+    await within(dialog).findByText(/Dashboard is published/i, undefined, { timeout: 4000 })
+    await user.click(within(dialog).getByRole('button', { name: 'Done' }))
+
+    expect(screen.getByTestId('dashboard-published-banner')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Manage dashboard sharing/i }))
+    const manageDialog = screen.getByRole('dialog')
+    await user.click(within(manageDialog).getByRole('button', { name: 'Unpublish' }))
+
+    expect(
+      within(manageDialog).getByRole('heading', { name: /Publish dashboard/i }),
+    ).toBeInTheDocument()
+
+    await user.click(within(manageDialog).getByLabelText('Close'))
+
+    expect(screen.queryByTestId('dashboard-published-banner')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Publish dashboard/i })).toBeInTheDocument()
   })
 })

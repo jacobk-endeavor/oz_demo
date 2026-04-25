@@ -182,3 +182,32 @@ export function CheckIcon({ className, ...props }: IconProps) {
     </svg>
   )
 }
+
+export function ShareIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <circle cx="6" cy="10" r="2" />
+      <circle cx="15" cy="5" r="2" />
+      <circle cx="15" cy="15" r="2" />
+      <line x1="7.7" y1="9" x2="13.3" y2="6" />
+      <line x1="7.7" y1="11" x2="13.3" y2="14" />
+    </svg>
+  )
+}
+
+export function CopyIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <rect x="6" y="6" width="11" height="11" rx="2" />
+      <path d="M3 13V5a2 2 0 0 1 2-2h8" />
+    </svg>
+  )
+}
+
+export function SpinnerIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <path d="M10 3a7 7 0 1 0 7 7" />
+    </svg>
+  )
+}

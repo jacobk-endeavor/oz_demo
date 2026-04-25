@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Panel, Tag, joinClasses } from '../../shared/ui'
+import { ShareIcon } from '../../shared/ui/icons'
 import { excelDashboardMapping, featureAddOns, webAppTemplates } from './dashboardData'
 import { generateDashboardFromPrompt } from './dashboardGenerator'
+import {
+  PublishDashboardModal,
+  type PublishedDashboardSnapshot,
+} from './PublishDashboardModal'
 import type {
   DashboardChartCard,
   DashboardGenerationResult,
@@ -114,6 +119,9 @@ export function DashboardGeneratorPage() {
   const [excelPreview, setExcelPreview] = useState(() =>
     buildExcelPreview(excelDashboardMapping.sourceFile),
   )
+  const [isPublishModalOpen, setPublishModalOpen] = useState(false)
+  const [publishedSnapshot, setPublishedSnapshot] =
+    useState<PublishedDashboardSnapshot | null>(null)
 
   const activeFeatures = useMemo(() => new Set(enabledFeatures), [enabledFeatures])
 
@@ -151,6 +159,17 @@ export function DashboardGeneratorPage() {
     setExcelPreview(buildExcelPreview(fileName))
   }
 
+  function handlePublish(snapshot: PublishedDashboardSnapshot) {
+    setPublishedSnapshot(snapshot)
+  }
+
+  function handleUnpublish() {
+    setPublishedSnapshot(null)
+  }
+
+  const isPublished = publishedSnapshot !== null
+  const publishButtonLabel = isPublished ? 'Manage sharing' : 'Publish'
+
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex min-w-0 flex-col gap-5">
@@ -158,7 +177,33 @@ export function DashboardGeneratorPage() {
           eyebrow="Prompt"
           title="Generate a dashboard"
           description="Describe the dashboard you want or pick a template. Oz keeps every card cited to demo records."
-          action={isBuilding ? <Tag tone="blue" dot>Building</Tag> : <Tag tone="emerald" dot>Ready</Tag>}
+          action={
+            <div className="flex items-center gap-2">
+              {isBuilding ? (
+                <Tag tone="blue" dot>
+                  Building
+                </Tag>
+              ) : isPublished ? (
+                <Tag tone="emerald" dot>
+                  Published
+                </Tag>
+              ) : (
+                <Tag tone="emerald" dot>
+                  Ready
+                </Tag>
+              )}
+              <Button
+                variant={isPublished ? 'secondary' : 'primary'}
+                onClick={() => setPublishModalOpen(true)}
+                aria-label={
+                  isPublished ? 'Manage dashboard sharing' : 'Publish dashboard'
+                }
+              >
+                <ShareIcon className="h-4 w-4" />
+                {publishButtonLabel}
+              </Button>
+            </div>
+          }
         >
           <div className="flex flex-col gap-2 sm:flex-row">
             <label htmlFor="dashboard-prompt" className="sr-only">
@@ -202,6 +247,34 @@ export function DashboardGeneratorPage() {
             </div>
           </div>
         </Panel>
+
+        {isPublished && publishedSnapshot && (
+          <div
+            className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900 sm:flex-row sm:items-center sm:justify-between"
+            role="status"
+            data-testid="dashboard-published-banner"
+          >
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                Published
+              </p>
+              <p className="mt-0.5 truncate text-sm font-medium">
+                {publishedSnapshot.title}
+              </p>
+              <p className="mt-0.5 truncate font-mono text-xs text-emerald-800">
+                {publishedSnapshot.shareUrl}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Tag tone="emerald" dot>
+                {publishedSnapshot.recipients.length} invited
+              </Tag>
+              <Button variant="secondary" onClick={() => setPublishModalOpen(true)}>
+                Manage sharing
+              </Button>
+            </div>
+          </div>
+        )}
 
         <Panel
           eyebrow="Generated"
@@ -349,6 +422,15 @@ export function DashboardGeneratorPage() {
           )}
         </Panel>
       </aside>
+
+      <PublishDashboardModal
+        open={isPublishModalOpen}
+        onClose={() => setPublishModalOpen(false)}
+        defaultTitle={dashboard.generatedTitle}
+        published={publishedSnapshot}
+        onPublish={handlePublish}
+        onUnpublish={handleUnpublish}
+      />
     </div>
   )
 }

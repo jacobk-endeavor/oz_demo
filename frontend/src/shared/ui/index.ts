@@ -1,6 +1,7 @@
 export { BackgroundTaskRail } from './BackgroundTaskRail'
 export type { BackgroundTaskItem, BackgroundTaskStatus } from './BackgroundTaskRail'
 export { Button } from './Button'
+export { Modal } from './Modal'
 export { OzAssistantPanel } from './OzAssistantPanel'
 export type {
   OzActionVariant,
