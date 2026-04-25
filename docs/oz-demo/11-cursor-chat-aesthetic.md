@@ -56,7 +56,7 @@ The panel exposes a `showFloatingMark` boolean prop. `App.tsx` sets it to `page 
 
 ### Mode Pill (composer-level)
 
-- The `Ask` / `Agent` / `Edit` selector is no longer a row of segmented tabs near the top of the panel. It now lives **inside the composer footer as a single compact pill** — `[icon] Mode ⌄` — sitting next to the `oz-prompt` model picker. This matches Cursor's `∞ Agent ⌄` pill in its composer.
+- The `Ask` / `Agent` / `Edit` selector is no longer a row of segmented tabs near the top of the panel. It now lives **inside the composer footer as a single compact pill** — `[icon] Mode ⌄`. This matches Cursor's `∞ Agent ⌄` pill in its composer. The mode pill is the only affordance in the bottom-left of the composer; the placeholder `oz-prompt` model picker is gone since the demo doesn't switch models.
 - Each mode has its own icon: `Ask` uses a chat bubble, `Agent` uses an infinity glyph, `Edit` uses a pencil.
 - Clicking the pill opens an upward menu listing the three modes with descriptions. `Ask` is the only functional mode in the demo; the others have explanatory tooltips and copy in the menu.
 
@@ -86,7 +86,7 @@ The panel exposes a `showFloatingMark` boolean prop. `App.tsx` sets it to `page 
 - Wrapped in a thin `rounded-xl border border-zinc-200 bg-white` block — Cursor's composer feels like a floating card that the rest of the panel respects.
 - Inside the wrapper:
   - Auto-resizing textarea (1-6 lines), no inner border, no outline ring on focus, just a placeholder `Ask Oz…`.
-  - Bottom row: model picker pill on the left (`oz-prompt` with chevron), keyboard hint (`↵ to send · ⇧↵ for newline`) in the middle, and a small icon-only **send** button on the right.
+  - Bottom row: mode pill on the left (`[icon] Mode ⌄`), keyboard hint (`↵ to send · ⇧↵ for newline`) in the middle, and a small icon-only **send** button on the right. No model picker — the demo doesn't switch models.
 - **Send button**: 28px square, rounded, blue-600 fill when input has content, zinc-300 when empty. Icon is an upward arrow. No "Send" label.
 - Submit on `Enter`. Newline on `Shift+Enter`. Up arrow recalls the last user message into the textarea.
 

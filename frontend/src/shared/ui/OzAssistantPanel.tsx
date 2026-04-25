@@ -858,14 +858,6 @@ function Composer({
           <div className="flex items-center gap-1">
             <button
               type="button"
-              className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-              title="Model selector (demo only)"
-            >
-              <span>oz-prompt</span>
-              <ChevronDownIcon className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
               onClick={onToggleMode}
               aria-haspopup="menu"
               aria-expanded={modeOpen}
@@ -888,7 +880,7 @@ function Composer({
                 ref={modeMenuRef}
                 role="menu"
                 aria-label="Chat mode"
-                className="absolute bottom-full left-12 z-30 mb-1 w-44 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg"
+                className="absolute bottom-full left-2 z-30 mb-1 w-44 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg"
               >
                 {modeOptions.map((option) => {
                   const Icon = option.icon
