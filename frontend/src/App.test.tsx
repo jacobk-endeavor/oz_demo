@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import { render, screen, cleanup, act } from '@testing-library/react'
+import { render, screen, cleanup, act, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import App, { getHashPage } from './App'
 
@@ -13,6 +13,29 @@ vi.mock('./features/graph/GraphPage', () => ({
 vi.mock('./features/ingest/IngestPage', () => ({
   IngestPage: () => <div data-testid="ingest-page">IngestPage</div>,
 }))
+vi.mock('./features/fieldNotes', () => ({
+  FieldNotesPage: () => <div data-testid="field-notes-page">FieldNotesPage</div>,
+}))
+vi.mock('./features/callMining', () => ({
+  CallMiningPage: () => <div data-testid="call-mining-page">CallMiningPage</div>,
+}))
+vi.mock('./features/dashboardGenerator', () => ({
+  DashboardGeneratorPage: () => <div data-testid="dashboards-page">DashboardGeneratorPage</div>,
+}))
+vi.mock('./features/quoteAutomation', () => ({
+  QuoteAutomationWorkspace: () => <div data-testid="quote-automation-page">QuoteAutomationWorkspace</div>,
+}))
+vi.mock('./features/leadsReports', () => ({
+  LeadGenerationScreen: ({ onAddToReport }: { onAddToReport: () => void }) => (
+    <div data-testid="lead-generation-page">
+      LeadGenerationScreen
+      <button type="button" onClick={onAddToReport}>
+        Add to weekly report
+      </button>
+    </div>
+  ),
+  ReportingScreen: () => <div data-testid="reports-page">ReportingScreen</div>,
+}))
 
 afterEach(() => {
   cleanup()
@@ -22,9 +45,19 @@ afterEach(() => {
 // ── getHashPage unit tests ──────────────────────────────────────────────────
 
 describe('getHashPage()', () => {
-  it('returns chat for empty hash', () => {
+  it('returns oz for empty hash', () => {
     window.location.hash = ''
-    expect(getHashPage()).toBe('chat')
+    expect(getHashPage()).toBe('oz')
+  })
+
+  it('returns oz for #/oz', () => {
+    window.location.hash = '#/oz'
+    expect(getHashPage()).toBe('oz')
+  })
+
+  it('returns field notes for #/field-notes', () => {
+    window.location.hash = '#/field-notes'
+    expect(getHashPage()).toBe('field-notes')
   })
 
   it('returns graph for #/graph', () => {
@@ -42,19 +75,25 @@ describe('getHashPage()', () => {
     expect(getHashPage()).toBe('ingest')
   })
 
-  it('defaults to chat for unknown hash', () => {
+  it('defaults to oz for unknown hash', () => {
     window.location.hash = '#/unknown'
-    expect(getHashPage()).toBe('chat')
+    expect(getHashPage()).toBe('oz')
   })
 })
 
 // ── App integration smoke tests ─────────────────────────────────────────────
 
 describe('App', () => {
-  it('renders ChatPage by default', () => {
+  it('renders Oz by default', () => {
     window.location.hash = ''
     render(<App />)
-    expect(screen.getByTestId('chat-page')).toBeInTheDocument()
+    expect(screen.getByText('Oz voice command center')).toBeInTheDocument()
+  })
+
+  it('renders Field Notes when hash is #/field-notes', () => {
+    window.location.hash = '#/field-notes'
+    render(<App />)
+    expect(screen.getByTestId('field-notes-page')).toBeInTheDocument()
   })
 
   it('renders GraphPage when hash is #/graph', () => {
@@ -70,9 +109,9 @@ describe('App', () => {
   })
 
   it('switches to GraphPage on hashchange event', async () => {
-    window.location.hash = ''
+    window.location.hash = '#/oz'
     render(<App />)
-    expect(screen.getByTestId('chat-page')).toBeInTheDocument()
+    expect(screen.getByText('Oz voice command center')).toBeInTheDocument()
 
     await act(async () => {
       window.location.hash = '#/graph'
@@ -82,16 +121,35 @@ describe('App', () => {
     expect(screen.getByTestId('graph-page')).toBeInTheDocument()
   })
 
-  it('switches back to ChatPage on hashchange from graph', async () => {
+  it('switches back to Oz on hashchange from graph', async () => {
     window.location.hash = '#/graph'
     render(<App />)
     expect(screen.getByTestId('graph-page')).toBeInTheDocument()
 
     await act(async () => {
-      window.location.hash = '#/chat'
+      window.location.hash = '#/oz'
       window.dispatchEvent(new HashChangeEvent('hashchange'))
     })
 
-    expect(screen.getByTestId('chat-page')).toBeInTheDocument()
+    expect(screen.getByText('Oz voice command center')).toBeInTheDocument()
+  })
+
+  it('navigates from lead generation to reports', () => {
+    window.location.hash = '#/lead-generation'
+    render(<App />)
+    expect(screen.getByTestId('lead-generation-page')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to weekly report' }))
+
+    expect(screen.getByTestId('reports-page')).toBeInTheDocument()
+  })
+
+  it('exposes primary Oz workflow navigation', () => {
+    window.location.hash = '#/oz'
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Call Mining' }))
+
+    expect(screen.getByTestId('call-mining-page')).toBeInTheDocument()
   })
 })

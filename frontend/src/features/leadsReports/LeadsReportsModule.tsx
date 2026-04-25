@@ -37,6 +37,9 @@ function LeadTable({ leads }: { leads: LeadProspect[] }) {
               Location
             </th>
             <th scope="col" className="px-4 py-3 font-semibold">
+              Distance From Route
+            </th>
+            <th scope="col" className="px-4 py-3 font-semibold">
               Similarity Reason
             </th>
             <th scope="col" className="px-4 py-3 font-semibold">
@@ -60,6 +63,7 @@ function LeadTable({ leads }: { leads: LeadProspect[] }) {
               <td className="px-4 py-4">{lead.contact}</td>
               <td className="px-4 py-4 font-mono text-blue-100">{lead.phone}</td>
               <td className="px-4 py-4 text-slate-300">{lead.location}</td>
+              <td className="px-4 py-4 text-blue-100">{lead.distanceFromRoute}</td>
               <td className="max-w-xs px-4 py-4 text-slate-200">{lead.similarityReason}</td>
               <td className="px-4 py-4">
                 <ScorePill score={lead.estimatedFit} />

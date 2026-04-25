@@ -244,7 +244,7 @@ export function CallMiningPage() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="min-w-[1280px] divide-y divide-white/10 text-left text-sm">
+                <table className="min-w-[1380px] divide-y divide-white/10 text-left text-sm">
                   <thead className="bg-white/[0.03] text-xs uppercase tracking-[0.16em] text-[#8B93A7]">
                     <tr>
                       <th className="px-4 py-3">Company</th>
@@ -252,6 +252,7 @@ export function CallMiningPage() {
                       <th className="px-4 py-3">Date</th>
                       <th className="px-4 py-3">Medium</th>
                       <th className="px-4 py-3">Location</th>
+                      <th className="px-4 py-3">Interaction Type</th>
                       <th className="px-4 py-3">Topic</th>
                       <th className="px-4 py-3">Complaint</th>
                       <th className="px-4 py-3">Product</th>
@@ -286,11 +287,9 @@ export function CallMiningPage() {
                           <td className="px-4 py-3">
                             <LocationChip tag={record.locationTag} />
                           </td>
+                          <td className="px-4 py-3 text-[#D7DCEB]">{record.interactionType}</td>
                           <td className="px-4 py-3">
                             <div className="font-medium text-white">{record.topic}</div>
-                            <div className="mt-1 text-xs text-[#8B93A7]">
-                              {record.interactionType}
-                            </div>
                           </td>
                           <td className="px-4 py-3 text-[#D7DCEB]">
                             {record.complaint || 'No complaint logged'}
