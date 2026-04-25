@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BackgroundTaskRail } from './BackgroundTaskRail'
 import { OzAssistantPanel } from './OzAssistantPanel'
 import { OzOrb, type OzOrbState } from './OzOrb'
+import { ozWorkflowNavItems } from './OzWorkflowShell.contract'
+import { OzWorkflowShell } from './OzWorkflowShell'
 
 afterEach(() => {
   cleanup()
@@ -109,5 +111,66 @@ describe('BackgroundTaskRail', () => {
     expect(within(rail).getByText('Queued')).toBeInTheDocument()
     expect(within(rail).getByText('Running')).toBeInTheDocument()
     expect(within(rail).getByText('Complete')).toBeInTheDocument()
+  })
+})
+
+describe('OzWorkflowShell', () => {
+  it('renders the IA navigation contract and handles workflow changes', () => {
+    const onNavItemChange = vi.fn()
+
+    render(
+      <OzWorkflowShell
+        activeNavItem="call-mining"
+        onNavItemChange={onNavItemChange}
+        title="Call Mining"
+        subtitle="Mine calls into qualified demand signals."
+      >
+        <div>Workflow canvas content</div>
+      </OzWorkflowShell>,
+    )
+
+    const nav = screen.getByRole('navigation', { name: 'Oz workflow navigation' })
+
+    ozWorkflowNavItems.forEach((item) => {
+      expect(within(nav).getByRole('button', { name: item.label })).toBeInTheDocument()
+    })
+
+    expect(within(nav).getByRole('button', { name: 'Call Mining' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(screen.getByRole('region', { name: 'Workflow canvas' })).toHaveTextContent(
+      'Workflow canvas content',
+    )
+
+    fireEvent.click(within(nav).getByRole('button', { name: 'Lead Generation' }))
+
+    expect(onNavItemChange).toHaveBeenCalledWith('lead-generation')
+  })
+
+  it('keeps the Oz assistant persistent and exposes optional evidence and task areas', () => {
+    render(
+      <OzWorkflowShell
+        activeNavItem="field-notes"
+        title="Field Notes"
+        evidence={<div>Annotated source evidence</div>}
+        backgroundTasks={[
+          { id: 'extract', label: 'Extract field notes', status: 'running', sourceCount: 12 },
+        ]}
+      >
+        <div>Field note canvas</div>
+      </OzWorkflowShell>,
+    )
+
+    expect(screen.getByRole('complementary', { name: 'Oz Assistant' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('complementary', { name: 'Evidence and background tasks' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Evidence' })).toHaveTextContent(
+      'Annotated source evidence',
+    )
+    expect(screen.getByRole('region', { name: 'Background agents' })).toHaveTextContent(
+      'Extract field notes',
+    )
   })
 })

@@ -32,7 +32,7 @@ export interface OzAssistantAction {
   onClick?: () => void
 }
 
-interface OzAssistantPanelProps {
+export interface OzAssistantPanelProps {
   title?: string
   eyebrow?: string
   contextSummary: string
