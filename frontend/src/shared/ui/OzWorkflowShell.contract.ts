@@ -1,16 +1,13 @@
 import type { ComponentType, SVGProps } from 'react'
 import {
   CallsIcon,
-  ChatIcon,
   DashboardIcon,
-  GraphIcon,
   LeadIcon,
   NebulaIcon,
   NotebookIcon,
   QuoteIcon,
   ReportIcon,
   SparkleIcon,
-  UploadIcon,
 } from './icons'
 
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>
@@ -67,15 +64,6 @@ export const navGroups: OzNavGroup[] = [
       { id: 'quote-automation', label: 'Quote Automation', icon: QuoteIcon },
       { id: 'lead-generation', label: 'Lead Generation', icon: LeadIcon },
       { id: 'reports', label: 'Reports', icon: ReportIcon },
-    ],
-  },
-  {
-    id: 'legacy',
-    label: 'Legacy',
-    items: [
-      { id: 'chat', label: 'Chat', icon: ChatIcon },
-      { id: 'graph', label: 'Graph', icon: GraphIcon },
-      { id: 'ingest', label: 'Ingest', icon: UploadIcon },
     ],
   },
 ]

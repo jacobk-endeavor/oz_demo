@@ -5,7 +5,7 @@
   "description": "Oz + Nebula demo workspace",
   "scripts": {
     "setup": "npm --prefix frontend install",
-    "dev": "npm run setup && VITE_DEMO_MODE=true npm --prefix frontend run dev -- --host 0.0.0.0",
+    "dev": "npm run setup && npm --prefix frontend run dev -- --host 0.0.0.0",
     "build": "npm run setup && npm --prefix frontend run build",
     "preview": "npm --prefix frontend run preview -- --host 0.0.0.0",
     "lint": "npm run setup && npm --prefix frontend run lint",

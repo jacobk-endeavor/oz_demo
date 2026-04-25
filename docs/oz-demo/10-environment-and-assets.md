@@ -12,9 +12,7 @@ Run the demo from the repository root:
 npm run dev
 ```
 
-The root command installs frontend dependencies when needed and starts Vite with `VITE_DEMO_MODE=true`. In this mode the Chat and Graph screens use seeded in-browser demo responses for `/api/chat`, `/api/chat/sessions`, and `/api/graph`, so the app is usable without a backend.
-
-Future live API work can leave `VITE_DEMO_MODE` unset or set it to `false`. The frontend will call live `/api/*` routes first and only falls back to the seeded demo data for missing or non-JSON API responses, which covers the local Vite-only case.
+The root command installs frontend dependencies when needed and starts Vite. The entire demo is hard-coded inside the React app, so no backend service is required. Future live integrations (ElevenLabs voice, AI providers, email sending, DigitalOcean Spaces uploads) should be added behind small server-side adapters as their keys come online.
 
 Root validation commands (`npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`) also install frontend dependencies before delegating into `frontend/`.
 

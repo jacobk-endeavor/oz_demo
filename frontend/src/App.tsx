@@ -1,8 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { OzWorkflowShell } from './shared/ui'
-import { ChatPage } from './features/chat/ChatPage'
-import { GraphPage } from './features/graph/GraphPage'
-import { IngestPage } from './features/ingest/IngestPage'
 import { OzHomePage } from './features/oz/OzHomePage'
 import { NebulaHubPage } from './features/oz/NebulaHubPage'
 import { FieldNotesPage } from './features/fieldNotes'
@@ -11,8 +8,7 @@ import { DashboardGeneratorPage } from './features/dashboardGenerator'
 import { QuoteAutomationWorkspace } from './features/quoteAutomation'
 import { LeadGenerationScreen, ReportingScreen } from './features/leadsReports'
 
-type LegacyPage = 'chat' | 'graph' | 'ingest'
-type WorkflowPage =
+export type Page =
   | 'oz'
   | 'nebula'
   | 'field-notes'
@@ -21,9 +17,7 @@ type WorkflowPage =
   | 'quote-automation'
   | 'lead-generation'
   | 'reports'
-export type Page = WorkflowPage | LegacyPage
 
-const legacyPages = new Set<Page>(['chat', 'graph', 'ingest'])
 const allPages = new Set<Page>([
   'oz',
   'nebula',
@@ -33,9 +27,6 @@ const allPages = new Set<Page>([
   'quote-automation',
   'lead-generation',
   'reports',
-  'chat',
-  'graph',
-  'ingest',
 ])
 
 interface PageMeta {
@@ -79,25 +70,6 @@ const pageMeta: Record<Page, PageMeta> = {
     title: 'Reports',
     subtitle: 'Turn an Oz insight into a recurring sales digest with delivery status and next actions.',
   },
-  chat: {
-    eyebrow: 'Legacy',
-    title: 'Chat',
-    subtitle: 'Conversational interface for the original ECL knowledge base.',
-  },
-  graph: {
-    eyebrow: 'Legacy',
-    title: 'Knowledge Graph',
-    subtitle: 'Force-directed exploration of indexed entities and relationships.',
-  },
-  ingest: {
-    eyebrow: 'Legacy',
-    title: 'Ingest',
-    subtitle: 'Drop documents into the knowledge base.',
-  },
-}
-
-function isLegacyPage(page: Page): page is LegacyPage {
-  return legacyPages.has(page)
 }
 
 function isPage(value: string): value is Page {
@@ -146,12 +118,6 @@ export default function App() {
     body = <LeadGenerationScreen onAddToReport={() => navigate('reports')} />
   }
   if (page === 'reports') body = <ReportingScreen />
-  if (page === 'chat') body = <ChatPage />
-  if (page === 'graph') body = <GraphPage />
-  if (page === 'ingest') body = <IngestPage />
-
-  const isFullBleed = page === 'chat'
-  const hideAssistant = isLegacyPage(page)
 
   return (
     <OzWorkflowShell
@@ -160,8 +126,6 @@ export default function App() {
       eyebrow={meta.eyebrow}
       title={meta.title}
       subtitle={meta.subtitle}
-      fullBleed={isFullBleed}
-      hideAssistant={hideAssistant}
       assistantProps={{
         contextSummary: meta.subtitle ?? '',
         messages: [

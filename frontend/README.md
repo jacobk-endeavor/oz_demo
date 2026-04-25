@@ -10,21 +10,22 @@ From the repository root:
 npm run dev
 ```
 
-This installs frontend dependencies if needed and starts Vite on **http://localhost:5173**. The sidebar currently provides three routes:
+This installs frontend dependencies if needed and starts Vite on **http://localhost:5173**.
 
-| Hash | Page | What it calls |
-|------|------|---------------|
-| `#/chat` (default) | Chat | `POST /api/chat` |
-| `#/graph` | Knowledge Graph | `GET /api/graph` |
-| `#/ingest` | Ingest | _(stubbed — no API call yet)_ |
+## Routes
 
-## Development (frontend only)
+Hash-based routing, no router library. `useHashRoute()` in `App.tsx` listens for `hashchange`.
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+| Hash | Page |
+|------|------|
+| `#/oz` (default) | Oz home |
+| `#/nebula` | Nebula workflow hub |
+| `#/field-notes` | Voice field notes |
+| `#/call-mining` | Interaction intelligence table |
+| `#/dashboards` | Dashboard generator |
+| `#/quote-automation` | Quote review workspace |
+| `#/lead-generation` | Lookalike leads + route preview |
+| `#/reports` | Weekly digest report builder |
 
 ## Commands
 
@@ -41,37 +42,23 @@ npm run dev
 
 ```
 src/
-  App.tsx                    # Root app + useHashRoute() + hash-based routing
-  main.tsx                   # React entry point
+  App.tsx                       # Root app, hash routing, page meta
+  main.tsx                      # React entry point
   shared/
-    api/client.ts            # Typed fetch wrapper (get, post, stream)
-    styles/index.css         # Tailwind 4 + base styles
-    ui/
-      AppShell.tsx           # Layout: sidebar + main content area
-      Sidebar.tsx            # Dark sidebar with Chat / Graph / Ingest nav
-      Button.tsx             # primary / secondary / ghost variants
-      Panel.tsx              # Rounded card with optional header
-      icons.tsx              # Inline SVG icon components
+    styles/index.css            # Tailwind 4 + base styles
+    ui/                         # OzWorkflowShell, Panel, Button, Tag,
+                                # PulseOrb, Modal, OzAssistantPanel, etc.
   features/
-    chat/                    # ChatPage — POST /api/chat, MessageList, CitationPills
-    graph/                   # GraphPage — GET /api/graph, force-directed canvas
-    ingest/                  # IngestPage — FileDropzone + CategoryPicker (stubbed)
+    oz/                         # OzHomePage + NebulaHubPage
+    fieldNotes/                 # Voice field notes module
+    callMining/                 # Interaction table + Oz queries
+    dashboardGenerator/         # Prompt-driven dashboard with templates
+    quoteAutomation/            # Quote review + task rail
+    leadsReports/               # Lead generation + reporting
 ```
-
-## Routing
-
-Hash-based routing with no external router library.  `useHashRoute()` in
-`App.tsx` listens for `hashchange` events and returns the active `Page`.
-
-Supported routes: `#/chat` (default), `#/graph`, `#/ingest`.
-
-## Vite proxy
-
-In development, all `/api/*` requests are forwarded to `http://localhost:8000`
-(the FastAPI backend) — see `vite.config.ts`.  No CORS workarounds needed.
 
 ## Tests
 
 ```bash
-npm run test          # vitest — all *.test.tsx files
+npm run test
 ```

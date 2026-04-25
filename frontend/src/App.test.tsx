@@ -3,15 +3,6 @@ import { render, screen, cleanup, act, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import App, { getHashPage } from './App'
 
-vi.mock('./features/chat/ChatPage', () => ({
-  ChatPage: () => <div data-testid="chat-page">ChatPage</div>,
-}))
-vi.mock('./features/graph/GraphPage', () => ({
-  GraphPage: () => <div data-testid="graph-page">GraphPage</div>,
-}))
-vi.mock('./features/ingest/IngestPage', () => ({
-  IngestPage: () => <div data-testid="ingest-page">IngestPage</div>,
-}))
 vi.mock('./features/oz/OzHomePage', () => ({
   OzHomePage: () => <div data-testid="oz-home-page">OzHomePage</div>,
 }))
@@ -58,28 +49,34 @@ describe('getHashPage()', () => {
     expect(getHashPage()).toBe('oz')
   })
 
+  it('returns nebula for #/nebula', () => {
+    window.location.hash = '#/nebula'
+    expect(getHashPage()).toBe('nebula')
+  })
+
   it('returns field notes for #/field-notes', () => {
     window.location.hash = '#/field-notes'
     expect(getHashPage()).toBe('field-notes')
   })
 
-  it('returns graph for #/graph', () => {
+  it('returns dashboards for #/dashboards', () => {
+    window.location.hash = '#/dashboards'
+    expect(getHashPage()).toBe('dashboards')
+  })
+
+  it('returns reports for #/reports?focus=int_001', () => {
+    window.location.hash = '#/reports?focus=int_001'
+    expect(getHashPage()).toBe('reports')
+  })
+
+  it('defaults to oz for unknown hash including legacy routes', () => {
+    window.location.hash = '#/chat'
+    expect(getHashPage()).toBe('oz')
     window.location.hash = '#/graph'
-    expect(getHashPage()).toBe('graph')
-  })
-
-  it('returns graph for #/graph?focus=obs_001', () => {
-    window.location.hash = '#/graph?focus=obs_001'
-    expect(getHashPage()).toBe('graph')
-  })
-
-  it('returns ingest for #/ingest', () => {
+    expect(getHashPage()).toBe('oz')
     window.location.hash = '#/ingest'
-    expect(getHashPage()).toBe('ingest')
-  })
-
-  it('defaults to oz for unknown hash', () => {
-    window.location.hash = '#/unknown'
+    expect(getHashPage()).toBe('oz')
+    window.location.hash = '#/anything-else'
     expect(getHashPage()).toBe('oz')
   })
 })
@@ -97,42 +94,35 @@ describe('App', () => {
     expect(screen.getByTestId('field-notes-page')).toBeInTheDocument()
   })
 
-  it('renders GraphPage when hash is #/graph', () => {
-    window.location.hash = '#/graph'
+  it('renders Call Mining when hash is #/call-mining', () => {
+    window.location.hash = '#/call-mining'
     render(<App />)
-    expect(screen.getByTestId('graph-page')).toBeInTheDocument()
+    expect(screen.getByTestId('call-mining-page')).toBeInTheDocument()
   })
 
-  it('renders IngestPage when hash is #/ingest', () => {
-    window.location.hash = '#/ingest'
+  it('renders Dashboards when hash is #/dashboards', () => {
+    window.location.hash = '#/dashboards'
     render(<App />)
-    expect(screen.getByTestId('ingest-page')).toBeInTheDocument()
+    expect(screen.getByTestId('dashboards-page')).toBeInTheDocument()
   })
 
-  it('switches to GraphPage on hashchange event', async () => {
+  it('renders Quote Automation when hash is #/quote-automation', () => {
+    window.location.hash = '#/quote-automation'
+    render(<App />)
+    expect(screen.getByTestId('quote-automation-page')).toBeInTheDocument()
+  })
+
+  it('switches between workflows on hashchange', async () => {
     window.location.hash = '#/oz'
     render(<App />)
     expect(screen.getByTestId('oz-home-page')).toBeInTheDocument()
 
     await act(async () => {
-      window.location.hash = '#/graph'
+      window.location.hash = '#/dashboards'
       window.dispatchEvent(new HashChangeEvent('hashchange'))
     })
 
-    expect(screen.getByTestId('graph-page')).toBeInTheDocument()
-  })
-
-  it('switches back to Oz on hashchange from graph', async () => {
-    window.location.hash = '#/graph'
-    render(<App />)
-    expect(screen.getByTestId('graph-page')).toBeInTheDocument()
-
-    await act(async () => {
-      window.location.hash = '#/oz'
-      window.dispatchEvent(new HashChangeEvent('hashchange'))
-    })
-
-    expect(screen.getByTestId('oz-home-page')).toBeInTheDocument()
+    expect(screen.getByTestId('dashboards-page')).toBeInTheDocument()
   })
 
   it('navigates from lead generation to reports', () => {
@@ -145,7 +135,7 @@ describe('App', () => {
     expect(screen.getByTestId('reports-page')).toBeInTheDocument()
   })
 
-  it('exposes primary Oz workflow navigation', () => {
+  it('exposes primary Oz workflow navigation in the sidebar', () => {
     window.location.hash = '#/oz'
     render(<App />)
 
@@ -161,5 +151,13 @@ describe('App', () => {
     expect(collapseButton).toBeInTheDocument()
     fireEvent.click(collapseButton)
     expect(screen.getByRole('button', { name: /Expand sidebar/i })).toBeInTheDocument()
+  })
+
+  it('does not expose legacy chat/graph/ingest navigation', () => {
+    window.location.hash = '#/oz'
+    render(<App />)
+    expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Graph' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ingest' })).not.toBeInTheDocument()
   })
 })

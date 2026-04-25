@@ -18,9 +18,7 @@ The demo should feel like a sales command center from the future: black space ba
 
 ## One-Command Local Demo
 
-From the repository root, `npm run dev` installs frontend dependencies and starts Vite with `VITE_DEMO_MODE=true`. That gives Chat conversation history, Chat replies/citations, and Graph data from seeded browser-side demo responses, so no backend service is required for the local demo.
-
-When live `/api/*` routes are added, run the frontend without demo mode or set `VITE_DEMO_MODE=false` so successful backend responses take precedence.
+From the repository root, `npm run dev` installs frontend dependencies and starts Vite. The whole demo runs from hard-coded data in the browser, so no backend service is required. Live API integrations (ElevenLabs, AI providers, email, DigitalOcean Spaces) only enter the picture when their keys are configured behind the relevant feature.
 
 ## File Map
 
