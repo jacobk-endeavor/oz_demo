@@ -16,6 +16,8 @@ import type {
 const defaultPrompt =
   'Generate a dashboard with top product requests, complaints, competitor pressure, and next best actions.'
 
+const initialDashboard = generateDashboardFromPrompt(defaultPrompt)
+
 const featureRequestPrompts: Record<GeneratedFeatureId, string> = {
   ai_chat: 'Add an AI chat feature to this dashboard.',
   dynamic_graph_generation: 'Add dynamic graph generation.',
@@ -24,13 +26,25 @@ const featureRequestPrompts: Record<GeneratedFeatureId, string> = {
 
 const ozAnswers: Record<string, string> = {
   opportunity:
-    'The biggest opportunity is EcoShield replenishment at Holt Supply. It has repeated buying intent, a clear quote path, and no active service complaint blocking the deal.',
+    'The biggest opportunity is Russin Lumber. Record int_001 has a composite decking request, a TimberTech comparison, and a clear callback path for a bundle quote.',
   accounts:
-    'Call Benton Foods, Drake HVAC, and Holt Supply first. They combine recent activity, competitor pressure, and concrete product requests.',
+    'Call Russin Lumber and Hudson Valley Supply first because both records combine product demand, complaints, and competitor pressure. North Ridge Builders is the clean upsell follow-up for hidden fasteners.',
   changed:
-    'This month, complaints shifted from price objections to delivery delays. That changes the play from discounting to recovery calls and reliable date commitments.',
+    'The April source set shifted from a phone call to an in-person note and then a Zoom recap email, giving the dashboard one record each across calls, notes, and emails.',
   promote:
-    'Promote EcoShield Sealant and FlexRail Kits. Demand is rising and reps already have source-backed objections they can address.',
+    'Promote composite decking, hidden fasteners, and exterior trim. Those are the exact product requests in int_001, int_002, and int_003.',
+}
+
+function buildMockExcelPreview(fileName: string) {
+  return {
+    fileName,
+    parsedSheets: excelDashboardMapping.sheets.map((sheet) => sheet.sheetName),
+    mappedColumnCount: excelDashboardMapping.sheets.reduce(
+      (total, sheet) => total + Object.keys(sheet.columnMappings).length,
+      0,
+    ),
+    generatedModuleCount: excelDashboardMapping.generatedModules.length,
+  }
 }
 
 function MiniBarChart({ card }: { card: DashboardChartCard }) {
@@ -118,14 +132,19 @@ function BuildRail({ template }: { template: GeneratedWebAppTemplate }) {
 
 export function DashboardGeneratorPage() {
   const [prompt, setPrompt] = useState(defaultPrompt)
-  const [dashboard, setDashboard] = useState(() => generateDashboardFromPrompt(defaultPrompt))
+  const [dashboard, setDashboard] = useState<DashboardGenerationResult>(initialDashboard)
   const [isBuilding, setIsBuilding] = useState(false)
-  const [enabledFeatures, setEnabledFeatures] = useState<GeneratedFeatureId[]>([])
+  const [enabledFeatures, setEnabledFeatures] = useState<GeneratedFeatureId[]>(
+    initialDashboard.template.defaultFeatures,
+  )
   const [appPrompt, setAppPrompt] = useState('Generate a web app from this dashboard.')
   const [chatMessages, setChatMessages] = useState<string[]>([
     'Oz: Tell me the app you want, or ask me to add AI chat, dynamic graphs, or Excel import.',
   ])
   const [ozAnswer, setOzAnswer] = useState(ozAnswers.opportunity)
+  const [excelPreview, setExcelPreview] = useState(() =>
+    buildMockExcelPreview(excelDashboardMapping.sourceFile),
+  )
 
   const activeFeatureSet = useMemo(() => new Set(enabledFeatures), [enabledFeatures])
 
@@ -140,8 +159,12 @@ export function DashboardGeneratorPage() {
   }, [isBuilding])
 
   function runDashboardGeneration(nextPrompt = prompt) {
+    const nextDashboard = generateDashboardFromPrompt(nextPrompt)
     setPrompt(nextPrompt)
-    setDashboard(generateDashboardFromPrompt(nextPrompt))
+    setDashboard(nextDashboard)
+    setEnabledFeatures((current) => [
+      ...new Set([...current, ...nextDashboard.template.defaultFeatures]),
+    ])
     setIsBuilding(true)
   }
 
@@ -186,6 +209,17 @@ export function DashboardGeneratorPage() {
       ...current,
       `User: Generate ${template.name}.`,
       `Oz: ${template.name} is ready as a hard-coded web app template.`,
+    ])
+  }
+
+  function handleExcelPreview(fileList: FileList | null) {
+    const fileName = fileList?.[0]?.name ?? excelDashboardMapping.sourceFile
+
+    setExcelPreview(buildMockExcelPreview(fileName))
+    setChatMessages((current) => [
+      ...current,
+      `User: Uploaded ${fileName}`,
+      `Oz: Mock parsed ${fileName} into ${excelDashboardMapping.sheets.length} sheets and ${excelDashboardMapping.generatedModules.length} dashboard modules.`,
     ])
   }
 
@@ -420,8 +454,32 @@ export function DashboardGeneratorPage() {
               {activeFeatureSet.has('excel_to_dashboard') && (
                 <div className="mt-4 rounded-2xl border border-blue-400/30 bg-blue-500/10 p-4">
                   <p className="font-semibold text-white">Excel import active</p>
-                  <div className="mt-3 rounded-xl border border-dashed border-white/20 bg-black/30 p-4 text-center text-sm text-zinc-300">
-                    Drop {excelDashboardMapping.sourceFile} here
+                  <label
+                    htmlFor="excel-dashboard-upload"
+                    className="mt-3 block cursor-pointer rounded-xl border border-dashed border-white/20 bg-black/30 p-4 text-center text-sm text-zinc-300 transition hover:border-blue-300/70 hover:text-white"
+                  >
+                    Drop {excelDashboardMapping.sourceFile} here or choose an Excel file
+                    <span className="mt-1 block text-xs text-zinc-500">
+                      Parsing is mocked for demo; selecting a file refreshes the preview below.
+                    </span>
+                  </label>
+                  <input
+                    id="excel-dashboard-upload"
+                    type="file"
+                    accept=".xls,.xlsx,.xlsm"
+                    className="sr-only"
+                    aria-label="Upload Excel source file"
+                    onChange={(event) => handleExcelPreview(event.currentTarget.files)}
+                  />
+                  <div className="mt-3 rounded-xl border border-white/10 bg-black/30 p-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-blue-200">
+                      Mock parsed preview
+                    </p>
+                    <p className="mt-2 text-sm text-white">{excelPreview.fileName}</p>
+                    <p className="mt-1 text-xs text-zinc-400">
+                      {excelPreview.parsedSheets.join(', ')} · {excelPreview.mappedColumnCount}{' '}
+                      mapped columns · {excelPreview.generatedModuleCount} generated modules
+                    </p>
                   </div>
                   <div className="mt-3 space-y-2">
                     {excelDashboardMapping.sheets.map((sheet) => (

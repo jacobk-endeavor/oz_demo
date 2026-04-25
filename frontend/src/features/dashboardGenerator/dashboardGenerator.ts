@@ -94,7 +94,7 @@ export function generateDashboardFromPrompt(prompt: string): DashboardGeneration
     timeRange: 'last 90 days',
     modules: getCardsForTemplate(template),
     primaryInsight:
-      'Demand is high enough to act now, but competitor pressure and service complaints determine which accounts need executive attention first.',
+      'Russin Lumber and Hudson Valley Supply need the most attention because their product requests are paired with complaints and competitor mentions.',
     recommendedActions,
     sourceSummary:
       'Built from 60 demo interactions across phone calls, Zoom meetings, field notes, emails, and quote signals.',
