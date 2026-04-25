@@ -506,7 +506,7 @@ function Header({
               data-active={isActive ? 'true' : undefined}
               data-running={isRunning ? 'true' : undefined}
               className={joinClasses(
-                'group flex max-w-[160px] shrink-0 items-center gap-1 border-r border-zinc-200 px-2.5 text-xs transition-colors',
+                'group flex max-w-[140px] shrink-0 items-center gap-0.5 border-r border-zinc-200 px-1.5 text-[11px] transition-colors',
                 isActive
                   ? 'bg-white text-zinc-900'
                   : 'bg-zinc-50 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-800',
@@ -517,17 +517,17 @@ function Header({
                 onClick={() => onSelectSession(session.id)}
                 title={tabTitle}
                 aria-label={`Switch to chat: ${tabTitle}`}
-                className="flex min-w-0 items-center gap-1.5 py-1 text-left"
+                className="flex min-w-0 items-center gap-1 py-0.5 text-left"
               >
                 {isRunning ? (
                   <SpinnerIcon
-                    className="h-3 w-3 shrink-0 animate-spin text-blue-500"
+                    className="h-2.5 w-2.5 shrink-0 animate-spin text-blue-500"
                     aria-label="Reply in progress"
                   />
                 ) : (
                   <ChatBubbleIcon
                     className={joinClasses(
-                      'h-3 w-3 shrink-0',
+                      'h-2.5 w-2.5 shrink-0',
                       isActive ? 'text-zinc-700' : 'text-zinc-400 group-hover:text-zinc-600',
                     )}
                     aria-hidden="true"
@@ -545,22 +545,22 @@ function Header({
                   !isActive && 'opacity-0 group-hover:opacity-100',
                 )}
               >
-                <CloseIcon className="h-3 w-3" />
+                <CloseIcon className="h-2.5 w-2.5" />
               </button>
             </div>
           )
         })}
       </div>
 
-      <div className="flex shrink-0 items-center gap-0.5 border-l border-zinc-200 px-2 pr-12">
+      <div className="flex shrink-0 items-center gap-0.5 border-l border-zinc-200 px-1.5 pr-9">
         <button
           type="button"
           onClick={onNewChat}
           aria-label="New chat"
           title="New chat"
-          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
         >
-          <PlusIcon className="h-4 w-4" />
+          <PlusIcon className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
@@ -570,13 +570,13 @@ function Header({
           aria-label="Chat history"
           title="Chat history"
           className={joinClasses(
-            'rounded-md p-1.5 transition-colors',
+            'inline-flex h-6 w-6 items-center justify-center rounded-md transition-colors',
             historyOpen
               ? 'bg-zinc-100 text-zinc-900'
               : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900',
           )}
         >
-          <ClockIcon className="h-4 w-4" />
+          <ClockIcon className="h-3.5 w-3.5" />
         </button>
       </div>
 

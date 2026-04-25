@@ -297,13 +297,16 @@ export function OzWorkflowShell({
           aria-label={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
           title={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
           className={joinClasses(
-            'absolute right-2.5 top-2.5 z-50 rounded-md p-1.5 transition-colors',
+            // Align with the 44px chat header: center a 24px button vertically
+            // (top: 10px) and sit ~10px from the right edge so the icons inside
+            // the chat header sit on the same horizontal line.
+            'absolute right-2.5 top-[10px] z-50 inline-flex h-6 w-6 items-center justify-center rounded-md transition-colors',
             assistantCollapsed
               ? 'bg-white/90 text-zinc-500 ring-1 ring-zinc-200 hover:bg-zinc-100 hover:text-zinc-900'
               : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900',
           )}
         >
-          <PanelRightIcon className="h-4 w-4" />
+          <PanelRightIcon className="h-3.5 w-3.5" />
         </button>
       )}
     </div>
