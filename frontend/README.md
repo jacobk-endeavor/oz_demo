@@ -1,29 +1,16 @@
-# ECL Frontend
+# Oz + Nebula Frontend
 
-React 19 + TypeScript + Vite 6 + Tailwind CSS 4 frontend for the ECL system.
+React 19 + TypeScript + Vite 6 + Tailwind CSS 4 frontend for the Oz + Nebula demo.
 
-## Quick start (end-to-end)
+## Quick Start
 
-You need both the API backend and the Vite dev server running. Open two terminals
-from the `impl/` directory:
+From the repository root:
 
-**Terminal 1 — API backend**
 ```bash
-cd impl
-just dev-api
-# Starts uvicorn on http://localhost:8000
+npm run dev
 ```
 
-**Terminal 2 — Vite dev server**
-```bash
-cd impl
-just dev-frontend
-# Starts Vite on http://localhost:5173
-# Proxies /api/* → http://localhost:8000
-```
-
-Then open **http://localhost:5173** in a browser.  The sidebar provides three
-routes:
+This installs frontend dependencies if needed and starts Vite on **http://localhost:5173**. The sidebar currently provides three routes:
 
 | Hash | Page | What it calls |
 |------|------|---------------|
@@ -31,19 +18,9 @@ routes:
 | `#/graph` | Knowledge Graph | `GET /api/graph` |
 | `#/ingest` | Ingest | _(stubbed — no API call yet)_ |
 
-Or use the combined recipe if `just` supports background processes on your shell:
-
-```bash
-just dev   # runs API + frontend concurrently
-```
-
 ## Development (frontend only)
 
 ```bash
-# From the impl/ directory:
-just dev-frontend
-
-# Or directly inside frontend/:
 cd frontend
 npm install
 npm run dev

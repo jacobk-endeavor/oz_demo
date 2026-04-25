@@ -1,0 +1,16 @@
+{
+  "name": "oz-demo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Oz + Nebula demo workspace",
+  "scripts": {
+    "setup": "npm --prefix frontend install",
+    "dev": "npm run setup && npm --prefix frontend run dev -- --host 0.0.0.0",
+    "build": "npm run setup && npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview -- --host 0.0.0.0",
+    "lint": "npm --prefix frontend run lint",
+    "typecheck": "npm --prefix frontend run typecheck",
+    "test": "npm --prefix frontend run test",
+    "validate": "npm run typecheck && npm run lint && npm run test && npm run build"
+  }
+}
