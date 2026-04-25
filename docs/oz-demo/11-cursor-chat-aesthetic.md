@@ -14,20 +14,14 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 - **Borders**: 1px `border-zinc-200` on the panel boundary and on subsections (header bar, composer top edge, context strip). No shadows.
 - **Width**: fixed at 360px on desktop. Always present. Never collapses.
 
-### Header Bar
+### Header Bar (with inline tabs)
 
-- Thin row at the top, ~44px tall, with a bottom border.
-- Left: just the **`Oz` wordmark** as quiet zinc-900 text. No chevron, no model dropdown affordance — the demo doesn't switch models, so the chevron was visual noise.
-- Right: an icon-only **clock** button that opens the chat history dropdown, and an icon-only overflow button. The previous text-and-chevron `History [n]` affordance is replaced by the clock — Cursor uses a small icon there too.
-- The previous header-level `New chat` button is gone; new chats live in the tab strip below.
-- No avatars, no eyebrows like "Persistent copilot". The product name in the header is enough.
-
-### Chat Tabs
-
-- Below the header sits a **chat tab strip** rendering every open chat as a small browser-style tab. Each tab shows a leading icon, the chat title (truncated), and a close button that appears on hover (or while active). The active tab uses a white background with a thin zinc-200 border on the top and sides; inactive tabs are quieter zinc-100.
-- A small `+` button at the end of the strip starts a fresh chat in a new tab and switches to it.
-- When a chat has a pending Oz reply, its tab swaps the leading icon for an animated **spinner** so the user can see what's running across tabs at a glance. The same spinner appears next to the sticky title and as a small marker in the history dropdown row for that session.
-- The tab strip is scrollable horizontally if there are too many open chats. The active tab is always the source of truth for the conversation, composer, sticky title, and Try chips.
+- Single thin row, ~44px tall, with a bottom border. Everything fits in this row — there is no separate tab strip below.
+- Left: the **`Oz` wordmark** in quiet zinc-900 text, separated from the rest by a thin vertical divider.
+- Middle: the **chat tab strip** flowing horizontally, scrollable when there are many open chats. Each tab shows a leading icon, the chat title (truncated to ~160px), and a close button that appears on hover or while active. The active tab uses a white background; inactive tabs are zinc-50 and lighten on hover. Tabs are separated by 1px zinc-200 dividers, like a code editor's tab strip.
+- A small `+` button sits at the end of the tab strip and starts a fresh chat in a new tab.
+- Right: an icon-only **clock** button that opens the chat history dropdown, and an icon-only overflow button. The clock+overflow live behind another vertical divider.
+- When a chat has a pending Oz reply, its tab swaps the leading icon for an animated **spinner** so the user can see what's running across tabs at a glance. The same spinner appears next to the sticky title and in the history dropdown row.
 
 ### Sticky Title (First Prompt)
 
@@ -76,17 +70,18 @@ The panel exposes a `showFloatingMark` boolean prop. `App.tsx` sets it to `page 
 - Inline code uses `bg-zinc-100 text-zinc-800` mono. Code blocks use `bg-zinc-950 text-zinc-100` with subtle padding. Optional in this demo.
 - **Streaming/thinking** state: a three-dot pulse with the role label `Oz · Thinking…`. We use a CSS pulse on three small dots.
 
-### Context Pills
+### Add Context Affordance
 
-- Right above the composer, a horizontally scrolling row of small pills with an `@` icon and a short label. They look like Cursor's `@File`, `@Symbol`, or `@Doc` chips: `rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-xs`.
-- The first pill is `+ Add context` and is the only pill that opens an action. Other pills are mocked badges that show what context is currently in scope (e.g. `@call-mining`, `@Russin Lumber`).
+- The previous full-width `+ Add context` strip with `@`-prefixed context chips is gone. The strip added another row of chrome between the conversation and the composer, and the chips were demo decoration.
+- It's replaced by a **small paperclip icon** sitting inside the composer footer, immediately after the mode pill. The paperclip is a low-emphasis ghost button (no fill until hovered) and its `aria-label` is "Add context"; tooltip notes the demo limitation.
+- The chip-based context vocabulary (`@File`, `@Symbol`) can come back later if it earns its keep, but for the demo the paperclip is the only attach affordance.
 
 ### Composer
 
 - Wrapped in a thin `rounded-xl border border-zinc-200 bg-white` block — Cursor's composer feels like a floating card that the rest of the panel respects.
 - Inside the wrapper:
   - Auto-resizing textarea (1-6 lines), no inner border, no outline ring on focus, just a placeholder `Ask Oz…`.
-  - Bottom row: mode pill on the left (`[icon] Mode ⌄`), keyboard hint (`↵ to send · ⇧↵ for newline`) in the middle, and a small icon-only **send** button on the right. No model picker — the demo doesn't switch models.
+  - Bottom row: mode pill on the left (`[icon] Mode ⌄`), an inline paperclip Add-context button next to it, and a small icon-only **send** button on the right. No keyboard hint, no model picker.
 - **Send button**: 28px square, rounded, blue-600 fill when input has content, zinc-300 when empty. Icon is an upward arrow. No "Send" label.
 - Submit on `Enter`. Newline on `Shift+Enter`. Up arrow recalls the last user message into the textarea.
 

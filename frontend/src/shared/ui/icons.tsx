@@ -260,3 +260,11 @@ export function CloseIcon({ className, ...props }: IconProps) {
     </svg>
   )
 }
+
+export function PaperclipIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <path d="M14.5 8.5 8.7 14.3a2.5 2.5 0 1 1-3.5-3.5l6.6-6.6a4 4 0 0 1 5.7 5.7l-7.7 7.7a5.5 5.5 0 0 1-7.8-7.8l6.4-6.4" />
+    </svg>
+  )
+}

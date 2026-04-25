@@ -12,13 +12,13 @@ import {
 } from 'react'
 import {
   ArrowUpIcon,
-  AtSignIcon,
   ChatBubbleIcon,
   ChevronDownIcon,
   ClockIcon,
   CloseIcon,
   InfinityIcon,
   MoreHorizontalIcon,
+  PaperclipIcon,
   PencilIcon,
   PlusIcon,
   SparkleIcon,
@@ -163,7 +163,6 @@ function formatRelativeTime(timestamp: number, now: number): string {
 export function OzAssistantPanel({
   title = 'Oz',
   contextSummary,
-  contextItems = [],
   messages,
   suggestedPrompts = [],
   onPromptSelect,
@@ -393,19 +392,14 @@ export function OzAssistantPanel({
         title={title}
         historyOpen={historyOpen}
         onToggleHistory={() => setHistoryOpen((open) => !open)}
-        sessions={historySessions}
+        historySessions={historySessions}
+        tabSessions={orderedSessions}
         activeSessionId={activeSession.id}
         onSelectSession={handleSelectSession}
+        onCloseTab={handleCloseTab}
+        onNewChat={handleNewChat}
         historyMenuRef={historyMenuRef}
         now={now}
-      />
-
-      <ChatTabBar
-        sessions={orderedSessions}
-        activeSessionId={activeSession.id}
-        onSelect={handleSelectSession}
-        onClose={handleCloseTab}
-        onNewChat={handleNewChat}
       />
 
       {firstUserMessage && (
@@ -431,8 +425,6 @@ export function OzAssistantPanel({
       {suggestedPrompts.length > 0 && (
         <SuggestedPrompts prompts={suggestedPrompts} onClick={handlePromptClick} />
       )}
-
-      <ContextStrip contextItems={contextItems} />
 
       <Composer
         textareaRef={textareaRef}
@@ -461,25 +453,111 @@ function Header({
   title,
   historyOpen,
   onToggleHistory,
-  sessions,
+  historySessions,
+  tabSessions,
   activeSessionId,
   onSelectSession,
+  onCloseTab,
+  onNewChat,
   historyMenuRef,
   now,
 }: {
   title: string
   historyOpen: boolean
   onToggleHistory: () => void
-  sessions: ChatSession[]
+  historySessions: ChatSession[]
+  tabSessions: ChatSession[]
   activeSessionId: string
   onSelectSession: (id: string) => void
+  onCloseTab: (id: string) => void
+  onNewChat: () => void
   historyMenuRef: React.RefObject<HTMLDivElement | null>
   now: number
 }) {
   return (
-    <header className="relative flex h-11 shrink-0 items-center justify-between gap-2 border-b border-zinc-200 px-3">
-      <span className="px-2 py-1 text-sm font-semibold text-zinc-900">{title}</span>
-      <div className="flex items-center gap-0.5">
+    <header className="relative flex h-11 shrink-0 items-stretch border-b border-zinc-200">
+      <div className="flex shrink-0 items-center gap-2 border-r border-zinc-200 px-3">
+        <span className="text-sm font-semibold text-zinc-900">{title}</span>
+      </div>
+
+      <div
+        role="tablist"
+        aria-label="Chat tabs"
+        className="flex min-w-0 flex-1 items-stretch overflow-x-auto"
+      >
+        {tabSessions.map((session) => {
+          const isActive = session.id === activeSessionId
+          const isRunning = session.pendingMessageId !== null
+          const tabTitle =
+            session.messages.length === 0 ? NEW_CHAT_TITLE : session.title
+          const canClose = tabSessions.length > 1
+          return (
+            <div
+              key={session.id}
+              role="tab"
+              aria-selected={isActive}
+              data-testid="chat-tab"
+              data-active={isActive ? 'true' : undefined}
+              data-running={isRunning ? 'true' : undefined}
+              className={joinClasses(
+                'group flex max-w-[160px] shrink-0 items-center gap-1 border-r border-zinc-200 px-2.5 text-xs transition-colors',
+                isActive
+                  ? 'bg-white text-zinc-900'
+                  : 'bg-zinc-50 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-800',
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => onSelectSession(session.id)}
+                title={tabTitle}
+                aria-label={`Switch to chat: ${tabTitle}`}
+                className="flex min-w-0 items-center gap-1.5 py-1 text-left"
+              >
+                {isRunning ? (
+                  <SpinnerIcon
+                    className="h-3 w-3 shrink-0 animate-spin text-blue-500"
+                    aria-label="Reply in progress"
+                  />
+                ) : (
+                  <ChatBubbleIcon
+                    className={joinClasses(
+                      'h-3 w-3 shrink-0',
+                      isActive ? 'text-zinc-700' : 'text-zinc-400 group-hover:text-zinc-600',
+                    )}
+                    aria-hidden="true"
+                  />
+                )}
+                <span className="truncate font-medium">{tabTitle}</span>
+              </button>
+              {canClose && (
+                <button
+                  type="button"
+                  onClick={() => onCloseTab(session.id)}
+                  aria-label={`Close chat: ${tabTitle}`}
+                  title="Close chat"
+                  className={joinClasses(
+                    'rounded p-0.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700',
+                    !isActive && 'opacity-0 group-hover:opacity-100',
+                  )}
+                >
+                  <CloseIcon className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          )
+        })}
+        <button
+          type="button"
+          onClick={onNewChat}
+          aria-label="New chat"
+          title="New chat"
+          className="flex shrink-0 items-center justify-center px-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+        >
+          <PlusIcon className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-0.5 border-l border-zinc-200 px-2">
         <button
           type="button"
           onClick={onToggleHistory}
@@ -511,7 +589,7 @@ function Header({
           ref={historyMenuRef}
           role="menu"
           aria-label="Chat history"
-          className="absolute right-3 top-11 z-20 mt-1 w-72 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg"
+          className="absolute right-2 top-11 z-20 mt-1 w-72 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg"
         >
           <div className="border-b border-zinc-200 px-3 py-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
@@ -519,7 +597,7 @@ function Header({
             </p>
           </div>
           <ul className="max-h-72 overflow-y-auto">
-            {sessions.map((session) => {
+            {historySessions.map((session) => {
               const isActive = session.id === activeSessionId
               const isRunning = session.pendingMessageId !== null
               return (
@@ -566,101 +644,6 @@ function Header({
         </div>
       )}
     </header>
-  )
-}
-
-function ChatTabBar({
-  sessions,
-  activeSessionId,
-  onSelect,
-  onClose,
-  onNewChat,
-}: {
-  sessions: ChatSession[]
-  activeSessionId: string
-  onSelect: (id: string) => void
-  onClose: (id: string) => void
-  onNewChat: () => void
-}) {
-  return (
-    <div
-      className="flex shrink-0 items-end gap-1 border-b border-zinc-200 bg-zinc-50 px-2 pt-2"
-      role="tablist"
-      aria-label="Chat tabs"
-    >
-      <div className="flex min-w-0 flex-1 items-end gap-1 overflow-x-auto">
-        {sessions.map((session) => {
-          const isActive = session.id === activeSessionId
-          const isRunning = session.pendingMessageId !== null
-          const tabTitle =
-            session.messages.length === 0 ? NEW_CHAT_TITLE : session.title
-          const canClose = sessions.length > 1
-          return (
-            <div
-              key={session.id}
-              role="tab"
-              aria-selected={isActive}
-              data-testid="chat-tab"
-              data-active={isActive ? 'true' : undefined}
-              data-running={isRunning ? 'true' : undefined}
-              className={joinClasses(
-                'group flex max-w-[160px] items-center gap-1 rounded-t-md border border-b-0 px-2 py-1.5 text-xs transition-colors',
-                isActive
-                  ? 'border-zinc-200 bg-white text-zinc-900'
-                  : 'border-transparent bg-zinc-100 text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-800',
-              )}
-            >
-              <button
-                type="button"
-                onClick={() => onSelect(session.id)}
-                title={tabTitle}
-                aria-label={`Switch to chat: ${tabTitle}`}
-                className="flex min-w-0 items-center gap-1.5 text-left"
-              >
-                {isRunning ? (
-                  <SpinnerIcon
-                    className="h-3 w-3 shrink-0 animate-spin text-blue-500"
-                    aria-label="Reply in progress"
-                  />
-                ) : (
-                  <ChatBubbleIcon
-                    className={joinClasses(
-                      'h-3 w-3 shrink-0',
-                      isActive ? 'text-zinc-700' : 'text-zinc-400 group-hover:text-zinc-600',
-                    )}
-                    aria-hidden="true"
-                  />
-                )}
-                <span className="truncate font-medium">{tabTitle}</span>
-              </button>
-              {canClose && (
-                <button
-                  type="button"
-                  onClick={() => onClose(session.id)}
-                  aria-label={`Close chat: ${tabTitle}`}
-                  title="Close chat"
-                  className={joinClasses(
-                    'rounded p-0.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700',
-                    !isActive && 'opacity-0 group-hover:opacity-100',
-                  )}
-                >
-                  <CloseIcon className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          )
-        })}
-      </div>
-      <button
-        type="button"
-        onClick={onNewChat}
-        aria-label="New chat"
-        title="New chat"
-        className="mb-1 ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900"
-      >
-        <PlusIcon className="h-3.5 w-3.5" />
-      </button>
-    </div>
   )
 }
 
@@ -782,31 +765,6 @@ function SuggestedPrompts({
   )
 }
 
-function ContextStrip({ contextItems }: { contextItems: OzContextItem[] }) {
-  return (
-    <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-t border-zinc-200 bg-white px-3 py-2">
-      <button
-        type="button"
-        className="inline-flex items-center gap-1 rounded-full border border-dashed border-zinc-300 bg-white px-2 py-0.5 text-[11px] text-zinc-600 transition-colors hover:border-zinc-400 hover:text-zinc-900"
-        title="Add context (demo only)"
-      >
-        <PlusIcon className="h-3 w-3" />
-        <span>Add context</span>
-      </button>
-      {contextItems.map((item) => (
-        <span
-          key={item.label}
-          className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[11px] text-zinc-600"
-          title={typeof item.value === 'string' ? item.value : undefined}
-        >
-          <AtSignIcon className="h-3 w-3 text-zinc-400" />
-          <span className="truncate">{item.label}</span>
-        </span>
-      ))}
-    </div>
-  )
-}
-
 function Composer({
   textareaRef,
   draft,
@@ -874,6 +832,14 @@ function Composer({
               <span>{activeMode.label}</span>
               <ChevronDownIcon className="h-3 w-3 text-zinc-500" />
             </button>
+            <button
+              type="button"
+              aria-label="Add context"
+              title="Add context (demo only)"
+              className="rounded-md p-1 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+            >
+              <PaperclipIcon className="h-3.5 w-3.5" />
+            </button>
 
             {modeOpen && (
               <div
@@ -915,10 +881,6 @@ function Composer({
               </div>
             )}
           </div>
-
-          <span className="hidden text-[11px] text-zinc-400 sm:block">
-            ↵ to send · ⇧↵ for newline
-          </span>
 
           <button
             type="submit"

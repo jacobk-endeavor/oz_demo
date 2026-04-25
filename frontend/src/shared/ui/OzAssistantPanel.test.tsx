@@ -35,22 +35,22 @@ function renderPanel(overrides: { showFloatingMark?: boolean } = {}) {
 }
 
 describe('OzAssistantPanel chrome', () => {
-  it('renders the header clock, a single chat tab with a New chat plus, and the composer mode pill', () => {
+  it('renders header tabs inline with the Oz wordmark, the clock, and the composer mode pill + paperclip', () => {
     renderPanel()
 
+    // Header has the Oz wordmark, an inline tab strip, the clock and overflow.
+    const panel = screen.getByRole('complementary', { name: 'Oz chat' })
+    expect(within(panel).getByText('Oz')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Chat history' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /^History/ })).not.toBeInTheDocument()
 
     const tablist = screen.getByRole('tablist', { name: 'Chat tabs' })
     expect(within(tablist).getAllByTestId('chat-tab')).toHaveLength(1)
     expect(screen.getByRole('button', { name: 'New chat' })).toBeInTheDocument()
 
+    // Composer footer carries the mode pill + paperclip Add context, no keyboard hint.
     expect(screen.getByRole('button', { name: 'Mode: Ask' })).toBeInTheDocument()
-
-    // Try chip is above the @ Add context strip.
-    const tryChip = screen.getByRole('button', { name: 'What is the next sales action?' })
-    const addContext = screen.getByRole('button', { name: /^Add context$/ })
-    expect(tryChip.compareDocumentPosition(addContext) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add context' })).toBeInTheDocument()
+    expect(screen.queryByText(/to send · /)).not.toBeInTheDocument()
   })
 
   it('opens the mode pill menu and lets the user pick Agent', async () => {
