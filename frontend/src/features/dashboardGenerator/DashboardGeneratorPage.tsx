@@ -9,6 +9,7 @@ import {
 } from './PublishDashboardModal'
 import { CompanyFinderPreview } from './templates/CompanyFinderPreview'
 import { InvestorCommandPreview } from './templates/InvestorCommandPreview'
+import { TemplateThumbnail } from './TemplateThumbnail'
 import type {
   CustomLayoutId,
   DashboardChartCard,
@@ -231,7 +232,7 @@ export function DashboardGeneratorPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
               Template
             </p>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {webAppTemplates.map((template) => {
                 const active = template.id === dashboard.template.id
                 return (
@@ -242,20 +243,28 @@ export function DashboardGeneratorPage() {
                     aria-pressed={active}
                     onClick={() => selectTemplate(template)}
                     className={joinClasses(
-                      'flex flex-col rounded-xl border p-3 text-left transition-colors',
+                      'flex flex-col overflow-hidden rounded-xl border text-left transition-colors',
                       active
-                        ? 'border-blue-300 bg-blue-50'
-                        : 'border-zinc-200 bg-white hover:border-blue-200 hover:bg-blue-50/40',
+                        ? 'border-blue-400 ring-2 ring-blue-200'
+                        : 'border-zinc-200 hover:border-blue-300',
                     )}
                   >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-zinc-900">{template.name}</span>
+                    <TemplateThumbnail
+                      templateId={template.id}
+                      className="h-24 w-full border-b border-zinc-200"
+                    />
+                    <span className="flex items-center justify-between gap-2 bg-white px-3 py-2">
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-zinc-900">
+                          {template.name}
+                        </span>
+                        <span className="block text-[11px] text-zinc-500">
+                          {template.modules.length} modules
+                        </span>
+                      </span>
                       {template.customLayoutId !== undefined && (
-                        <Tag tone="zinc">Custom UI</Tag>
+                        <Tag tone="blue">Custom UI</Tag>
                       )}
-                    </span>
-                    <span className="mt-0.5 text-xs text-zinc-600">
-                      {template.modules.length} modules
                     </span>
                   </button>
                 )
