@@ -1,0 +1,49 @@
+{
+  "sourceFile": "Productivity Report - New Active 2026 03 31.xlsm",
+  "dashboardTemplate": "sales_demand_command_center",
+  "uploadBehavior": "mocked_parse_first_real_parser_later",
+  "sheets": [
+    {
+      "sheetName": "Interactions",
+      "purpose": "Customer calls, notes, emails, and meeting records",
+      "columnMappings": {
+        "Company": "company",
+        "Representative": "representative",
+        "Date": "date",
+        "Medium": "medium",
+        "Location": "locationTag",
+        "Product Requested": "productRequested",
+        "Complaint": "complaint",
+        "Competitor": "competitorMentioned"
+      }
+    },
+    {
+      "sheetName": "Products",
+      "purpose": "Product request counts and trend data",
+      "columnMappings": {
+        "Product": "productName",
+        "Requests": "requestCount",
+        "Trend": "trend",
+        "Recommended Action": "recommendedAction"
+      }
+    },
+    {
+      "sheetName": "Leads",
+      "purpose": "Prospects and route planning",
+      "columnMappings": {
+        "Company": "company",
+        "Contact": "contact",
+        "Phone": "phone",
+        "Location": "location",
+        "Similarity Reason": "similarityReason"
+      }
+    }
+  ],
+  "generatedModules": [
+    "product_request_leaderboard",
+    "complaint_categories",
+    "competitor_mentions",
+    "lead_route_preview",
+    "recommended_rep_actions"
+  ]
+}

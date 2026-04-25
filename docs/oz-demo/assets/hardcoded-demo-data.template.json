@@ -1,0 +1,121 @@
+{
+  "customers": [
+    {
+      "id": "cust_001",
+      "name": "Russin Lumber",
+      "location": "Montgomery, NY",
+      "segment": "building materials distributor",
+      "representative": "Sami"
+    },
+    {
+      "id": "cust_002",
+      "name": "North Ridge Builders",
+      "location": "Albany, NY",
+      "segment": "regional contractor",
+      "representative": "Sami"
+    }
+  ],
+  "interactionLocationTags": [
+    {
+      "id": "zoom",
+      "label": "Zoom",
+      "color": "#23B8FF"
+    },
+    {
+      "id": "phone_call",
+      "label": "Phone call",
+      "color": "#E10600"
+    },
+    {
+      "id": "in_person",
+      "label": "In person",
+      "color": "#F5F7FF"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "int_001",
+      "company": "Russin Lumber",
+      "representative": "Sami",
+      "date": "2026-04-18",
+      "medium": "call_center",
+      "locationTag": "phone_call",
+      "topic": "Composite decking availability",
+      "complaint": "Lead times are unclear",
+      "productRequested": "Composite decking bundle",
+      "competitorMentioned": "TimberTech",
+      "confidence": 0.91,
+      "transcriptExcerpt": "Customer asked whether we can beat TimberTech delivery windows on composite decking.",
+      "suggestedAction": "Draft a decking bundle quote and call back with delivery assumptions."
+    },
+    {
+      "id": "int_002",
+      "company": "North Ridge Builders",
+      "representative": "Ava",
+      "date": "2026-04-19",
+      "medium": "note",
+      "locationTag": "in_person",
+      "topic": "Fastener upsell",
+      "complaint": "",
+      "productRequested": "Hidden fastener system",
+      "competitorMentioned": "",
+      "confidence": 0.84,
+      "transcriptExcerpt": "Rep noted the customer is buying decking but sourcing fasteners separately.",
+      "suggestedAction": "Suggest fastener bundle during the next site visit."
+    },
+    {
+      "id": "int_003",
+      "company": "Hudson Valley Supply",
+      "representative": "Mia",
+      "date": "2026-04-21",
+      "medium": "email",
+      "locationTag": "zoom",
+      "topic": "Quarterly buying plan",
+      "complaint": "Needs cleaner reporting on backorders",
+      "productRequested": "Exterior trim",
+      "competitorMentioned": "Boral",
+      "confidence": 0.88,
+      "transcriptExcerpt": "Zoom recap email mentioned Boral pricing and recurring exterior trim requests.",
+      "suggestedAction": "Generate competitor-risk dashboard and prepare trim pricing options."
+    }
+  ],
+  "quoteAutomation": {
+    "placeholderPdf": "fake-automation-source-document.pdf",
+    "customer": "Russin Lumber",
+    "source": "voice_memo",
+    "requestedProduct": "Composite decking package",
+    "constraints": ["fast delivery", "budget sensitive", "needs accessory recommendation"],
+    "missingInfo": ["Exact square footage", "Delivery address", "Preferred board color"],
+    "upsellSuggestions": ["Hidden fastener system", "Jobsite delivery coordination"]
+  },
+  "leadGeneration": {
+    "query": "Find nearby customers similar to our best decking accounts.",
+    "leads": [
+      {
+        "company": "North Ridge Builders",
+        "contact": "Jordan Miles",
+        "phone": "555-0142",
+        "location": "Albany, NY",
+        "similarityReason": "Matches high-volume exterior materials profile",
+        "suggestedProduct": "Composite decking bundle",
+        "routeStop": 1
+      },
+      {
+        "company": "Beacon Yard Supply",
+        "contact": "Taylor Quinn",
+        "phone": "555-0198",
+        "location": "Poughkeepsie, NY",
+        "similarityReason": "Recently expanded contractor counter and sells deck packages",
+        "suggestedProduct": "Exterior trim and fastener bundle",
+        "routeStop": 2
+      }
+    ]
+  },
+  "reports": {
+    "weeklyDigest": {
+      "title": "Weekly Sales Intelligence Digest",
+      "recipients": ["sami@example.com", "sales@example.com"],
+      "sections": ["product_requests", "competitor_mentions", "leads", "quote_opportunities"]
+    }
+  }
+}

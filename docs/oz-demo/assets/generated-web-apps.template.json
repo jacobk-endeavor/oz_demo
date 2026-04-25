@@ -1,0 +1,93 @@
+{
+  "templates": [
+    {
+      "id": "sales_demand_command_center",
+      "name": "Sales Demand Command Center",
+      "promptTriggers": [
+        "generate a dashboard",
+        "top product requests",
+        "customer complaints",
+        "competitor pressure"
+      ],
+      "description": "A sales intelligence dashboard for requested products, complaints, competitor pressure, and next best actions.",
+      "modules": [
+        "product_request_leaderboard",
+        "complaint_categories",
+        "competitor_mentions",
+        "recommended_rep_actions"
+      ],
+      "defaultFeatures": ["ai_chat", "dynamic_graph_generation"]
+    },
+    {
+      "id": "quote_pipeline_studio",
+      "name": "Quote Pipeline Studio",
+      "promptTriggers": [
+        "pricing",
+        "quote",
+        "spec review",
+        "approval queue"
+      ],
+      "description": "A workflow dashboard for reviewing specs, pricing assumptions, draft quotes, and approval status.",
+      "modules": [
+        "quote_queue",
+        "spec_review_status",
+        "pricing_assumptions",
+        "approval_queue"
+      ],
+      "defaultFeatures": ["ai_chat"]
+    },
+    {
+      "id": "lead_route_planner",
+      "name": "Lead Route Planner",
+      "promptTriggers": [
+        "nearest customers",
+        "similar customers",
+        "generate a route",
+        "prospects"
+      ],
+      "description": "A lead generation app that ranks lookalike customers and creates a sales route.",
+      "modules": [
+        "prospect_table",
+        "route_preview",
+        "contact_list",
+        "visit_talking_points"
+      ],
+      "defaultFeatures": ["ai_chat", "dynamic_graph_generation"]
+    },
+    {
+      "id": "weekly_revenue_brief",
+      "name": "Weekly Revenue Brief",
+      "promptTriggers": [
+        "weekly report",
+        "send report",
+        "sales team",
+        "executive digest"
+      ],
+      "description": "A recurring report dashboard for sales leadership and field reps.",
+      "modules": [
+        "executive_summary",
+        "top_requested_products",
+        "at_risk_accounts",
+        "sales_team_actions"
+      ],
+      "defaultFeatures": ["ai_chat"]
+    }
+  ],
+  "featureAddOns": [
+    {
+      "id": "ai_chat",
+      "name": "AI Chat Feature",
+      "description": "Adds a right-side assistant panel with contextual prompts, answers, and suggested actions."
+    },
+    {
+      "id": "dynamic_graph_generation",
+      "name": "Dynamic Graph Generation",
+      "description": "Adds a prompt-to-chart module with hard-coded chart options for demand, complaints, and competitor mentions."
+    },
+    {
+      "id": "excel_to_dashboard",
+      "name": "Excel To Dashboard",
+      "description": "Adds an Excel upload/drop zone and maps parsed columns into dashboard modules."
+    }
+  ]
+}
