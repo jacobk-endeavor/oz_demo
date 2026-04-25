@@ -79,13 +79,10 @@ afterEach(() => {
 })
 
 describe('GraphPage', () => {
-  it('renders the knowledge graph header and layer chips', () => {
+  it('renders the knowledge graph header and category selector', () => {
     render(<GraphPage />)
     expect(screen.getByText('Knowledge Graph')).toBeTruthy()
-    expect(screen.getByText('L1')).toBeTruthy()
-    expect(screen.getByText('L2')).toBeTruthy()
-    expect(screen.getByText('L3')).toBeTruthy()
-    expect(screen.getByText('L4')).toBeTruthy()
+    expect(screen.getByDisplayValue('All categories')).toBeTruthy()
   })
 
   it('shows hint text in the right rail before any selection', () => {

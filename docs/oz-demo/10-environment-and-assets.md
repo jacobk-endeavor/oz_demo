@@ -4,6 +4,20 @@
 
 Use Vite/React for the first implementation.
 
+## Local Launch
+
+Run the demo from the repository root:
+
+```sh
+npm run dev
+```
+
+The root command installs frontend dependencies when needed and starts Vite with `VITE_DEMO_MODE=true`. In this mode the Chat and Graph screens use seeded in-browser demo responses for `/api/chat`, `/api/chat/sessions`, and `/api/graph`, so the app is usable without a backend.
+
+Future live API work can leave `VITE_DEMO_MODE` unset or set it to `false`. The frontend will call live `/api/*` routes first and only falls back to the seeded demo data for missing or non-JSON API responses, which covers the local Vite-only case.
+
+Root validation commands (`npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`) also install frontend dependencies before delegating into `frontend/`.
+
 ## Defense
 
 The first Oz + Nebula demo is primarily a polished, scripted web UI with hard-coded data. Vite keeps the app lightweight, fast to develop, and straightforward to deploy on DigitalOcean App Platform. Add a small Node service only when live AI, ElevenLabs, email, or file processing needs protected server-side API keys.

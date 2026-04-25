@@ -1,3 +1,5 @@
+import { getDemoResponse, isDemoMode } from './demoApi'
+
 class ApiError extends Error {
   status: number
   body: unknown
@@ -18,21 +20,53 @@ async function parseResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>
 }
 
+function getFallback<T>(method: 'GET' | 'POST', path: string, body?: unknown): T | undefined {
+  return getDemoResponse<T>(method, path, body)
+}
+
+function shouldUseDemoFallback(err: unknown): boolean {
+  if (isDemoMode) return true
+  if (err instanceof SyntaxError || err instanceof TypeError) return true
+  return err instanceof ApiError && [404, 405].includes(err.status)
+}
+
 export const api = {
   async get<T>(path: string): Promise<T> {
-    const res = await fetch(path, {
-      headers: { 'Content-Type': 'application/json' },
-    })
-    return parseResponse<T>(res)
+    if (isDemoMode) {
+      const demo = getFallback<T>('GET', path)
+      if (demo !== undefined) return demo
+    }
+
+    try {
+      const res = await fetch(path, {
+        headers: { 'Content-Type': 'application/json' },
+      })
+      return await parseResponse<T>(res)
+    } catch (err) {
+      const demo = getFallback<T>('GET', path)
+      if (demo !== undefined && shouldUseDemoFallback(err)) return demo
+      throw err
+    }
   },
 
   async post<T>(path: string, body: unknown): Promise<T> {
-    const res = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    return parseResponse<T>(res)
+    if (isDemoMode) {
+      const demo = getFallback<T>('POST', path, body)
+      if (demo !== undefined) return demo
+    }
+
+    try {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      return await parseResponse<T>(res)
+    } catch (err) {
+      const demo = getFallback<T>('POST', path, body)
+      if (demo !== undefined && shouldUseDemoFallback(err)) return demo
+      throw err
+    }
   },
 
   async stream(

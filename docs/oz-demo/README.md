@@ -16,6 +16,12 @@ The demo should feel like a sales command center from the future: black space ba
 - Make Oz feel persistent. The right-side assistant should follow every workflow and answer questions about the current screen.
 - Use the dot orb image as the signature Oz speaking state: `assets/oz-speaking-orb-reference.png`.
 
+## One-Command Local Demo
+
+From the repository root, `npm run dev` installs frontend dependencies and starts Vite with `VITE_DEMO_MODE=true`. That gives Chat conversation history, Chat replies/citations, and Graph data from seeded browser-side demo responses, so no backend service is required for the local demo.
+
+When live `/api/*` routes are added, run the frontend without demo mode or set `VITE_DEMO_MODE=false` so successful backend responses take precedence.
+
 ## File Map
 
 - `01-product-architecture.md`: product shape, app boundaries, and hosting assumptions.
