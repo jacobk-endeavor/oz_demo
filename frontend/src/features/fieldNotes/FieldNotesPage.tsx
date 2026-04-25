@@ -16,11 +16,16 @@ const stageCopy: Record<FieldNotesStage, { label: string; helper: string; button
   thinking: {
     label: 'Thinking',
     helper: 'Oz is structuring the note and ranking the next best questions.',
-    button: 'Show Oz output',
+    button: 'Prepare follow-up',
+  },
+  followup: {
+    label: 'Follow-up needed',
+    helper: 'Ask the benefit question so Oz can recommend the right product before any specs are pushed.',
+    button: 'Choose prompt below',
   },
   output: {
     label: 'Speaking',
-    helper: 'Oz found the pricing angle, follow-up questions, and sales actions.',
+    helper: 'Oz found the pricing angle, follow-up questions, and product recommendation.',
     button: 'Push to Nebula',
   },
   pushed: {
@@ -34,6 +39,7 @@ const orbStateByStage: Record<FieldNotesStage, OrbState> = {
   idle: 'idle',
   listening: 'listening',
   thinking: 'thinking',
+  followup: 'thinking',
   output: 'speaking',
   pushed: 'running_action',
 }
@@ -41,7 +47,8 @@ const orbStateByStage: Record<FieldNotesStage, OrbState> = {
 const nextStageByStage: Record<FieldNotesStage, FieldNotesStage> = {
   idle: 'listening',
   listening: 'thinking',
-  thinking: 'output',
+  thinking: 'followup',
+  followup: 'followup',
   output: 'pushed',
   pushed: 'idle',
 }
@@ -50,15 +57,21 @@ const visibleTranscriptCount: Record<FieldNotesStage, number> = {
   idle: 0,
   listening: 2,
   thinking: 3,
+  followup: 3,
   output: 3,
   pushed: 3,
 }
+
+const benefitPrompt = 'Anything else they might benefit from?'
+const suggestedPrompts = ['What should I ask next?', 'How should I price this?', benefitPrompt]
 
 export function FieldNotesPage() {
   const [stage, setStage] = useState<FieldNotesStage>('idle')
   const copy = stageCopy[stage]
   const orbState = orbStateByStage[stage]
   const showOutput = stage === 'output' || stage === 'pushed'
+  const showSalesActions = stage === 'pushed'
+  const isBenefitPromptStep = stage === 'followup'
   const visibleTranscript = useMemo(
     () => fieldNotesDemo.transcript.slice(0, visibleTranscriptCount[stage]),
     [stage],
@@ -66,6 +79,10 @@ export function FieldNotesPage() {
 
   function advanceDemo() {
     setStage((current) => nextStageByStage[current])
+  }
+
+  function askBenefitPrompt() {
+    setStage('output')
   }
 
   return (
@@ -96,11 +113,19 @@ export function FieldNotesPage() {
                 type="button"
                 data-testid="field-notes-advance"
                 onClick={advanceDemo}
+                disabled={isBenefitPromptStep}
                 className="group mx-auto mt-8 flex flex-col items-center gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23B8FF]"
                 aria-label={`${copy.button} field note demo`}
               >
                 <OzOrb state={orbState} />
-                <span className="rounded-full bg-[#E10600] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#E10600]/30 transition group-hover:bg-[#FF3B00]">
+                <span
+                  className={[
+                    'rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg transition',
+                    isBenefitPromptStep
+                      ? 'bg-white/15 text-[#8B93A7] shadow-none'
+                      : 'bg-[#E10600] shadow-[#E10600]/30 group-hover:bg-[#FF3B00]',
+                  ].join(' ')}
+                >
                   {copy.button}
                 </span>
               </button>
@@ -109,16 +134,31 @@ export function FieldNotesPage() {
             </div>
 
             <div className="mt-5 space-y-3" aria-label="Suggested prompts">
-              {['What should I ask next?', 'How should I price this?', 'Anything else they might benefit from?'].map(
-                (prompt) => (
-                  <div
+              {suggestedPrompts.map((prompt) => {
+                const isActionableBenefitPrompt = isBenefitPromptStep && prompt === benefitPrompt
+
+                return (
+                  <button
                     key={prompt}
-                    className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-[#DCE7FF]"
+                    type="button"
+                    disabled={!isActionableBenefitPrompt}
+                    onClick={askBenefitPrompt}
+                    className={[
+                      'w-full rounded-2xl border px-4 py-3 text-left text-sm transition',
+                      isActionableBenefitPrompt
+                        ? 'border-[#23B8FF]/60 bg-[#23B8FF]/10 text-[#F5F7FF] shadow-lg shadow-[#0674FF]/20 hover:border-[#BFEAFF]'
+                        : 'border-white/10 bg-white/[0.04] text-[#DCE7FF]',
+                    ].join(' ')}
                   >
                     {prompt}
-                  </div>
-                ),
-              )}
+                    {isActionableBenefitPrompt && (
+                      <span className="mt-2 block text-xs font-semibold uppercase tracking-[0.16em] text-[#BFEAFF]">
+                        Tap to ask before Oz recommends products
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
@@ -154,6 +194,8 @@ export function FieldNotesPage() {
                     <p className="mt-2 text-sm leading-6 text-[#CAD5EA]">{fieldNotesDemo.structuredSummary}</p>
                   </div>
 
+                  <SourceEvidence />
+
                   <List title="Follow-up questions" items={fieldNotesDemo.questionsToAsk} />
                   <List title="Upsell and cross-sell" items={fieldNotesDemo.upsellSuggestions} />
 
@@ -173,22 +215,33 @@ export function FieldNotesPage() {
               )}
             </Panel>
 
-            <Panel eyebrow="Nebula Sync" title="Concrete sales actions" action={stage === 'pushed' ? 'Pushed' : 'Queued'}>
-              <div className="space-y-3">
-                {fieldNotesDemo.salesActions.map((action) => (
-                  <article key={action.id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-sm font-semibold text-white">{action.label}</h3>
-                      <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] text-[#DCE7FF]">
-                        {action.owner}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-[#8B93A7]">{action.detail}</p>
-                  </article>
-                ))}
-              </div>
+            <Panel
+              eyebrow="Nebula Sync"
+              title="Concrete sales actions"
+              action={showSalesActions ? 'Pushed' : showOutput ? 'Ready to push' : 'Locked'}
+            >
+              {showSalesActions ? (
+                <div className="space-y-3">
+                  {fieldNotesDemo.salesActions.map((action) => (
+                    <article key={action.id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-sm font-semibold text-white">{action.label}</h3>
+                        <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] text-[#DCE7FF]">
+                          {action.owner}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-[#8B93A7]">{action.detail}</p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-4 text-sm leading-6 text-[#8B93A7]">
+                  Sales actions stay locked until Oz has structured the note, the rep asks the benefit follow-up, and
+                  the presenter pushes the result to Nebula.
+                </div>
+              )}
 
-              {stage === 'pushed' && (
+              {showSalesActions && (
                 <div
                   role="status"
                   className="mt-4 rounded-2xl border border-[#23B8FF]/40 bg-[#23B8FF]/10 p-4 text-sm text-[#BFEAFF]"
@@ -255,6 +308,36 @@ function Panel({
       </div>
       {children}
     </section>
+  )
+}
+
+function SourceEvidence() {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <h2 className="text-sm font-semibold text-white">Source evidence</h2>
+      <dl className="mt-3 space-y-3 text-sm leading-6">
+        <div>
+          <dt className="text-xs uppercase tracking-[0.16em] text-[#23B8FF]">Product context</dt>
+          <dd className="mt-1 text-[#CAD5EA]">{fieldNotesDemo.productContext}</dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-[0.16em] text-[#23B8FF]">Raw note</dt>
+          <dd className="mt-1 text-[#CAD5EA]">{fieldNotesDemo.rawNote}</dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-[0.16em] text-[#23B8FF]">Prior interactions</dt>
+          <dd className="mt-1">
+            <ul className="space-y-2">
+              {fieldNotesDemo.priorInteractions.map((interaction) => (
+                <li key={interaction} className="rounded-xl bg-black/20 px-3 py-2 text-[#CAD5EA]">
+                  {interaction}
+                </li>
+              ))}
+            </ul>
+          </dd>
+        </div>
+      </dl>
+    </div>
   )
 }
 

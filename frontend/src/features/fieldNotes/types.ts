@@ -1,4 +1,4 @@
-export type FieldNotesStage = 'idle' | 'listening' | 'thinking' | 'output' | 'pushed'
+export type FieldNotesStage = 'idle' | 'listening' | 'thinking' | 'followup' | 'output' | 'pushed'
 
 export type OrbState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'running_action'
 

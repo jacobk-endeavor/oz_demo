@@ -15,10 +15,13 @@ describe('FieldNotesPage', () => {
     expect(screen.getByText('ABC Building Supply')).toBeInTheDocument()
     expect(screen.getByText('Tap to speak')).toBeInTheDocument()
     expect(screen.getByText('What should I ask next?')).toBeInTheDocument()
+    expect(screen.queryByText('Draft bundle quote')).not.toBeInTheDocument()
+    expect(screen.queryByText('Show product specs')).not.toBeInTheDocument()
+    expect(screen.getByText(/Sales actions stay locked/i)).toBeInTheDocument()
     expect(screen.getByTestId('oz-orb')).toHaveAttribute('data-state', 'idle')
   })
 
-  it('progresses through listening, thinking, and output states without a microphone', () => {
+  it('requires the benefit follow-up before Oz recommends products', () => {
     render(<FieldNotesPage />)
 
     const advanceButton = screen.getByTestId('field-notes-advance')
@@ -34,12 +37,22 @@ describe('FieldNotesPage', () => {
     expect(screen.getByLabelText('Rank customer intent')).toBeInTheDocument()
 
     fireEvent.click(advanceButton)
+    expect(screen.getByText('Follow-up needed')).toBeInTheDocument()
+    expect(screen.getByText('Choose prompt below')).toBeInTheDocument()
+    expect(screen.queryByText('Upsell and cross-sell')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Anything else they might benefit from/i }))
     expect(screen.getByTestId('oz-orb')).toHaveAttribute('data-state', 'speaking')
     expect(screen.getByText('Speaking')).toBeInTheDocument()
     expect(screen.getByText('Structured sales note')).toBeInTheDocument()
+    expect(screen.getByText('Source evidence')).toBeInTheDocument()
+    expect(screen.getByText('Composite decking, railing kits, and jobsite delivery windows')).toBeInTheDocument()
+    expect(screen.getByText(/ABC needs composite decking faster/i)).toBeInTheDocument()
+    expect(screen.getByText('Asked twice about faster delivery on composite decking.')).toBeInTheDocument()
     expect(screen.getByText('Follow-up questions')).toBeInTheDocument()
     expect(screen.getByText('Upsell and cross-sell')).toBeInTheDocument()
     expect(screen.getByText('Pricing guidance')).toBeInTheDocument()
+    expect(screen.queryByText('Draft bundle quote')).not.toBeInTheDocument()
   })
 
   it('pushes concrete sales actions to Nebula in the final state', () => {
@@ -49,6 +62,7 @@ describe('FieldNotesPage', () => {
     fireEvent.click(advanceButton)
     fireEvent.click(advanceButton)
     fireEvent.click(advanceButton)
+    fireEvent.click(screen.getByRole('button', { name: /Anything else they might benefit from/i }))
     fireEvent.click(advanceButton)
 
     expect(screen.getByTestId('oz-orb')).toHaveAttribute('data-state', 'running_action')
