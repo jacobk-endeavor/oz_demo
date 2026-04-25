@@ -20,9 +20,9 @@ import {
   PaperclipIcon,
   PencilIcon,
   PlusIcon,
-  SparkleIcon,
   SpinnerIcon,
 } from './icons'
+import { PulseOrb } from './PulseOrb'
 import { joinClasses, type Tone } from './visualSystem'
 
 export type OzMessageRole = 'user' | 'oz' | 'system'
@@ -671,9 +671,9 @@ function EmptyState({ showFloatingMark }: { showFloatingMark: boolean }) {
       aria-label="Oz mark"
       data-testid="oz-floating-mark"
     >
-      <span className="oz-floating-mark grid h-16 w-16 place-items-center rounded-2xl bg-zinc-100 text-zinc-500 ring-1 ring-zinc-200/80">
-        <SparkleIcon className="h-8 w-8" />
-      </span>
+      {/* Reuse the same blue pulsating orb from the Oz home so the chat empty
+          state and the assistant home read as the same artifact. */}
+      <PulseOrb size="md" label="Oz" />
     </div>
   )
 }

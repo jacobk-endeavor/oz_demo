@@ -33,6 +33,7 @@ From the repository root, `npm run dev` installs frontend dependencies and start
 - `09-model-spec-outline.md`: compact structured outline for future model/codegen use.
 - `10-environment-and-assets.md`: Vite, API keys, ElevenLabs, and editable asset guidance.
 - `11-cursor-chat-aesthetic.md`: visual + behavioral spec for the Cursor-style Oz chat rail.
+- `12-chat-ui-handoff.md`: handoff document covering chat UI status, file map, design system, tests, and pitfalls before sidebar/component work picks up.
 
 ## Demo Narrative
 

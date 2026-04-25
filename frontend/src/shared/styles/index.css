@@ -118,23 +118,9 @@ body {
   }
 }
 
-.oz-floating-mark {
-  animation: oz-floating-mark 4.2s ease-in-out infinite;
-}
-
-@keyframes oz-floating-mark {
-  0%, 100% {
-    transform: translateY(-2px);
-  }
-  50% {
-    transform: translateY(2px);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .cursor-chat-dot,
-  .cursor-chat-message,
-  .oz-floating-mark {
+  .cursor-chat-message {
     animation: none;
   }
 }

@@ -32,8 +32,8 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 ### Empty State
 
 - The empty state has **no greeting copy in the conversation column**. The seeded greeting that used to read "Pick a workflow on the left, or ask me what to do next." was loud and made the chat feel like a marketing surface; it's removed.
-- On every workflow page **except the Oz home**, the panel renders a **floating Oz mark** (a small rounded sparkle tile) centered in the conversation area. The mark has a subtle vertical float animation. It hides as soon as the user sends the first message and disappears entirely on the Oz home, where the page itself already shows the orb.
-- The Try chips above the @ Add context strip remain available so the user always has a one-tap way in.
+- On every workflow page **except the Oz home**, the panel renders the **PulseOrb** (the same blue pulsating Oz voice orb used on the Oz home) centered in the conversation area. The chat empty state and the assistant home now read as the same artifact, not a separate sparkle tile. It hides as soon as the user sends the first message and disappears entirely on the Oz home, where the page itself already shows the orb.
+- The Try chips above the composer remain available so the user always has a one-tap way in.
 - Once the user sends the first prompt, the empty state disappears and the sticky title takes over.
 
 The panel exposes a `showFloatingMark` boolean prop. `App.tsx` sets it to `page !== 'oz'`.
