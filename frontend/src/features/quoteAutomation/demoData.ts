@@ -37,6 +37,7 @@ export const quoteAutomationDemoData: QuoteAutomationDemoData = {
   ],
   sourceReference: {
     fileName: 'fake-automation-source-document.pdf',
+    assetPath: 'docs/oz-demo/assets/fake-automation-source-document.pdf',
     documentType: 'Machine Concept / Spec Review Package',
     customer: 'Russin Lumber',
     preparedFor: 'Field Sales Demo',
@@ -51,27 +52,37 @@ export const quoteAutomationDemoData: QuoteAutomationDemoData = {
   tasks: [
     {
       id: 'review-voice-memo',
-      label: 'Review voice memo',
+      label: 'Reviewing voice memo',
       detail: 'Extract request, urgency, and rep intent from the field note.',
     },
     {
+      id: 'extract-requested-products',
+      label: 'Extracting requested products',
+      detail: 'Identify the decking package, accessory needs, and quantity signals.',
+    },
+    {
       id: 'review-specs',
-      label: 'Review source PDF',
+      label: 'Reviewing specs',
       detail: 'Read placeholder spec package and capture requested products.',
     },
     {
       id: 'pull-template',
-      label: 'Pull quote template',
+      label: 'Pulling quote template',
       detail: 'Select the composite decking package quote structure.',
     },
     {
       id: 'check-pricing',
-      label: 'Check pricing guidance',
+      label: 'Checking pricing guidance',
       detail: 'Apply rough range guidance and standard delivery assumptions.',
     },
     {
+      id: 'find-additions',
+      label: 'Finding upsell/cross-sell additions',
+      detail: 'Match hidden fasteners and trim follow-up to the customer request.',
+    },
+    {
       id: 'prepare-quote',
-      label: 'Prepare draft quote',
+      label: 'Preparing draft quote',
       detail: 'Assemble the 80% complete draft and mark gaps for rep review.',
     },
   ],

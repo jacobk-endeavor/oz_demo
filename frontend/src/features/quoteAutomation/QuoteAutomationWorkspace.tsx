@@ -28,6 +28,7 @@ export function QuoteAutomationWorkspace({
   data = quoteAutomationDemoData,
 }: QuoteAutomationWorkspaceProps) {
   const [activeTaskIndex, setActiveTaskIndex] = useState(0)
+  const [isReviewSubmitted, setIsReviewSubmitted] = useState(false)
   const taskCount = data.tasks.length
   const allTasksComplete = activeTaskIndex >= taskCount
 
@@ -38,6 +39,15 @@ export function QuoteAutomationWorkspace({
 
   function advanceTaskRail() {
     setActiveTaskIndex((current) => Math.min(current + 1, taskCount))
+  }
+
+  function handleReviewAction() {
+    if (allTasksComplete) {
+      setIsReviewSubmitted(true)
+      return
+    }
+
+    advanceTaskRail()
   }
 
   return (
@@ -66,8 +76,14 @@ export function QuoteAutomationWorkspace({
 
           <div className="min-w-56 rounded-2xl border border-red-400/50 bg-red-500/10 p-4 text-right">
             <p className="text-xs uppercase tracking-[0.24em] text-red-100">Rep status</p>
-            <p className="mt-2 text-2xl font-semibold">80% done</p>
-            <p className="mt-1 text-sm text-red-100">Needs rep review, not final pricing</p>
+            <p className="mt-2 text-2xl font-semibold">
+              {isReviewSubmitted ? 'Review ready' : '80% done'}
+            </p>
+            <p className="mt-1 text-sm text-red-100">
+              {isReviewSubmitted
+                ? 'Submitted to rep review queue'
+                : 'Needs rep review, not final pricing'}
+            </p>
           </div>
         </header>
 
@@ -152,6 +168,17 @@ export function QuoteAutomationWorkspace({
                         <dt className="text-slate-500">Prepared for</dt>
                         <dd className="font-semibold">{data.sourceReference.preparedFor}</dd>
                       </div>
+                      <div>
+                        <dt className="text-slate-500">Placeholder PDF path</dt>
+                        <dd className="font-semibold">
+                          <a
+                            href={`/${data.sourceReference.assetPath}`}
+                            className="text-[#0674FF] underline decoration-[#0674FF]/40 underline-offset-4"
+                          >
+                            {data.sourceReference.assetPath}
+                          </a>
+                        </dd>
+                      </div>
                     </dl>
                     <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -207,8 +234,16 @@ export function QuoteAutomationWorkspace({
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold">{data.draftQuote.title}</h2>
                 </div>
-                <span className="rounded-full border border-red-400/50 bg-red-500/10 px-3 py-1 text-sm text-red-100">
-                  80% done / needs rep review
+                <span
+                  className={`rounded-full border px-3 py-1 text-sm ${
+                    isReviewSubmitted
+                      ? 'border-emerald-300/50 bg-emerald-400/10 text-emerald-100'
+                      : 'border-red-400/50 bg-red-500/10 text-red-100'
+                  }`}
+                >
+                  {isReviewSubmitted
+                    ? 'Review-ready / queued for rep'
+                    : '80% done / needs rep review'}
                 </span>
               </div>
               <p className="mt-4 text-sm leading-6 text-slate-300">
@@ -280,11 +315,25 @@ export function QuoteAutomationWorkspace({
 
               <button
                 type="button"
-                onClick={advanceTaskRail}
+                onClick={handleReviewAction}
+                disabled={isReviewSubmitted}
                 className="mt-5 w-full rounded-xl bg-[#E10600] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-red-950/40 transition hover:bg-[#FF3B00]"
               >
-                {allTasksComplete ? 'Send for rep review' : 'Advance background review'}
+                {isReviewSubmitted
+                  ? 'Submitted for rep review'
+                  : allTasksComplete
+                    ? 'Send for rep review'
+                    : 'Advance background review'}
               </button>
+              {isReviewSubmitted ? (
+                <div
+                  className="mt-3 rounded-2xl border border-emerald-300/40 bg-emerald-400/10 p-4 text-sm text-emerald-50"
+                  role="status"
+                >
+                  Quote draft is review-ready. Sami can validate the assumptions before anything is
+                  sent to the customer.
+                </div>
+              ) : null}
               <button
                 type="button"
                 className="mt-3 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"

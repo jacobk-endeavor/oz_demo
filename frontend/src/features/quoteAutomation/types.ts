@@ -16,6 +16,7 @@ export interface QuoteRequestInput {
 
 export interface SourceReference {
   fileName: string
+  assetPath: string
   documentType: string
   customer: string
   preparedFor: string
