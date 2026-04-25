@@ -8,6 +8,10 @@ export type GeneratedWebAppTemplateId =
   | 'quote_pipeline_studio'
   | 'lead_route_planner'
   | 'weekly_revenue_brief'
+  | 'investor_command'
+  | 'company_finder'
+
+export type CustomLayoutId = 'investor_command' | 'company_finder'
 
 export type DashboardModuleId =
   | 'product_request_leaderboard'
@@ -46,6 +50,9 @@ export interface GeneratedWebAppTemplate {
     value: string
     note: string
   }>
+  /** When set, the dashboard generator renders the dedicated layout
+      component instead of the generic chart-card grid. */
+  customLayoutId?: CustomLayoutId
 }
 
 export interface FeatureAddOn {

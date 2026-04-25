@@ -89,6 +89,57 @@ export const webAppTemplates: GeneratedWebAppTemplate[] = [
       { label: 'Rep actions', value: '16', note: 'Assigned by territory' },
     ],
   },
+  {
+    id: 'investor_command',
+    name: 'Investor Command',
+    promptTriggers: [
+      'investor command',
+      'investor',
+      'trading',
+      'equity',
+      'portfolio',
+      'terminal',
+      'returns',
+      'baseline',
+    ],
+    description:
+      'Bloomberg-style command terminal for tracking equity returns versus a baseline, with a live news ticker and book status.',
+    modules: ['executive_summary', 'rep_activity'],
+    defaultFeatures: ['ai_chat'],
+    accent: 'from-emerald-400 to-cyan-400',
+    buildSteps: ['Streaming feed', 'Computing baseline delta', 'Rendering equity curve'],
+    previewMetrics: [
+      { label: 'Net return', value: '+0.00%', note: 'vs SPY since session open' },
+      { label: 'Equity', value: '$100.0k', note: 'paper account, ALPACA_PAPER=live' },
+      { label: 'Headlines', value: '14', note: 'Polymarket, Kalshi, Google News' },
+    ],
+    customLayoutId: 'investor_command',
+  },
+  {
+    id: 'company_finder',
+    name: 'Company Finder',
+    promptTriggers: [
+      'company finder',
+      'find companies',
+      'find prospects',
+      'distribution companies',
+      'sculptor',
+      'company filter',
+      'lookalike search',
+    ],
+    description:
+      'Filter-driven company discovery workspace. Tune attributes on the left, scan the table preview, and refine with the right-hand assistant.',
+    modules: ['prospect_table', 'contact_list'],
+    defaultFeatures: ['ai_chat'],
+    accent: 'from-blue-300 to-indigo-500',
+    buildSteps: ['Reading filters', 'Loading 3,050 candidate rows', 'Scoring with the assistant'],
+    previewMetrics: [
+      { label: 'Filtered results', value: '50', note: 'of 3,050 matches loaded' },
+      { label: 'Saved filters', value: '5', note: 'Wholesale plus logistics families' },
+      { label: 'Assistant turns', value: '3', note: 'Ready to refine the table' },
+    ],
+    customLayoutId: 'company_finder',
+  },
 ]
 
 export const featureAddOns: FeatureAddOn[] = [

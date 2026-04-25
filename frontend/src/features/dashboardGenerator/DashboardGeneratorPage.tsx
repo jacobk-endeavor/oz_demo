@@ -7,7 +7,10 @@ import {
   PublishDashboardModal,
   type PublishedDashboardSnapshot,
 } from './PublishDashboardModal'
+import { CompanyFinderPreview } from './templates/CompanyFinderPreview'
+import { InvestorCommandPreview } from './templates/InvestorCommandPreview'
 import type {
+  CustomLayoutId,
   DashboardChartCard,
   DashboardGenerationResult,
   GeneratedFeatureId,
@@ -28,6 +31,12 @@ const ozAnswers: Record<string, string> = {
     'The April source set shifted from a phone call to an in-person note and then a Zoom recap email — one of each medium.',
   promote:
     'Promote composite decking, hidden fasteners, and exterior trim. Those are the exact product requests in int_001, int_002, and int_003.',
+}
+
+function CustomLayout({ layoutId }: { layoutId: CustomLayoutId }) {
+  if (layoutId === 'investor_command') return <InvestorCommandPreview />
+  if (layoutId === 'company_finder') return <CompanyFinderPreview />
+  return null
 }
 
 function buildExcelPreview(fileName: string) {
@@ -222,7 +231,7 @@ export function DashboardGeneratorPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
               Template
             </p>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {webAppTemplates.map((template) => {
                 const active = template.id === dashboard.template.id
                 return (
@@ -233,14 +242,21 @@ export function DashboardGeneratorPage() {
                     aria-pressed={active}
                     onClick={() => selectTemplate(template)}
                     className={joinClasses(
-                      'rounded-xl border p-3 text-left transition-colors',
+                      'flex flex-col rounded-xl border p-3 text-left transition-colors',
                       active
                         ? 'border-blue-300 bg-blue-50'
                         : 'border-zinc-200 bg-white hover:border-blue-200 hover:bg-blue-50/40',
                     )}
                   >
-                    <p className="text-sm font-semibold text-zinc-900">{template.name}</p>
-                    <p className="mt-0.5 text-xs text-zinc-600">{template.modules.length} modules</p>
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-zinc-900">{template.name}</span>
+                      {template.customLayoutId !== undefined && (
+                        <Tag tone="zinc">Custom UI</Tag>
+                      )}
+                    </span>
+                    <span className="mt-0.5 text-xs text-zinc-600">
+                      {template.modules.length} modules
+                    </span>
                   </button>
                 )
               })}
@@ -285,33 +301,39 @@ export function DashboardGeneratorPage() {
           <MetricStrip dashboard={dashboard} />
         </Panel>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          {dashboard.modules.map((card) => (
-            <ChartCard key={card.id} card={card} />
-          ))}
-        </div>
-
-        <Panel
-          eyebrow="Confidence"
-          title="Sources, recommendations, and freshness"
-          description={dashboard.sourceSummary}
-          action={<Tag tone="zinc">Generated {dashboard.generatedAt}</Tag>}
-        >
-          <div className="grid gap-3 md:grid-cols-3">
-            {dashboard.recommendedActions.map((action) => (
-              <div
-                key={`${action.owner}-${action.due}`}
-                className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"
-              >
-                <p className="text-sm font-semibold text-zinc-900">{action.owner}</p>
-                <p className="mt-1 text-sm text-zinc-700">{action.action}</p>
-                <p className="mt-2 text-[11px] text-zinc-500">
-                  Due {action.due} · {action.sourceCue}
-                </p>
-              </div>
+        {dashboard.template.customLayoutId !== undefined ? (
+          <CustomLayout layoutId={dashboard.template.customLayoutId} />
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {dashboard.modules.map((card) => (
+              <ChartCard key={card.id} card={card} />
             ))}
           </div>
-        </Panel>
+        )}
+
+        {dashboard.template.customLayoutId === undefined && (
+          <Panel
+            eyebrow="Confidence"
+            title="Sources, recommendations, and freshness"
+            description={dashboard.sourceSummary}
+            action={<Tag tone="zinc">Generated {dashboard.generatedAt}</Tag>}
+          >
+            <div className="grid gap-3 md:grid-cols-3">
+              {dashboard.recommendedActions.map((action) => (
+                <div
+                  key={`${action.owner}-${action.due}`}
+                  className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">{action.owner}</p>
+                  <p className="mt-1 text-sm text-zinc-700">{action.action}</p>
+                  <p className="mt-2 text-[11px] text-zinc-500">
+                    Due {action.due} · {action.sourceCue}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        )}
       </div>
 
       <aside className="flex flex-col gap-4">

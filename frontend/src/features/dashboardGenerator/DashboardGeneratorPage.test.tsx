@@ -130,6 +130,34 @@ describe('DashboardGeneratorPage', () => {
     expect(screen.getAllByText('Published').length).toBeGreaterThan(0)
   })
 
+  it('renders the Investor Command terminal layout when its template is selected', async () => {
+    const user = userEvent.setup()
+    render(<DashboardGeneratorPage />)
+
+    await user.click(screen.getByLabelText('Generate Investor Command'))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Investor Command' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/\/\/ investor command/i)).toBeInTheDocument()
+    expect(screen.getAllByText('+0.00%').length).toBeGreaterThan(0)
+    expect(screen.getByRole('img', { name: /equity time series chart/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^15M$/, pressed: true })).toBeInTheDocument()
+  })
+
+  it('renders the Company Finder filter, table, and assistant layout', async () => {
+    const user = userEvent.setup()
+    render(<DashboardGeneratorPage />)
+
+    await user.click(screen.getByLabelText('Generate Company Finder'))
+
+    expect(await screen.findByRole('heading', { name: 'Company Finder' })).toBeInTheDocument()
+    expect(screen.getByText('Find companies with filters')).toBeInTheDocument()
+    expect(screen.getAllByText('Sculptor').length).toBeGreaterThan(0)
+    expect(screen.getByText('Kimball Midwest')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('What are you looking for?')).toBeInTheDocument()
+  })
+
   it('lets the user unpublish from the manage sharing modal', async () => {
     const user = userEvent.setup()
     render(<DashboardGeneratorPage />)

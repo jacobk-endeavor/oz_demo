@@ -6,6 +6,8 @@ This folder stores demo assets that should be easy to replace without changing t
 
 - `take-sales-to-space-reference.png`: brand mood reference.
 - `oz-speaking-orb-reference.png`: Oz speaking orb reference.
+- `template-investor-command-reference.png`: terminal-style "Investor Command" dashboard template reference.
+- `template-company-finder-reference.png`: filter + table + chat "Company Finder" template reference.
 
 ## Source Documents
 
