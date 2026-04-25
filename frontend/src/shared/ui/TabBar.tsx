@@ -31,8 +31,8 @@ export function TabBar<T extends string>({
   fullBleed = false,
 }: TabBarProps<T>) {
   const layoutClass = fullBleed
-    ? 'flex items-center gap-1 border-b border-zinc-200 px-4 pt-2 flex-shrink-0'
-    : '-mx-6 -mt-6 mb-6 flex items-center gap-1 border-b border-zinc-200 px-4 pt-2'
+    ? 'flex items-center gap-1 border-b border-white/10 bg-[#030407]/92 px-4 pt-2 flex-shrink-0'
+    : '-mx-6 -mt-6 mb-6 flex items-center gap-1 border-b border-white/10 bg-[#030407]/92 px-4 pt-2'
   return (
     <div
       className={layoutClass}
@@ -50,16 +50,16 @@ export function TabBar<T extends string>({
             className={[
               'relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
               isActive
-                ? 'text-zinc-900'
-                : 'text-zinc-500 hover:text-zinc-800',
+                ? 'text-[#F5F7FF]'
+                : 'text-[#8B93A7] hover:text-[#F5F7FF]',
             ].join(' ')}
           >
-            {tab.icon ? <span className="text-zinc-400">{tab.icon}</span> : null}
+            {tab.icon ? <span className="text-[#23B8FF]">{tab.icon}</span> : null}
             <span>{tab.label}</span>
             {isActive && (
               <span
                 aria-hidden="true"
-                className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-blue-500"
+                className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-[#FF3B00] shadow-[0_0_16px_rgba(255,59,0,0.7)]"
               />
             )}
           </button>
