@@ -128,13 +128,8 @@ export default function App() {
       subtitle={meta.subtitle}
       assistantProps={{
         contextSummary: meta.subtitle ?? '',
-        messages: [
-          {
-            id: 'oz-intro',
-            role: 'oz',
-            content: 'Pick a workflow on the left, or ask me what to do next.',
-          },
-        ],
+        messages: [],
+        showFloatingMark: page !== 'oz',
         suggestedPrompts: [
           { id: 'next-action', label: 'What is the next sales action?' },
           { id: 'top-products', label: 'Top requested products this week?' },

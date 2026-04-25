@@ -21,6 +21,7 @@ import {
   MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
+  SparkleIcon,
   SpinnerIcon,
 } from './icons'
 import { joinClasses, type Tone } from './visualSystem'
@@ -62,14 +63,20 @@ export interface OzAssistantPanelProps {
   contextSummary: string
   contextItems?: OzContextItem[]
   /**
-   * Initial assistant greeting for empty sessions on this page. Rendered as
-   * the empty-state intro until the user sends the first message.
+   * Seed messages prop kept for API compatibility. The panel no longer renders
+   * these as ambient empty-state copy; the empty state is icon-only.
    */
   messages: OzAssistantMessage[]
   suggestedPrompts?: OzSuggestedPrompt[]
   /** Optional action buttons. Kept in the API for callers; not rendered. */
   actions?: OzAssistantAction[]
   onPromptSelect?: (prompt: OzSuggestedPrompt) => void
+  /**
+   * When true and the active chat is empty, render the Oz mark floating in the
+   * conversation area. Use this on every workflow page except the Oz home,
+   * where the page itself already shows the orb.
+   */
+  showFloatingMark?: boolean
   className?: string
 }
 
@@ -160,6 +167,7 @@ export function OzAssistantPanel({
   messages,
   suggestedPrompts = [],
   onPromptSelect,
+  showFloatingMark = false,
   className,
 }: OzAssistantPanelProps) {
   const [sessions, setSessions] = useState<ChatSession[]>(() => [makeSession()])
@@ -410,7 +418,7 @@ export function OzAssistantPanel({
         aria-label="Oz conversation"
       >
         {transcript.length === 0 ? (
-          <EmptyState seedMessages={messages} />
+          <EmptyState showFloatingMark={showFloatingMark} />
         ) : (
           <div className="flex flex-col gap-4">
             {conversationMessages.map((message) => (
@@ -470,14 +478,7 @@ function Header({
 }) {
   return (
     <header className="relative flex h-11 shrink-0 items-center justify-between gap-2 border-b border-zinc-200 px-3">
-      <button
-        type="button"
-        className="flex items-center gap-1 rounded-md px-2 py-1 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100"
-        title="Model selector (demo only)"
-      >
-        <span>{title}</span>
-        <ChevronDownIcon className="h-3 w-3 text-zinc-500" />
-      </button>
+      <span className="px-2 py-1 text-sm font-semibold text-zinc-900">{title}</span>
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -683,18 +684,17 @@ function StickyTitle({ text, pending }: { text: string; pending: boolean }) {
   )
 }
 
-function EmptyState({ seedMessages }: { seedMessages: OzAssistantMessage[] }) {
+function EmptyState({ showFloatingMark }: { showFloatingMark: boolean }) {
+  if (!showFloatingMark) return null
   return (
-    <div className="flex flex-col gap-3 text-sm text-zinc-600">
-      {seedMessages.length === 0 ? (
-        <p className="text-zinc-500">Ask Oz anything about this page.</p>
-      ) : (
-        seedMessages.map((message) => (
-          <p key={message.id} className="text-zinc-600">
-            {message.content}
-          </p>
-        ))
-      )}
+    <div
+      className="flex h-full items-center justify-center pb-12"
+      aria-label="Oz mark"
+      data-testid="oz-floating-mark"
+    >
+      <span className="oz-floating-mark grid h-16 w-16 place-items-center rounded-2xl bg-zinc-100 text-zinc-500 ring-1 ring-zinc-200/80">
+        <SparkleIcon className="h-8 w-8" />
+      </span>
     </div>
   )
 }

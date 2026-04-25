@@ -16,7 +16,7 @@ const seedMessages: OzAssistantMessage[] = [
   },
 ]
 
-function renderPanel() {
+function renderPanel(overrides: { showFloatingMark?: boolean } = {}) {
   return render(
     <OzAssistantPanel
       contextSummary="Voice-first sales assistant. Ask for the next sales action."
@@ -29,6 +29,7 @@ function renderPanel() {
         { id: 'next', label: 'What is the next sales action?' },
         { id: 'top', label: 'Top requested products this week?' },
       ]}
+      {...overrides}
     />,
   )
 }
@@ -72,6 +73,34 @@ describe('OzAssistantPanel chrome', () => {
 
     await user.click(screen.getByRole('button', { name: 'Chat history' }))
     expect(screen.getByRole('menu', { name: 'Chat history' })).toBeInTheDocument()
+  })
+
+  it('drops the chevron next to the Oz title', () => {
+    renderPanel()
+    // The Oz identity used to be a button with a chevron; it's now plain text
+    // so there is no model-selector button in the header.
+    const panel = screen.getByRole('complementary', { name: 'Oz chat' })
+    expect(within(panel).queryByRole('button', { name: /^Oz$/ })).not.toBeInTheDocument()
+    expect(within(panel).getByText('Oz')).toBeInTheDocument()
+  })
+
+  it('renders an empty conversation area with no seeded greeting text by default', () => {
+    renderPanel()
+    const conversation = screen.getByLabelText('Oz conversation')
+    expect(within(conversation).queryByText(seedMessages[0].content as string)).not.toBeInTheDocument()
+    expect(screen.queryByTestId('oz-floating-mark')).not.toBeInTheDocument()
+  })
+
+  it('renders the floating Oz mark when showFloatingMark is on and the chat is empty', async () => {
+    const user = userEvent.setup()
+    renderPanel({ showFloatingMark: true })
+
+    expect(screen.getByTestId('oz-floating-mark')).toBeInTheDocument()
+
+    // Once the user sends a message, the floating mark goes away.
+    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'Hello')
+    await user.click(screen.getByRole('button', { name: 'Send message' }))
+    expect(screen.queryByTestId('oz-floating-mark')).not.toBeInTheDocument()
   })
 })
 

@@ -17,7 +17,7 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 ### Header Bar
 
 - Thin row at the top, ~44px tall, with a bottom border.
-- Left: model/identity pill. We render `Oz` followed by a small chevron, mirroring Cursor's model selector. No real model switching for the demo, but the chevron implies it exists.
+- Left: just the **`Oz` wordmark** as quiet zinc-900 text. No chevron, no model dropdown affordance — the demo doesn't switch models, so the chevron was visual noise.
 - Right: an icon-only **clock** button that opens the chat history dropdown, and an icon-only overflow button. The previous text-and-chevron `History [n]` affordance is replaced by the clock — Cursor uses a small icon there too.
 - The previous header-level `New chat` button is gone; new chats live in the tab strip below.
 - No avatars, no eyebrows like "Persistent copilot". The product name in the header is enough.
@@ -38,9 +38,12 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 
 ### Empty State
 
-- Before the first message, the conversation area shows the seeded greeting (passed as `assistantProps.messages`) as quiet ambient text — not as a "real" message.
-- The empty state also surfaces the suggested prompts more prominently so the user knows what to ask.
+- The empty state has **no greeting copy in the conversation column**. The seeded greeting that used to read "Pick a workflow on the left, or ask me what to do next." was loud and made the chat feel like a marketing surface; it's removed.
+- On every workflow page **except the Oz home**, the panel renders a **floating Oz mark** (a small rounded sparkle tile) centered in the conversation area. The mark has a subtle vertical float animation. It hides as soon as the user sends the first message and disappears entirely on the Oz home, where the page itself already shows the orb.
+- The Try chips above the @ Add context strip remain available so the user always has a one-tap way in.
 - Once the user sends the first prompt, the empty state disappears and the sticky title takes over.
+
+The panel exposes a `showFloatingMark` boolean prop. `App.tsx` sets it to `page !== 'oz'`.
 
 ### Sessions / Multi-Chat
 
