@@ -32,6 +32,7 @@ From the repository root, `npm run dev` installs frontend dependencies and start
 - `08-workflow-lead-generation-reporting.md`: prospect discovery, route planning, and recurring reports.
 - `09-model-spec-outline.md`: compact structured outline for future model/codegen use.
 - `10-environment-and-assets.md`: Vite, API keys, ElevenLabs, and editable asset guidance.
+- `11-cursor-chat-aesthetic.md`: visual + behavioral spec for the Cursor-style Oz chat rail.
 
 ## Demo Narrative
 

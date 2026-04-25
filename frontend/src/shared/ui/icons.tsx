@@ -172,3 +172,48 @@ export function SpinnerIcon({ className, ...props }: IconProps) {
     </svg>
   )
 }
+
+export function ArrowUpIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <line x1="10" y1="16" x2="10" y2="4" />
+      <polyline points="5 9 10 4 15 9" />
+    </svg>
+  )
+}
+
+export function AtSignIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <circle cx="10" cy="10" r="3.2" />
+      <path d="M13.2 10v1.6a2 2 0 0 0 4 0V10a7.2 7.2 0 1 0-3 5.8" />
+    </svg>
+  )
+}
+
+export function PlusIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <line x1="10" y1="4" x2="10" y2="16" />
+      <line x1="4" y1="10" x2="16" y2="10" />
+    </svg>
+  )
+}
+
+export function MoreHorizontalIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <circle cx="5" cy="10" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="10" cy="10" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="10" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function ChevronDownIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <polyline points="5 8 10 13 15 8" />
+    </svg>
+  )
+}

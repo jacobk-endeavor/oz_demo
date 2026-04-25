@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { ChevronLeftIcon, ChevronRightIcon, PanelLeftIcon, PanelRightIcon } from './icons'
+import { PanelLeftIcon } from './icons'
 import { OzAssistantPanel, type OzAssistantPanelProps } from './OzAssistantPanel'
 import {
   navGroups,
@@ -21,13 +21,13 @@ export interface OzWorkflowShellProps {
   /** When true the main canvas takes the full content area without the
       framing card. The inner page is then responsible for its own layout. */
   fullBleed?: boolean
-  /** Hide the right Oz panel for full-bleed legacy surfaces like Chat. */
+  /** Suppress the right Oz panel for surfaces that explicitly do not want it.
+      Most pages should leave this as the default so Oz is always present. */
   hideAssistant?: boolean
   className?: string
 }
 
 const SIDEBAR_KEY = 'oz-demo-sidebar-collapsed'
-const ASSISTANT_KEY = 'oz-demo-assistant-collapsed'
 
 function useStoredFlag(storageKey: string, fallback: boolean): [boolean, (value: boolean) => void] {
   const [value, setValue] = useState(fallback)
@@ -139,7 +139,6 @@ export function OzWorkflowShell({
   className,
 }: OzWorkflowShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useStoredFlag(SIDEBAR_KEY, false)
-  const [assistantCollapsed, setAssistantCollapsed] = useStoredFlag(ASSISTANT_KEY, false)
 
   const showAssistant = !hideAssistant && (assistant !== undefined || assistantProps !== undefined)
 
@@ -200,20 +199,9 @@ export function OzWorkflowShell({
                   <p className="mt-1 max-w-3xl text-sm text-zinc-600">{subtitle}</p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {headerActions}
-                {showAssistant && (
-                  <button
-                    type="button"
-                    onClick={() => setAssistantCollapsed(!assistantCollapsed)}
-                    className="rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
-                    aria-label={assistantCollapsed ? 'Show Oz assistant' : 'Hide Oz assistant'}
-                    title={assistantCollapsed ? 'Show Oz assistant' : 'Hide Oz assistant'}
-                  >
-                    <PanelRightIcon className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+              {headerActions !== undefined && (
+                <div className="flex shrink-0 items-center gap-2">{headerActions}</div>
+              )}
             </header>
             <div className="min-h-0 flex-1 overflow-auto">
               <div className="mx-auto max-w-[1400px] px-6 py-6">{children}</div>
@@ -224,42 +212,10 @@ export function OzWorkflowShell({
 
       {showAssistant && (
         <aside
-          className={joinClasses(
-            'relative flex h-full shrink-0 flex-col border-l border-zinc-200 bg-white transition-[width] duration-200',
-            assistantCollapsed ? 'w-[44px]' : 'w-[360px]',
-          )}
+          className="flex h-full w-[360px] shrink-0 flex-col border-l border-zinc-200 bg-white"
           aria-label="Oz assistant rail"
         >
-          {assistantCollapsed ? (
-            <button
-              type="button"
-              onClick={() => setAssistantCollapsed(false)}
-              className="m-2 flex flex-1 flex-col items-center gap-2 rounded-md py-3 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-              aria-label="Show Oz assistant"
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-              <span className="rotate-180 text-[11px] font-semibold uppercase tracking-[0.18em] [writing-mode:vertical-rl]">
-                Oz Assistant
-              </span>
-            </button>
-          ) : (
-            <>
-              <div className="flex items-center justify-end border-b border-zinc-200 px-3 py-2">
-                <button
-                  type="button"
-                  onClick={() => setAssistantCollapsed(true)}
-                  className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-                  aria-label="Hide Oz assistant"
-                  title="Hide Oz assistant"
-                >
-                  <ChevronRightIcon className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="min-h-0 flex-1">
-                {assistant ?? (assistantProps ? <OzAssistantPanel {...assistantProps} /> : null)}
-              </div>
-            </>
-          )}
+          {assistant ?? (assistantProps ? <OzAssistantPanel {...assistantProps} /> : null)}
         </aside>
       )}
     </div>
