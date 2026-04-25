@@ -18,8 +18,16 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 
 - Thin row at the top, ~44px tall, with a bottom border.
 - Left: model/identity pill. We render `Oz` followed by a small chevron, mirroring Cursor's model selector. No real model switching for the demo, but the chevron implies it exists.
-- Right: a `History` button (chevron-down + label or count) that opens the session list dropdown, a small `New chat` action (plus icon + label), and an icon-only overflow button. All ghost buttons.
+- Right: an icon-only **clock** button that opens the chat history dropdown, and an icon-only overflow button. The previous text-and-chevron `History [n]` affordance is replaced by the clock — Cursor uses a small icon there too.
+- The previous header-level `New chat` button is gone; new chats live in the tab strip below.
 - No avatars, no eyebrows like "Persistent copilot". The product name in the header is enough.
+
+### Chat Tabs
+
+- Below the header sits a **chat tab strip** rendering every open chat as a small browser-style tab. Each tab shows a leading icon, the chat title (truncated), and a close button that appears on hover (or while active). The active tab uses a white background with a thin zinc-200 border on the top and sides; inactive tabs are quieter zinc-100.
+- A small `+` button at the end of the strip starts a fresh chat in a new tab and switches to it.
+- When a chat has a pending Oz reply, its tab swaps the leading icon for an animated **spinner** so the user can see what's running across tabs at a glance. The same spinner appears next to the sticky title and as a small marker in the history dropdown row for that session.
+- The tab strip is scrollable horizontally if there are too many open chats. The active tab is always the source of truth for the conversation, composer, sticky title, and Try chips.
 
 ### Sticky Title (First Prompt)
 
@@ -36,11 +44,18 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 
 ### Sessions / Multi-Chat
 
-- The chat supports **multiple sessions**, like Cursor's chat history.
-- A `History` dropdown in the header lists all sessions for the current page surface. Each row shows the session title (= first user prompt or `New chat` when empty) and a relative timestamp.
-- Clicking a row switches to that session. The composer, conversation, and sticky title all swap to that session's state.
-- `New chat` creates a fresh empty session and switches to it. The previous session is preserved in history.
-- Sessions are panel-local (not persisted across reloads). They reset when the seeded `messages` prop changes (i.e., when the user navigates between pages — each page has its own chat history).
+- The chat supports **multiple concurrent sessions**, surfaced as the tab strip described above. Tabs are the primary way to move between chats.
+- The **clock-icon history dropdown** in the header is the secondary surface: it lists every session sorted by most recent, with title, message count, and relative timestamp. Sessions that are currently generating a reply show a small spinner in the right-hand metadata.
+- Clicking a row in history switches to that session and scrolls its tab into view if needed. Clicking a tab does the same thing more directly.
+- `+` in the tab strip creates a fresh empty session. If the active tab is already empty, a second `+` is a no-op (no piled-up empties).
+- Each session tracks its own pending reply. Switching tabs while Oz is "thinking" does not cancel the pending reply; when it resolves, the originating tab updates and its spinner clears.
+- Sessions are panel-local (not persisted across reloads). They reset when the seeded `messages` prop changes — each page has its own chat history.
+
+### Mode Pill (composer-level)
+
+- The `Ask` / `Agent` / `Edit` selector is no longer a row of segmented tabs near the top of the panel. It now lives **inside the composer footer as a single compact pill** — `[icon] Mode ⌄` — sitting next to the `oz-prompt` model picker. This matches Cursor's `∞ Agent ⌄` pill in its composer.
+- Each mode has its own icon: `Ask` uses a chat bubble, `Agent` uses an infinity glyph, `Edit` uses a pencil.
+- Clicking the pill opens an upward menu listing the three modes with descriptions. `Ask` is the only functional mode in the demo; the others have explanatory tooltips and copy in the menu.
 
 ### Mode Tabs
 
@@ -121,9 +136,9 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 - Clicking one sends it as if typed. They are visible whether the conversation is empty or has messages, since Cursor keeps them present so users can pivot quickly.
 - Suggestions are page-scoped and come from `assistantProps.suggestedPrompts`. If absent, fall back to a small global default.
 
-### Mode Tabs
+### Mode Pill Behavior
 
-- Visual only for the demo. Clicking does not change behavior. Tooltip explains the demo limitation.
+- The active mode is a label-only switch in the demo: clicking another mode updates the pill and the send button's tooltip but does not change the scripted reply behavior. Tooltip copy explains the demo limitation.
 
 ## Implementation Notes
 
@@ -136,11 +151,12 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 
 The panel feels like Cursor's chat:
 
-- Quiet white surface with a thin top header.
+- Quiet white surface with a thin top header carrying a clock icon for history.
+- Browser-style chat tabs below the header, each with a per-tab spinner when its reply is in flight.
 - Small role labels above each message, no bubbles around the assistant.
 - The first user prompt sticks at the top of the column once a chat has started, replacing the seeded greeting.
 - Try chips float just above the @ Add context strip.
-- A History dropdown in the header switches between multiple sessions; New chat starts a fresh one without losing prior chats for the page.
+- The mode selector is a single composer-level pill (`[icon] Mode ⌄`) opening an upward menu, not a row of segmented tabs.
 - Send is an arrow icon, not a button with a word.
 - The user can actually type and receive a scripted reply.
 - The rail is always visible on every page.

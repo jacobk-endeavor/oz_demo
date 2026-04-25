@@ -4,16 +4,24 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentType,
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
+  type SVGProps,
 } from 'react'
 import {
   ArrowUpIcon,
   AtSignIcon,
+  ChatBubbleIcon,
   ChevronDownIcon,
+  ClockIcon,
+  CloseIcon,
+  InfinityIcon,
   MoreHorizontalIcon,
+  PencilIcon,
   PlusIcon,
+  SpinnerIcon,
 } from './icons'
 import { joinClasses, type Tone } from './visualSystem'
 
@@ -48,20 +56,16 @@ export interface OzAssistantAction {
 }
 
 export interface OzAssistantPanelProps {
-  /** Visible product label inside the model pill. Defaults to "Oz". */
   title?: string
   /** Replaces the default eyebrow over the title. Now unused; kept for API compat. */
   eyebrow?: string
-  /** One-line page context Oz uses to seed scripted replies. */
   contextSummary: string
-  /** Currently in-scope context badges, rendered as @-pills above the composer. */
   contextItems?: OzContextItem[]
   /**
    * Initial assistant greeting for empty sessions on this page. Rendered as
    * the empty-state intro until the user sends the first message.
    */
   messages: OzAssistantMessage[]
-  /** Quick-fire prompts shown as Try chips above the @ Add context strip. */
   suggestedPrompts?: OzSuggestedPrompt[]
   /** Optional action buttons. Kept in the API for callers; not rendered. */
   actions?: OzAssistantAction[]
@@ -71,27 +75,43 @@ export interface OzAssistantPanelProps {
 
 type ChatMode = 'ask' | 'agent' | 'edit'
 
+type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>
+
+interface ModeOption {
+  id: ChatMode
+  label: string
+  icon: IconCmp
+  tooltip: string
+}
+
+const modeOptions: ModeOption[] = [
+  { id: 'ask', label: 'Ask', icon: ChatBubbleIcon, tooltip: 'Talk to Oz about the current page' },
+  { id: 'agent', label: 'Agent', icon: InfinityIcon, tooltip: 'Demo only — agent runs are scripted' },
+  { id: 'edit', label: 'Edit', icon: PencilIcon, tooltip: 'Demo only — Oz cannot edit the page yet' },
+]
+
 interface ChatSession {
   id: string
   title: string
   messages: OzAssistantMessage[]
   createdAt: number
+  pendingMessageId: string | null
 }
 
 const NEW_CHAT_TITLE = 'New chat'
-
-const modeOptions: Array<{ id: ChatMode; label: string; tooltip: string }> = [
-  { id: 'ask', label: 'Ask', tooltip: 'Talk to Oz about the current page' },
-  { id: 'agent', label: 'Agent', tooltip: 'Demo only — agent runs are scripted' },
-  { id: 'edit', label: 'Edit', tooltip: 'Demo only — Oz cannot edit the page yet' },
-]
 
 function makeId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 }
 
 function makeSession(): ChatSession {
-  return { id: makeId(), title: NEW_CHAT_TITLE, messages: [], createdAt: Date.now() }
+  return {
+    id: makeId(),
+    title: NEW_CHAT_TITLE,
+    messages: [],
+    createdAt: Date.now(),
+    pendingMessageId: null,
+  }
 }
 
 function asString(content: ReactNode): string {
@@ -145,28 +165,28 @@ export function OzAssistantPanel({
   const [sessions, setSessions] = useState<ChatSession[]>(() => [makeSession()])
   const [activeSessionId, setActiveSessionId] = useState<string>(() => sessions[0].id)
   const [draft, setDraft] = useState('')
-  const [pendingId, setPendingId] = useState<string | null>(null)
   const [mode, setMode] = useState<ChatMode>('ask')
   const [historyCursor, setHistoryCursor] = useState<number | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [modeOpen, setModeOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const historyMenuRef = useRef<HTMLDivElement>(null)
+  const modeMenuRef = useRef<HTMLDivElement>(null)
 
   // Reset sessions when the seed messages change (e.g., page navigation).
-  // Each page surface gets its own chat history.
   useEffect(() => {
     const fresh = makeSession()
     setSessions([fresh])
     setActiveSessionId(fresh.id)
     setDraft('')
-    setPendingId(null)
     setHistoryCursor(null)
     setHistoryOpen(false)
+    setModeOpen(false)
   }, [messages])
 
-  // Keep relative timestamps fresh while history is open.
+  // Keep relative timestamps fresh while the history dropdown is open.
   useEffect(() => {
     if (!historyOpen) return
     setNow(Date.now())
@@ -174,16 +194,19 @@ export function OzAssistantPanel({
     return () => window.clearInterval(interval)
   }, [historyOpen])
 
-  // Close the history dropdown on outside click.
+  // Close popovers on outside click.
   useEffect(() => {
-    if (!historyOpen) return
+    if (!historyOpen && !modeOpen) return
     function handleClick(event: MouseEvent) {
-      if (historyMenuRef.current?.contains(event.target as Node)) return
+      const target = event.target as Node
+      if (historyOpen && historyMenuRef.current?.contains(target)) return
+      if (modeOpen && modeMenuRef.current?.contains(target)) return
       setHistoryOpen(false)
+      setModeOpen(false)
     }
     window.addEventListener('mousedown', handleClick)
     return () => window.removeEventListener('mousedown', handleClick)
-  }, [historyOpen])
+  }, [historyOpen, modeOpen])
 
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? sessions[0],
@@ -196,9 +219,13 @@ export function OzAssistantPanel({
     [transcript],
   )
   const conversationMessages = useMemo(
-    () => (firstUserMessage ? transcript.filter((message) => message.id !== firstUserMessage.id) : transcript),
+    () =>
+      firstUserMessage
+        ? transcript.filter((message) => message.id !== firstUserMessage.id)
+        : transcript,
     [transcript, firstUserMessage],
   )
+  const isPending = activeSession.pendingMessageId !== null
 
   // Auto-scroll to the latest message when the active transcript changes.
   useEffect(() => {
@@ -207,7 +234,6 @@ export function OzAssistantPanel({
     node.scrollTop = node.scrollHeight
   }, [transcript, activeSessionId])
 
-  // Auto-resize the textarea up to 6 lines.
   const resizeTextarea = useCallback(() => {
     const node = textareaRef.current
     if (!node) return
@@ -221,38 +247,32 @@ export function OzAssistantPanel({
   }, [draft, resizeTextarea])
 
   const userHistory = useMemo(
-    () => transcript.filter((message) => message.role === 'user').map((message) => asString(message.content)),
+    () =>
+      transcript.filter((message) => message.role === 'user').map((message) => asString(message.content)),
     [transcript],
   )
 
   const send = useCallback(
     (rawInput: string) => {
       const value = rawInput.trim()
-      if (!value || pendingId !== null) return
+      if (!value || isPending) return
 
-      const userMessage: OzAssistantMessage = {
-        id: makeId(),
-        role: 'user',
-        content: value,
-      }
-      const placeholder: OzAssistantMessage = {
-        id: makeId(),
-        role: 'oz',
-        content: '__thinking__',
-      }
+      const userMessage: OzAssistantMessage = { id: makeId(), role: 'user', content: value }
+      const placeholder: OzAssistantMessage = { id: makeId(), role: 'oz', content: '__thinking__' }
+      const targetSessionId = activeSessionId
 
       setSessions((current) =>
         current.map((session) => {
-          if (session.id !== activeSessionId) return session
-          const isFirstMessage = session.messages.length === 0
+          if (session.id !== targetSessionId) return session
+          const isFirst = session.messages.length === 0
           return {
             ...session,
-            title: isFirstMessage ? value : session.title,
+            title: isFirst ? value : session.title,
             messages: [...session.messages, userMessage, placeholder],
+            pendingMessageId: placeholder.id,
           }
         }),
       )
-      setPendingId(placeholder.id)
       setDraft('')
       setHistoryCursor(null)
 
@@ -260,19 +280,19 @@ export function OzAssistantPanel({
       window.setTimeout(() => {
         setSessions((current) =>
           current.map((session) => {
-            if (session.id !== activeSessionId) return session
+            if (session.id !== targetSessionId) return session
             return {
               ...session,
               messages: session.messages.map((entry) =>
                 entry.id === placeholder.id ? { ...entry, content: replyText } : entry,
               ),
+              pendingMessageId: null,
             }
           }),
         )
-        setPendingId(null)
       }, 700)
     },
-    [activeSessionId, contextSummary, pendingId],
+    [activeSessionId, contextSummary, isPending],
   )
 
   function handleSubmit(event?: FormEvent) {
@@ -312,16 +332,14 @@ export function OzAssistantPanel({
 
   function handleNewChat() {
     setSessions((current) => {
-      // If the active session is already untouched, keep it instead of stacking empties.
       const active = current.find((session) => session.id === activeSessionId)
       if (active && active.messages.length === 0) return current
       const fresh = makeSession()
       setActiveSessionId(fresh.id)
-      return [fresh, ...current]
+      return [...current, fresh]
     })
     setDraft('')
     setHistoryCursor(null)
-    setPendingId(null)
     setHistoryOpen(false)
     textareaRef.current?.focus()
   }
@@ -333,8 +351,24 @@ export function OzAssistantPanel({
     setHistoryOpen(false)
   }
 
-  const canSend = draft.trim().length > 0 && pendingId === null
-  const sortedSessions = useMemo(
+  function handleCloseTab(sessionId: string) {
+    setSessions((current) => {
+      if (current.length <= 1) return current
+      const remaining = current.filter((session) => session.id !== sessionId)
+      if (sessionId === activeSessionId) {
+        const fallback = remaining[remaining.length - 1]
+        setActiveSessionId(fallback.id)
+      }
+      return remaining
+    })
+  }
+
+  const canSend = draft.trim().length > 0 && !isPending
+
+  // Sessions render in creation order so tabs feel stable as the user opens new
+  // chats. The history dropdown sorts by most-recent for "back to last chat".
+  const orderedSessions = sessions
+  const historySessions = useMemo(
     () => [...sessions].sort((a, b) => b.createdAt - a.createdAt),
     [sessions],
   )
@@ -349,19 +383,25 @@ export function OzAssistantPanel({
     >
       <Header
         title={title}
-        sessions={sortedSessions}
-        activeSessionId={activeSession.id}
         historyOpen={historyOpen}
         onToggleHistory={() => setHistoryOpen((open) => !open)}
+        sessions={historySessions}
+        activeSessionId={activeSession.id}
         onSelectSession={handleSelectSession}
-        onNewChat={handleNewChat}
         historyMenuRef={historyMenuRef}
         now={now}
       />
-      <ModeTabs mode={mode} onChange={setMode} />
+
+      <ChatTabBar
+        sessions={orderedSessions}
+        activeSessionId={activeSession.id}
+        onSelect={handleSelectSession}
+        onClose={handleCloseTab}
+        onNewChat={handleNewChat}
+      />
 
       {firstUserMessage && (
-        <StickyTitle text={asString(firstUserMessage.content)} />
+        <StickyTitle text={asString(firstUserMessage.content)} pending={isPending} />
       )}
 
       <div
@@ -397,6 +437,13 @@ export function OzAssistantPanel({
         onSubmit={handleSubmit}
         canSend={canSend}
         mode={mode}
+        modeOpen={modeOpen}
+        onToggleMode={() => setModeOpen((open) => !open)}
+        onSelectMode={(next) => {
+          setMode(next)
+          setModeOpen(false)
+        }}
+        modeMenuRef={modeMenuRef}
       />
     </aside>
   )
@@ -404,22 +451,20 @@ export function OzAssistantPanel({
 
 function Header({
   title,
-  sessions,
-  activeSessionId,
   historyOpen,
   onToggleHistory,
+  sessions,
+  activeSessionId,
   onSelectSession,
-  onNewChat,
   historyMenuRef,
   now,
 }: {
   title: string
-  sessions: ChatSession[]
-  activeSessionId: string
   historyOpen: boolean
   onToggleHistory: () => void
+  sessions: ChatSession[]
+  activeSessionId: string
   onSelectSession: (id: string) => void
-  onNewChat: () => void
   historyMenuRef: React.RefObject<HTMLDivElement | null>
   now: number
 }) {
@@ -433,35 +478,22 @@ function Header({
         <span>{title}</span>
         <ChevronDownIcon className="h-3 w-3 text-zinc-500" />
       </button>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         <button
           type="button"
           onClick={onToggleHistory}
           aria-haspopup="menu"
           aria-expanded={historyOpen}
+          aria-label="Chat history"
+          title="Chat history"
           className={joinClasses(
-            'flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors',
+            'rounded-md p-1.5 transition-colors',
             historyOpen
               ? 'bg-zinc-100 text-zinc-900'
-              : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900',
+              : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900',
           )}
-          title="Chat history"
         >
-          <span>History</span>
-          <span className="rounded bg-zinc-100 px-1 py-0.5 text-[10px] font-semibold text-zinc-600">
-            {sessions.length}
-          </span>
-          <ChevronDownIcon className="h-3 w-3" />
-        </button>
-        <button
-          type="button"
-          onClick={onNewChat}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-          title="Start a new chat"
-          aria-label="New chat"
-        >
-          <PlusIcon className="h-3.5 w-3.5" />
-          <span>New chat</span>
+          <ClockIcon className="h-4 w-4" />
         </button>
         <button
           type="button"
@@ -488,6 +520,7 @@ function Header({
           <ul className="max-h-72 overflow-y-auto">
             {sessions.map((session) => {
               const isActive = session.id === activeSessionId
+              const isRunning = session.pendingMessageId !== null
               return (
                 <li key={session.id}>
                   <button
@@ -515,9 +548,13 @@ function Header({
                           : `${session.messages.length} message${
                               session.messages.length === 1 ? '' : 's'
                             }`}
+                        {isRunning && ' · running'}
                       </span>
                     </span>
-                    <span className="shrink-0 text-[11px] text-zinc-400">
+                    <span className="flex shrink-0 items-center gap-1 text-[11px] text-zinc-400">
+                      {isRunning && (
+                        <SpinnerIcon className="h-3 w-3 animate-spin text-blue-500" />
+                      )}
                       {formatRelativeTime(session.createdAt, now)}
                     </span>
                   </button>
@@ -531,34 +568,110 @@ function Header({
   )
 }
 
-function ModeTabs({ mode, onChange }: { mode: ChatMode; onChange: (mode: ChatMode) => void }) {
+function ChatTabBar({
+  sessions,
+  activeSessionId,
+  onSelect,
+  onClose,
+  onNewChat,
+}: {
+  sessions: ChatSession[]
+  activeSessionId: string
+  onSelect: (id: string) => void
+  onClose: (id: string) => void
+  onNewChat: () => void
+}) {
   return (
-    <div className="flex shrink-0 items-center gap-1 border-b border-zinc-200 bg-white px-3 py-2">
-      {modeOptions.map((option) => {
-        const active = option.id === mode
-        return (
-          <button
-            key={option.id}
-            type="button"
-            onClick={() => onChange(option.id)}
-            title={option.tooltip}
-            aria-pressed={active}
-            className={joinClasses(
-              'rounded-md px-2 py-1 text-xs font-medium transition-colors',
-              active ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700',
-            )}
-          >
-            {option.label}
-          </button>
-        )
-      })}
+    <div
+      className="flex shrink-0 items-end gap-1 border-b border-zinc-200 bg-zinc-50 px-2 pt-2"
+      role="tablist"
+      aria-label="Chat tabs"
+    >
+      <div className="flex min-w-0 flex-1 items-end gap-1 overflow-x-auto">
+        {sessions.map((session) => {
+          const isActive = session.id === activeSessionId
+          const isRunning = session.pendingMessageId !== null
+          const tabTitle =
+            session.messages.length === 0 ? NEW_CHAT_TITLE : session.title
+          const canClose = sessions.length > 1
+          return (
+            <div
+              key={session.id}
+              role="tab"
+              aria-selected={isActive}
+              data-testid="chat-tab"
+              data-active={isActive ? 'true' : undefined}
+              data-running={isRunning ? 'true' : undefined}
+              className={joinClasses(
+                'group flex max-w-[160px] items-center gap-1 rounded-t-md border border-b-0 px-2 py-1.5 text-xs transition-colors',
+                isActive
+                  ? 'border-zinc-200 bg-white text-zinc-900'
+                  : 'border-transparent bg-zinc-100 text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-800',
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => onSelect(session.id)}
+                title={tabTitle}
+                aria-label={`Switch to chat: ${tabTitle}`}
+                className="flex min-w-0 items-center gap-1.5 text-left"
+              >
+                {isRunning ? (
+                  <SpinnerIcon
+                    className="h-3 w-3 shrink-0 animate-spin text-blue-500"
+                    aria-label="Reply in progress"
+                  />
+                ) : (
+                  <ChatBubbleIcon
+                    className={joinClasses(
+                      'h-3 w-3 shrink-0',
+                      isActive ? 'text-zinc-700' : 'text-zinc-400 group-hover:text-zinc-600',
+                    )}
+                    aria-hidden="true"
+                  />
+                )}
+                <span className="truncate font-medium">{tabTitle}</span>
+              </button>
+              {canClose && (
+                <button
+                  type="button"
+                  onClick={() => onClose(session.id)}
+                  aria-label={`Close chat: ${tabTitle}`}
+                  title="Close chat"
+                  className={joinClasses(
+                    'rounded p-0.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700',
+                    !isActive && 'opacity-0 group-hover:opacity-100',
+                  )}
+                >
+                  <CloseIcon className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={onNewChat}
+        aria-label="New chat"
+        title="New chat"
+        className="mb-1 ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900"
+      >
+        <PlusIcon className="h-3.5 w-3.5" />
+      </button>
     </div>
   )
 }
 
-function StickyTitle({ text }: { text: string }) {
+function StickyTitle({ text, pending }: { text: string; pending: boolean }) {
   return (
-    <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 px-4 py-2.5 backdrop-blur-sm">
+    <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-zinc-200 bg-white/95 px-4 py-2.5 backdrop-blur-sm">
+      {pending && (
+        <SpinnerIcon
+          className="h-3.5 w-3.5 shrink-0 animate-spin text-blue-500"
+          aria-label="Reply in progress"
+        />
+      )}
       <p
         title={text}
         aria-label="Conversation title"
@@ -702,6 +815,10 @@ function Composer({
   onSubmit,
   canSend,
   mode,
+  modeOpen,
+  onToggleMode,
+  onSelectMode,
+  modeMenuRef,
 }: {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>
   draft: string
@@ -710,7 +827,14 @@ function Composer({
   onSubmit: (event?: FormEvent) => void
   canSend: boolean
   mode: ChatMode
+  modeOpen: boolean
+  onToggleMode: () => void
+  onSelectMode: (mode: ChatMode) => void
+  modeMenuRef: React.RefObject<HTMLDivElement | null>
 }) {
+  const activeMode = modeOptions.find((option) => option.id === mode) ?? modeOptions[0]
+  const ModeIcon = activeMode.icon
+
   return (
     <form
       onSubmit={onSubmit}
@@ -730,23 +854,85 @@ function Composer({
           placeholder="Ask Oz…"
           className="block w-full resize-none rounded-t-xl border-0 bg-transparent px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
         />
-        <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1 text-xs">
-          <button
-            type="button"
-            className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-            title="Model selector (demo only)"
-          >
-            <span>oz-prompt</span>
-            <ChevronDownIcon className="h-3 w-3" />
-          </button>
+        <div className="relative flex items-center justify-between gap-2 px-2 pb-2 pt-1 text-xs">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+              title="Model selector (demo only)"
+            >
+              <span>oz-prompt</span>
+              <ChevronDownIcon className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              onClick={onToggleMode}
+              aria-haspopup="menu"
+              aria-expanded={modeOpen}
+              aria-label={`Mode: ${activeMode.label}`}
+              title={activeMode.tooltip}
+              className={joinClasses(
+                'flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-zinc-700 transition-colors',
+                modeOpen
+                  ? 'border-zinc-300 bg-zinc-100'
+                  : 'border-zinc-200 bg-white hover:bg-zinc-100',
+              )}
+            >
+              <ModeIcon className="h-3 w-3 text-zinc-500" aria-hidden="true" />
+              <span>{activeMode.label}</span>
+              <ChevronDownIcon className="h-3 w-3 text-zinc-500" />
+            </button>
+
+            {modeOpen && (
+              <div
+                ref={modeMenuRef}
+                role="menu"
+                aria-label="Chat mode"
+                className="absolute bottom-full left-12 z-30 mb-1 w-44 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg"
+              >
+                {modeOptions.map((option) => {
+                  const Icon = option.icon
+                  const active = option.id === mode
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => onSelectMode(option.id)}
+                      aria-current={active ? 'true' : undefined}
+                      className={joinClasses(
+                        'flex w-full items-start gap-2 px-3 py-2 text-left text-xs transition-colors',
+                        active ? 'bg-zinc-50' : 'hover:bg-zinc-50',
+                      )}
+                    >
+                      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-500" aria-hidden="true" />
+                      <span className="min-w-0">
+                        <span
+                          className={joinClasses(
+                            'block text-zinc-900',
+                            active ? 'font-semibold' : 'font-medium',
+                          )}
+                        >
+                          {option.label}
+                        </span>
+                        <span className="block text-[11px] text-zinc-500">{option.tooltip}</span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
           <span className="hidden text-[11px] text-zinc-400 sm:block">
             ↵ to send · ⇧↵ for newline
           </span>
+
           <button
             type="submit"
             disabled={!canSend}
             aria-label="Send message"
-            title={`Send (${mode})`}
+            title={`Send (${activeMode.label})`}
             className={joinClasses(
               'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
               canSend

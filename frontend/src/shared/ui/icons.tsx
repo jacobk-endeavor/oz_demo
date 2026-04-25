@@ -217,3 +217,46 @@ export function ChevronDownIcon({ className, ...props }: IconProps) {
     </svg>
   )
 }
+
+export function ClockIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <circle cx="10" cy="10" r="7" />
+      <polyline points="10 6 10 10.5 13 12" />
+    </svg>
+  )
+}
+
+export function InfinityIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <path d="M5.6 13.6a3.6 3.6 0 1 1 0-7.2c1 0 1.95.4 2.65 1.05L14 13.6a3.6 3.6 0 0 0 5.6-3.6 3.6 3.6 0 0 0-5.6-3.6L8.25 12.55A3.6 3.6 0 0 1 5.6 13.6Z" />
+    </svg>
+  )
+}
+
+export function PencilIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <path d="M3 17l1-4 9.5-9.5a1.4 1.4 0 0 1 2 0l1 1a1.4 1.4 0 0 1 0 2L7 16l-4 1Z" />
+      <line x1="11" y1="6" x2="14" y2="9" />
+    </svg>
+  )
+}
+
+export function ChatBubbleIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <path d="M17 10c0 3.3-3.1 6-7 6a8 8 0 0 1-2.3-.3L4 17l1-3.2A5.8 5.8 0 0 1 3 10c0-3.3 3.1-6 7-6s7 2.7 7 6Z" />
+    </svg>
+  )
+}
+
+export function CloseIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <line x1="5" y1="5" x2="15" y2="15" />
+      <line x1="15" y1="5" x2="5" y2="15" />
+    </svg>
+  )
+}
