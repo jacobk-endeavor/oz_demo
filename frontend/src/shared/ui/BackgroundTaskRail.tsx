@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { joinClasses, ozSurfaceClasses, ozToneClasses } from './visualSystem'
+import { Tag } from './Tag'
+import { joinClasses, type Tone } from './visualSystem'
 
 export type BackgroundTaskStatus = 'queued' | 'running' | 'complete' | 'blocked'
 
@@ -26,83 +27,73 @@ const statusCopy: Record<BackgroundTaskStatus, string> = {
   blocked: 'Blocked',
 }
 
-const statusTone: Record<BackgroundTaskStatus, 'blue' | 'red' | 'white' | 'muted'> = {
-  queued: 'muted',
+const statusTone: Record<BackgroundTaskStatus, Tone> = {
+  queued: 'zinc',
   running: 'blue',
-  complete: 'white',
+  complete: 'emerald',
   blocked: 'red',
 }
 
 const nodeClasses: Record<BackgroundTaskStatus, string> = {
-  queued: 'border-white/20 bg-white/10',
-  running:
-    'oz-task-node--running border-[#23B8FF] bg-[#23B8FF] shadow-[0_0_24px_rgba(35,184,255,0.45)]',
-  complete: 'border-white bg-white text-[#030407]',
-  blocked: 'border-[#FF3B00] bg-[#E10600] shadow-[0_0_24px_rgba(225,6,0,0.36)]',
+  queued: 'border-zinc-300 bg-white',
+  running: 'border-blue-500 bg-blue-500',
+  complete: 'border-emerald-500 bg-emerald-500',
+  blocked: 'border-red-500 bg-red-500',
 }
 
 export function BackgroundTaskRail({
   tasks,
-  title = 'Background agents',
-  subtitle = 'Deterministic steps Oz is coordinating now.',
+  title = 'Background tasks',
+  subtitle = 'Steps Oz is coordinating now.',
   className,
 }: BackgroundTaskRailProps) {
   return (
     <section
-      className={joinClasses(ozSurfaceClasses.panel, 'w-full overflow-hidden p-5', className)}
+      className={joinClasses(
+        'rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm',
+        className,
+      )}
       aria-label={title}
     >
-      <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#23B8FF]">{title}</p>
-        <p className="mt-2 text-sm text-[#8B93A7]">{subtitle}</p>
+      <div className="mb-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          {title}
+        </p>
+        <p className="mt-1 text-sm text-zinc-600">{subtitle}</p>
       </div>
-
-      <ol className="relative space-y-4">
+      <ol className="relative space-y-3">
         {tasks.map((task, index) => (
-          <li key={task.id} className="relative grid grid-cols-[1.5rem_1fr] gap-3">
+          <li key={task.id} className="relative grid grid-cols-[1.25rem_1fr] gap-3">
             {index < tasks.length - 1 && (
               <span
-                className="absolute left-[0.6875rem] top-6 h-[calc(100%+1rem)] w-px bg-white/12"
+                className="absolute left-[0.563rem] top-5 h-[calc(100%+0.75rem)] w-px bg-zinc-200"
                 aria-hidden="true"
               />
             )}
             <span
               className={joinClasses(
-                'relative z-10 mt-1 h-5 w-5 rounded-full border',
+                'relative z-10 mt-0.5 h-4 w-4 rounded-full border',
                 nodeClasses[task.status],
+                task.status === 'running' && 'animate-pulse',
               )}
               aria-hidden="true"
             />
-            <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-sm font-semibold text-[#F5F7FF]">{task.label}</h3>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-zinc-900">{task.label}</p>
                   {task.detail !== undefined && (
-                    <p className="mt-1 text-sm leading-6 text-[#8B93A7]">{task.detail}</p>
+                    <p className="mt-0.5 text-xs text-zinc-600">{task.detail}</p>
                   )}
                 </div>
-                <span
-                  className={joinClasses(
-                    'shrink-0 rounded-full border px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em]',
-                    ozToneClasses[statusTone[task.status]],
-                  )}
-                >
-                  {statusCopy[task.status]}
-                </span>
+                <Tag tone={statusTone[task.status]}>{statusCopy[task.status]}</Tag>
               </div>
-
               {(task.sourceCount !== undefined || task.eta !== undefined) && (
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-[#8B93A7]">
+                <div className="mt-2 flex flex-wrap gap-2 text-xs text-zinc-500">
                   {task.sourceCount !== undefined && (
-                    <span className="rounded-full border border-white/10 bg-[#030407]/50 px-2.5 py-1">
-                      {task.sourceCount} sources
-                    </span>
+                    <span>{task.sourceCount} sources</span>
                   )}
-                  {task.eta !== undefined && (
-                    <span className="rounded-full border border-white/10 bg-[#030407]/50 px-2.5 py-1">
-                      {task.eta}
-                    </span>
-                  )}
+                  {task.eta !== undefined && <span>{task.eta}</span>}
                 </div>
               )}
             </div>

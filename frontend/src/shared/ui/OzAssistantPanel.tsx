@@ -1,14 +1,16 @@
 import type { ReactNode } from 'react'
-import { OzOrb, type OzOrbState } from './OzOrb'
-import { joinClasses, ozButtonClasses, ozSurfaceClasses, ozToneClasses } from './visualSystem'
+import { Button } from './Button'
+import { PulseOrb } from './PulseOrb'
+import { Tag } from './Tag'
+import { joinClasses, type Tone } from './visualSystem'
 
 export type OzMessageRole = 'user' | 'oz' | 'system'
-export type OzActionVariant = 'primary' | 'secondary' | 'ghost'
+export type OzActionVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
 export interface OzContextItem {
   label: string
   value: ReactNode
-  tone?: 'blue' | 'red' | 'white' | 'muted'
+  tone?: Tone
 }
 
 export interface OzAssistantMessage {
@@ -40,22 +42,21 @@ export interface OzAssistantPanelProps {
   messages: OzAssistantMessage[]
   suggestedPrompts?: OzSuggestedPrompt[]
   actions?: OzAssistantAction[]
-  orbState?: OzOrbState
-  orbSrc?: string
   onPromptSelect?: (prompt: OzSuggestedPrompt) => void
   className?: string
+  active?: boolean
 }
 
 const roleLabels: Record<OzMessageRole, string> = {
-  user: 'Rep',
+  user: 'You',
   oz: 'Oz',
   system: 'System',
 }
 
 const roleClasses: Record<OzMessageRole, string> = {
-  user: 'ml-8 border-[#23B8FF]/28 bg-[#0674FF]/14',
-  oz: 'mr-8 border-white/12 bg-white/[0.055]',
-  system: 'border-[#FF3B00]/24 bg-[#E10600]/12',
+  user: 'border-blue-200 bg-blue-50/60 ml-6',
+  oz: 'border-zinc-200 bg-white mr-6',
+  system: 'border-amber-200 bg-amber-50/60',
 }
 
 export function OzAssistantPanel({
@@ -66,78 +67,70 @@ export function OzAssistantPanel({
   messages,
   suggestedPrompts = [],
   actions = [],
-  orbState = 'idle',
-  orbSrc,
   onPromptSelect,
   className,
+  active = false,
 }: OzAssistantPanelProps) {
   return (
     <aside
       className={joinClasses(
-        ozSurfaceClasses.panel,
-        'flex h-full w-full max-w-[420px] flex-col overflow-hidden',
+        'flex h-full w-full flex-col border-l border-zinc-200 bg-white',
         className,
       )}
       aria-label={title}
     >
-      <div className="border-b border-white/10 p-5">
-        <div className="flex items-start gap-4">
-          <div className="shrink-0">
-            <OzOrb state={orbState} orbSrc={orbSrc} size="sm" className="border-0 bg-transparent p-0 shadow-none" />
-          </div>
-          <div className="min-w-0 pt-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#23B8FF]">
+      <div className="border-b border-zinc-200 p-5">
+        <div className="flex items-start gap-3">
+          <PulseOrb size="sm" paused={!active} />
+          <div className="min-w-0 pt-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-600">
               {eyebrow}
             </p>
-            <h2 className="mt-2 text-xl font-semibold text-[#F5F7FF]">{title}</h2>
-            <p className="mt-2 text-sm leading-6 text-[#8B93A7]">{contextSummary}</p>
+            <h2 className="mt-1 text-base font-semibold text-zinc-900">{title}</h2>
+            <p className="mt-1 text-sm leading-5 text-zinc-600">{contextSummary}</p>
           </div>
         </div>
-
         {contextItems.length > 0 && (
-          <dl className="mt-5 grid grid-cols-2 gap-2">
+          <dl className="mt-4 grid grid-cols-2 gap-2">
             {contextItems.map((item) => (
               <div
                 key={item.label}
-                className={joinClasses(
-                  'rounded-2xl border px-3 py-2',
-                  ozToneClasses[item.tone ?? 'muted'],
-                )}
+                className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2"
               >
-                <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-70">
+                <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                   {item.label}
                 </dt>
-                <dd className="mt-1 text-sm font-semibold">{item.value}</dd>
+                <dd className="mt-0.5 text-sm font-medium text-zinc-900">{item.value}</dd>
               </div>
             ))}
           </dl>
         )}
       </div>
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5" aria-label="Oz chat messages">
+      <div
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-zinc-50/50 p-4"
+        aria-label="Oz chat messages"
+      >
         {messages.map((message) => (
           <article
             key={message.id}
-            className={joinClasses('rounded-2xl border p-4', roleClasses[message.role])}
+            className={joinClasses('rounded-2xl border p-3', roleClasses[message.role])}
           >
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#F5F7FF]/75">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
                 {roleLabels[message.role]}
               </p>
               {message.timestamp !== undefined && (
-                <time className="text-xs text-[#8B93A7]">{message.timestamp}</time>
+                <time className="text-[11px] text-zinc-400">{message.timestamp}</time>
               )}
             </div>
-            <div className="mt-2 text-sm leading-6 text-[#F5F7FF]">{message.content}</div>
+            <div className="mt-1.5 text-sm leading-5 text-zinc-800">{message.content}</div>
             {message.sources !== undefined && message.sources.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2" aria-label="Sources">
+              <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Sources">
                 {message.sources.map((source) => (
-                  <span
-                    key={source}
-                    className="rounded-full border border-white/12 bg-[#030407]/70 px-2.5 py-1 text-xs text-[#BDEBFF]"
-                  >
+                  <Tag key={source} tone="blue">
                     {source}
-                  </span>
+                  </Tag>
                 ))}
               </div>
             )}
@@ -146,19 +139,19 @@ export function OzAssistantPanel({
       </div>
 
       {(suggestedPrompts.length > 0 || actions.length > 0) && (
-        <div className="space-y-4 border-t border-white/10 p-5">
+        <div className="space-y-3 border-t border-zinc-200 p-4">
           {suggestedPrompts.length > 0 && (
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#8B93A7]">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
                 Suggested prompts
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {suggestedPrompts.map((prompt) => (
                   <button
                     key={prompt.id}
                     type="button"
                     onClick={() => onPromptSelect?.(prompt)}
-                    className="rounded-full border border-[#23B8FF]/28 bg-[#0674FF]/12 px-3 py-1.5 text-left text-xs font-medium text-[#BDEBFF] transition hover:bg-[#0674FF]/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23B8FF]"
+                    className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
                     {prompt.label}
                   </button>
@@ -166,19 +159,17 @@ export function OzAssistantPanel({
               </div>
             </div>
           )}
-
           {actions.length > 0 && (
             <div className="grid gap-2">
               {actions.map((action) => (
-                <button
+                <Button
                   key={action.id}
-                  type="button"
+                  variant={action.variant ?? 'secondary'}
                   disabled={action.disabled}
                   onClick={action.onClick}
-                  className={ozButtonClasses[action.variant ?? 'secondary']}
                 >
                   {action.label}
-                </button>
+                </Button>
               ))}
             </div>
           )}

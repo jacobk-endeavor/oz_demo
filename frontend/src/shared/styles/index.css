@@ -11,221 +11,63 @@ body {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #030407;
-  color: #f5f7ff;
+  background: #fafafa;
+  color: #18181b;
 }
 
-.oz-space-background {
+/* Simple pulsing orb. No images, no gradients fighting each other.
+   One ring, one core, two paced animations. */
+.pulse-orb {
   position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(35, 184, 255, 0.18), transparent 30%),
-    radial-gradient(circle at 82% 8%, rgba(225, 6, 0, 0.22), transparent 28%),
-    linear-gradient(135deg, #030407 0%, #07172f 52%, #030407 100%);
-}
-
-.oz-space-background::before {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  content: "";
-  background-image:
-    radial-gradient(circle, rgba(245, 247, 255, 0.24) 0 1px, transparent 1px),
-    linear-gradient(115deg, transparent 20%, rgba(35, 184, 255, 0.08), transparent 52%);
-  background-position:
-    0 0,
-    0 0;
-  background-size:
-    44px 44px,
-    100% 100%;
-  opacity: 0.34;
-  animation: oz-star-drift 26s linear infinite;
-}
-
-.oz-orb {
+  display: inline-grid;
+  place-items: center;
   isolation: isolate;
 }
 
-.oz-orb__halo {
-  background:
-    radial-gradient(circle, rgba(35, 184, 255, 0.22), transparent 58%),
-    radial-gradient(circle, rgba(225, 6, 0, 0.16), transparent 68%);
-  filter: blur(8px);
-  opacity: 0.82;
+.pulse-orb__core {
+  background: radial-gradient(circle at 38% 32%, #93c5fd 0%, #3b82f6 60%, #1d4ed8 100%);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.18);
+  animation: pulse-orb-core 2.4s ease-in-out infinite;
 }
 
-.oz-orb__ring {
-  border: 1px solid rgba(35, 184, 255, 0.28);
-  box-shadow:
-    0 0 36px rgba(35, 184, 255, 0.28),
-    inset 0 0 24px rgba(255, 255, 255, 0.08);
+.pulse-orb__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid rgba(59, 130, 246, 0.45);
+  animation: pulse-orb-ring 2.4s ease-out infinite;
 }
 
-.oz-orb__body {
-  background:
-    radial-gradient(circle at 36% 28%, rgba(245, 247, 255, 0.9) 0 2px, transparent 3px),
-    radial-gradient(circle at 64% 32%, rgba(35, 184, 255, 0.95) 0 2px, transparent 3px),
-    radial-gradient(circle at 52% 66%, rgba(255, 59, 0, 0.78) 0 2px, transparent 3px),
-    radial-gradient(circle at 46% 48%, rgba(35, 184, 255, 0.5), transparent 42%),
-    #080a12;
-  box-shadow:
-    0 0 36px rgba(35, 184, 255, 0.3),
-    0 0 72px rgba(225, 6, 0, 0.16),
-    inset 0 0 42px rgba(245, 247, 255, 0.1);
+.pulse-orb--paused .pulse-orb__core,
+.pulse-orb--paused .pulse-orb__ring {
+  animation-play-state: paused;
 }
 
-.oz-orb__fallback {
-  background-image:
-    radial-gradient(circle, rgba(245, 247, 255, 0.8) 0 1px, transparent 1.5px),
-    radial-gradient(circle, rgba(35, 184, 255, 0.72) 0 1px, transparent 1.5px),
-    radial-gradient(circle, rgba(255, 59, 0, 0.66) 0 1px, transparent 1.5px);
-  background-position:
-    0 0,
-    10px 14px,
-    18px 4px;
-  background-size:
-    18px 18px,
-    24px 24px,
-    28px 28px;
-  opacity: 0.76;
-  mix-blend-mode: screen;
-  mask-image: radial-gradient(circle, black 58%, transparent 72%);
-}
-
-.oz-orb__image {
-  transition:
-    opacity 180ms ease,
-    transform 420ms ease,
-    filter 420ms ease;
-}
-
-.oz-orb--idle .oz-orb__body {
-  animation: oz-float 6s ease-in-out infinite, oz-soft-pulse 4s ease-in-out infinite;
-}
-
-.oz-orb--listening .oz-orb__ring {
-  animation: oz-wave-ring 1.5s ease-out infinite;
-}
-
-.oz-orb--listening .oz-orb__body {
-  transform: scale(1.04);
-}
-
-.oz-orb--thinking .oz-orb__body {
-  animation: oz-orb-rotate 4.5s linear infinite;
-}
-
-.oz-orb--speaking .oz-orb__halo,
-.oz-orb--speaking .oz-orb__ring {
-  animation: oz-speaking-pulse 1.05s ease-in-out infinite;
-}
-
-.oz-orb--running-action .oz-orb__ring {
-  border-color: rgba(255, 59, 0, 0.5);
-  animation: oz-action-scan 1.6s linear infinite;
-}
-
-.oz-task-node--running {
-  animation: oz-task-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes oz-star-drift {
-  from {
-    background-position:
-      0 0,
-      0 0;
-  }
-  to {
-    background-position:
-      44px 88px,
-      100% 0;
-  }
-}
-
-@keyframes oz-float {
-  0%,
-  100% {
-    transform: translateY(0);
+@keyframes pulse-orb-core {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.18);
   }
   50% {
-    transform: translateY(-8px);
+    transform: scale(1.06);
+    box-shadow: 0 10px 28px rgba(59, 130, 246, 0.32);
   }
 }
 
-@keyframes oz-soft-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 36px rgba(35, 184, 255, 0.24),
-      0 0 72px rgba(225, 6, 0, 0.12),
-      inset 0 0 42px rgba(245, 247, 255, 0.1);
-  }
-  50% {
-    box-shadow:
-      0 0 52px rgba(35, 184, 255, 0.38),
-      0 0 92px rgba(225, 6, 0, 0.2),
-      inset 0 0 48px rgba(245, 247, 255, 0.16);
-  }
-}
-
-@keyframes oz-wave-ring {
+@keyframes pulse-orb-ring {
   0% {
-    opacity: 0.88;
-    transform: scale(0.9);
+    opacity: 0.55;
+    transform: scale(1);
   }
   100% {
     opacity: 0;
-    transform: scale(1.16);
+    transform: scale(1.55);
   }
 }
 
-@keyframes oz-orb-rotate {
-  from {
-    filter: hue-rotate(0deg);
-    transform: rotate(0deg) scale(0.96);
-  }
-  to {
-    filter: hue-rotate(24deg);
-    transform: rotate(360deg) scale(0.96);
-  }
-}
-
-@keyframes oz-speaking-pulse {
-  0%,
-  100% {
-    opacity: 0.58;
-    transform: scale(0.94);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes oz-action-scan {
-  0% {
-    box-shadow:
-      0 0 22px rgba(255, 59, 0, 0.24),
-      inset 0 0 16px rgba(255, 255, 255, 0.08);
-  }
-  50% {
-    box-shadow:
-      0 0 44px rgba(255, 59, 0, 0.42),
-      inset 0 0 22px rgba(35, 184, 255, 0.14);
-  }
-  100% {
-    box-shadow:
-      0 0 22px rgba(255, 59, 0, 0.24),
-      inset 0 0 16px rgba(255, 255, 255, 0.08);
-  }
-}
-
-@keyframes oz-task-pulse {
-  0%,
-  100% {
-    transform: scale(0.92);
-  }
-  50% {
-    transform: scale(1.08);
+@media (prefers-reduced-motion: reduce) {
+  .pulse-orb__core,
+  .pulse-orb__ring {
+    animation: none;
   }
 }

@@ -1,42 +1,65 @@
-export const ozColors = {
-  spaceBlack: '#030407',
-  panelBlack: '#080A12',
-  deepNavy: '#07172F',
-  electricBlue: '#23B8FF',
-  nebulaBlue: '#0674FF',
-  signalRed: '#E10600',
-  hotRedOrange: '#FF3B00',
-  starlightWhite: '#F5F7FF',
-  mutedSlate: '#8B93A7',
-  glassBorder: 'rgba(255,255,255,0.14)',
+// Light-mode design tokens for the Oz + Nebula demo.
+//
+// The original frontend (chat module) uses zinc neutrals with a blue accent
+// and red for danger. The whole app should follow that vocabulary so screens
+// feel like one product, not five different drafts.
+
+export const tokens = {
+  surface: {
+    canvas: 'bg-zinc-50',
+    raised: 'bg-white',
+    sunken: 'bg-zinc-100',
+    inset: 'bg-zinc-50',
+  },
+  border: {
+    subtle: 'border-zinc-200',
+    strong: 'border-zinc-300',
+    focus: 'border-blue-500',
+  },
+  text: {
+    primary: 'text-zinc-900',
+    secondary: 'text-zinc-600',
+    muted: 'text-zinc-500',
+    inverted: 'text-white',
+    accent: 'text-blue-600',
+    danger: 'text-red-600',
+  },
+  radius: {
+    sm: 'rounded-md',
+    md: 'rounded-xl',
+    lg: 'rounded-2xl',
+    pill: 'rounded-full',
+  },
+  shadow: {
+    sm: 'shadow-sm',
+    card: 'shadow-sm shadow-zinc-200/60',
+    pop: 'shadow-md shadow-zinc-300/40',
+  },
 } as const
 
-export type OzVisualTone = 'blue' | 'red' | 'white' | 'muted'
-
-export const ozSurfaceClasses = {
-  page: 'oz-space-background min-h-full text-[#F5F7FF]',
-  panel:
-    'rounded-3xl border border-white/14 bg-[#080A12]/86 text-[#F5F7FF] shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl',
-  card:
-    'rounded-2xl border border-white/12 bg-white/[0.045] text-[#F5F7FF] shadow-[0_18px_50px_rgba(0,0,0,0.28)]',
-  inset:
-    'rounded-2xl border border-white/10 bg-[#030407]/60 text-[#F5F7FF]',
+export const surfaces = {
+  page: 'min-h-full bg-zinc-50 text-zinc-900',
+  card: 'rounded-2xl border border-zinc-200 bg-white shadow-sm',
+  cardMuted: 'rounded-2xl border border-zinc-200 bg-zinc-50',
+  inset: 'rounded-xl border border-zinc-200 bg-zinc-50',
 } as const
 
-export const ozButtonClasses = {
-  primary:
-    'rounded-full border border-red-400/50 bg-[#E10600] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_rgba(225,6,0,0.32)] transition hover:bg-[#FF3B00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:pointer-events-none disabled:opacity-50',
-  secondary:
-    'rounded-full border border-[#23B8FF]/45 bg-[#0674FF]/16 px-4 py-2 text-sm font-semibold text-[#F5F7FF] shadow-[0_0_22px_rgba(35,184,255,0.18)] transition hover:bg-[#0674FF]/28 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23B8FF] disabled:pointer-events-none disabled:opacity-50',
-  ghost:
-    'rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-[#F5F7FF] transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:pointer-events-none disabled:opacity-50',
-} as const
+export type Tone = 'blue' | 'red' | 'amber' | 'emerald' | 'zinc'
 
-export const ozToneClasses: Record<OzVisualTone, string> = {
-  blue: 'border-[#23B8FF]/45 bg-[#0674FF]/16 text-[#BDEBFF]',
-  red: 'border-[#FF3B00]/45 bg-[#E10600]/16 text-[#FFD0C4]',
-  white: 'border-white/30 bg-white/10 text-[#F5F7FF]',
-  muted: 'border-white/12 bg-white/[0.04] text-[#8B93A7]',
+export const toneClasses: Record<Tone, string> = {
+  blue: 'border-blue-200 bg-blue-50 text-blue-700',
+  red: 'border-red-200 bg-red-50 text-red-700',
+  amber: 'border-amber-200 bg-amber-50 text-amber-800',
+  emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  zinc: 'border-zinc-200 bg-zinc-100 text-zinc-700',
+}
+
+export const toneDot: Record<Tone, string> = {
+  blue: 'bg-blue-500',
+  red: 'bg-red-500',
+  amber: 'bg-amber-500',
+  emerald: 'bg-emerald-500',
+  zinc: 'bg-zinc-400',
 }
 
 export function joinClasses(...classes: Array<string | false | null | undefined>): string {

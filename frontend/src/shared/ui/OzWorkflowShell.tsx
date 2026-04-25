@@ -1,155 +1,267 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { ChevronLeftIcon, ChevronRightIcon, PanelLeftIcon, PanelRightIcon } from './icons'
+import { OzAssistantPanel, type OzAssistantPanelProps } from './OzAssistantPanel'
 import {
-  BackgroundTaskRail,
-  type BackgroundTaskItem,
-} from './BackgroundTaskRail'
-import {
-  OzAssistantPanel,
-  type OzAssistantPanelProps,
-} from './OzAssistantPanel'
-import {
-  ozWorkflowNavItems,
-  type OzWorkflowNavId,
+  navGroups,
+  type IconComponent,
+  type OzNavGroup,
 } from './OzWorkflowShell.contract'
-import { joinClasses, ozSurfaceClasses } from './visualSystem'
+import { joinClasses } from './visualSystem'
 
 export interface OzWorkflowShellProps {
-  activeNavItem: OzWorkflowNavId
-  onNavItemChange?: (item: OzWorkflowNavId) => void
+  activeNavItem: string
+  onNavItemChange?: (item: string) => void
   eyebrow?: ReactNode
   title: ReactNode
   subtitle?: ReactNode
   headerActions?: ReactNode
   children: ReactNode
-  evidence?: ReactNode
-  backgroundTasks?: BackgroundTaskItem[]
   assistant?: ReactNode
   assistantProps?: OzAssistantPanelProps
+  /** When true the main canvas takes the full content area without the
+      framing card. The inner page is then responsible for its own layout. */
+  fullBleed?: boolean
+  /** Hide the right Oz panel for full-bleed legacy surfaces like Chat. */
+  hideAssistant?: boolean
   className?: string
 }
 
-const defaultAssistantProps: OzAssistantPanelProps = {
-  contextSummary: 'Oz stays beside every workflow with current context, evidence, and next actions.',
-  contextItems: [
-    { label: 'Mode', value: 'Workflow', tone: 'blue' },
-    { label: 'System', value: 'Nebula', tone: 'white' },
-  ],
-  messages: [
-    {
-      id: 'oz-ready',
-      role: 'oz',
-      content: 'Select a workflow or drop evidence into the canvas to begin.',
-    },
-  ],
-  suggestedPrompts: [{ id: 'summarize', label: 'Summarize current evidence' }],
+const SIDEBAR_KEY = 'oz-demo-sidebar-collapsed'
+const ASSISTANT_KEY = 'oz-demo-assistant-collapsed'
+
+function useStoredFlag(storageKey: string, fallback: boolean): [boolean, (value: boolean) => void] {
+  const [value, setValue] = useState(fallback)
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return
+      const stored = window.localStorage.getItem(storageKey)
+      if (stored !== null) setValue(stored === '1')
+    } catch {
+      // Storage may be unavailable in tests or sandbox; ignore gracefully.
+    }
+  }, [storageKey])
+
+  function update(next: boolean) {
+    setValue(next)
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return
+      window.localStorage.setItem(storageKey, next ? '1' : '0')
+    } catch {
+      // Persisting is best-effort; the in-memory state still updates.
+    }
+  }
+
+  return [value, update]
 }
 
-function OzWorkflowNav({
+function NavButton({
+  collapsed,
+  active,
+  label,
+  icon: Icon,
+  onClick,
+}: {
+  collapsed: boolean
+  active: boolean
+  label: string
+  icon: IconComponent
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      title={collapsed ? label : undefined}
+      className={joinClasses(
+        'group flex w-full items-center gap-2 rounded-lg text-sm transition-colors',
+        collapsed ? 'justify-center px-2 py-2' : 'px-2.5 py-2',
+        active
+          ? 'bg-blue-50 text-blue-700'
+          : 'text-zinc-700 hover:bg-zinc-100',
+      )}
+    >
+      <Icon
+        className={joinClasses(
+          'h-4 w-4 shrink-0',
+          active ? 'text-blue-600' : 'text-zinc-500 group-hover:text-zinc-700',
+        )}
+      />
+      {!collapsed && <span className="truncate font-medium">{label}</span>}
+    </button>
+  )
+}
+
+function NavGroup({
+  group,
+  collapsed,
   activeNavItem,
   onNavItemChange,
-}: Pick<OzWorkflowShellProps, 'activeNavItem' | 'onNavItemChange'>) {
+}: {
+  group: OzNavGroup
+  collapsed: boolean
+  activeNavItem: string
+  onNavItemChange?: (id: string) => void
+}) {
   return (
-    <nav
-      className="flex h-full w-[260px] shrink-0 flex-col border-r border-white/10 bg-[#030407]/92 px-4 py-5 text-[#F5F7FF] backdrop-blur-xl"
-      aria-label="Oz workflow navigation"
-    >
-      <div className="mb-6 rounded-3xl border border-[#23B8FF]/24 bg-[#0674FF]/12 p-4 shadow-[0_0_32px_rgba(35,184,255,0.16)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#23B8FF]">Oz</p>
-        <h1 className="mt-2 text-2xl font-semibold">Nebula</h1>
-        <p className="mt-2 text-sm leading-6 text-[#8B93A7]">Workflow intelligence shell</p>
-      </div>
-
-      <div className="space-y-2">
-        {ozWorkflowNavItems.map((item) => {
-          const isActive = item.id === activeNavItem
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={joinClasses(
-                'flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition',
-                isActive
-                  ? 'border-[#23B8FF]/55 bg-[#0674FF]/22 text-[#F5F7FF] shadow-[0_0_24px_rgba(35,184,255,0.2)]'
-                  : 'border-white/10 bg-white/[0.035] text-[#B7C1D8] hover:border-white/20 hover:bg-white/[0.07] hover:text-[#F5F7FF]',
-              )}
-              aria-current={isActive ? 'page' : undefined}
-              onClick={() => onNavItemChange?.(item.id)}
-            >
-              <span>{item.label}</span>
-              {isActive && (
-                <span
-                  className="h-2 w-2 rounded-full bg-[#FF3B00] shadow-[0_0_16px_rgba(255,59,0,0.8)]"
-                  aria-hidden="true"
-                />
-              )}
-            </button>
-          )
-        })}
-      </div>
-    </nav>
+    <div className="space-y-1">
+      {!collapsed && (
+        <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
+          {group.label}
+        </p>
+      )}
+      {group.items.map((item) => (
+        <NavButton
+          key={item.id}
+          collapsed={collapsed}
+          active={item.id === activeNavItem}
+          label={item.label}
+          icon={item.icon}
+          onClick={() => onNavItemChange?.(item.id)}
+        />
+      ))}
+    </div>
   )
 }
 
 export function OzWorkflowShell({
   activeNavItem,
   onNavItemChange,
-  eyebrow = 'Workflow',
+  eyebrow,
   title,
   subtitle,
   headerActions,
   children,
-  evidence,
-  backgroundTasks = [],
   assistant,
-  assistantProps = defaultAssistantProps,
+  assistantProps,
+  fullBleed = false,
+  hideAssistant = false,
   className,
 }: OzWorkflowShellProps) {
-  const hasEvidenceArea = evidence !== undefined || backgroundTasks.length > 0
+  const [sidebarCollapsed, setSidebarCollapsed] = useStoredFlag(SIDEBAR_KEY, false)
+  const [assistantCollapsed, setAssistantCollapsed] = useStoredFlag(ASSISTANT_KEY, false)
+
+  const showAssistant = !hideAssistant && (assistant !== undefined || assistantProps !== undefined)
 
   return (
-    <div className={joinClasses(ozSurfaceClasses.page, 'flex h-screen', className)}>
-      <OzWorkflowNav activeNavItem={activeNavItem} onNavItemChange={onNavItemChange} />
+    <div className={joinClasses('flex h-screen bg-zinc-50 text-zinc-900', className)}>
+      <nav
+        aria-label="Primary navigation"
+        className={joinClasses(
+          'flex h-full shrink-0 flex-col border-r border-zinc-200 bg-white transition-[width] duration-200',
+          sidebarCollapsed ? 'w-[64px]' : 'w-[232px]',
+        )}
+      >
+        <div className="flex items-center justify-between gap-2 border-b border-zinc-200 px-3 py-3">
+          {!sidebarCollapsed && (
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Oz</p>
+              <p className="text-sm font-semibold text-zinc-900">Nebula</p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <PanelLeftIcon className="h-4 w-4" />
+          </button>
+        </div>
 
-      <section className="relative z-10 flex min-w-0 flex-1 gap-5 p-5" aria-label="Oz workflow shell">
-        <main className="flex min-w-0 flex-1 flex-col gap-5">
-          <header className={joinClasses(ozSurfaceClasses.panel, 'p-6')}>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#23B8FF]">
-                  {eyebrow}
-                </p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[#F5F7FF]">{title}</h2>
+        <div className="flex-1 space-y-5 overflow-y-auto px-2 py-3">
+          {navGroups.map((group) => (
+            <NavGroup
+              key={group.id}
+              group={group}
+              collapsed={sidebarCollapsed}
+              activeNavItem={activeNavItem}
+              onNavItemChange={onNavItemChange}
+            />
+          ))}
+        </div>
+      </nav>
+
+      <main className="flex min-w-0 flex-1 flex-col">
+        {fullBleed ? (
+          <div className="flex h-full min-h-0 flex-1 flex-col bg-white">{children}</div>
+        ) : (
+          <>
+            <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 bg-white px-6 py-4">
+              <div className="min-w-0">
+                {eyebrow !== undefined && (
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-600">
+                    {eyebrow}
+                  </p>
+                )}
+                <h1 className="mt-0.5 truncate text-xl font-semibold text-zinc-900">{title}</h1>
                 {subtitle !== undefined && (
-                  <p className="mt-3 max-w-3xl text-sm leading-6 text-[#8B93A7]">{subtitle}</p>
+                  <p className="mt-1 max-w-3xl text-sm text-zinc-600">{subtitle}</p>
                 )}
               </div>
-              {headerActions !== undefined && <div className="flex items-center gap-2">{headerActions}</div>}
+              <div className="flex shrink-0 items-center gap-2">
+                {headerActions}
+                {showAssistant && (
+                  <button
+                    type="button"
+                    onClick={() => setAssistantCollapsed(!assistantCollapsed)}
+                    className="rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+                    aria-label={assistantCollapsed ? 'Show Oz assistant' : 'Hide Oz assistant'}
+                    title={assistantCollapsed ? 'Show Oz assistant' : 'Hide Oz assistant'}
+                  >
+                    <PanelRightIcon className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </header>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <div className="mx-auto max-w-[1400px] px-6 py-6">{children}</div>
             </div>
-          </header>
+          </>
+        )}
+      </main>
 
-          <section
-            className={joinClasses(ozSurfaceClasses.card, 'min-h-0 flex-1 overflow-auto p-6')}
-            aria-label="Workflow canvas"
-          >
-            {children}
-          </section>
-
-          {hasEvidenceArea && (
-            <aside className="grid gap-4 xl:grid-cols-2" aria-label="Evidence and background tasks">
-              {evidence !== undefined && (
-                <section className={joinClasses(ozSurfaceClasses.panel, 'p-5')} aria-label="Evidence">
-                  {evidence}
-                </section>
-              )}
-              {backgroundTasks.length > 0 && <BackgroundTaskRail tasks={backgroundTasks} />}
-            </aside>
+      {showAssistant && (
+        <aside
+          className={joinClasses(
+            'relative flex h-full shrink-0 flex-col border-l border-zinc-200 bg-white transition-[width] duration-200',
+            assistantCollapsed ? 'w-[44px]' : 'w-[360px]',
           )}
-        </main>
-
-        <div className="h-full w-[380px] shrink-0">
-          {assistant ?? <OzAssistantPanel {...assistantProps} />}
-        </div>
-      </section>
+          aria-label="Oz assistant rail"
+        >
+          {assistantCollapsed ? (
+            <button
+              type="button"
+              onClick={() => setAssistantCollapsed(false)}
+              className="m-2 flex flex-1 flex-col items-center gap-2 rounded-md py-3 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+              aria-label="Show Oz assistant"
+            >
+              <ChevronLeftIcon className="h-4 w-4" />
+              <span className="rotate-180 text-[11px] font-semibold uppercase tracking-[0.18em] [writing-mode:vertical-rl]">
+                Oz Assistant
+              </span>
+            </button>
+          ) : (
+            <>
+              <div className="flex items-center justify-end border-b border-zinc-200 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => setAssistantCollapsed(true)}
+                  className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+                  aria-label="Hide Oz assistant"
+                  title="Hide Oz assistant"
+                >
+                  <ChevronRightIcon className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1">
+                {assistant ?? (assistantProps ? <OzAssistantPanel {...assistantProps} /> : null)}
+              </div>
+            </>
+          )}
+        </aside>
+      )}
     </div>
   )
 }

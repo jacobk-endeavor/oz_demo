@@ -3,7 +3,6 @@ import { render, screen, cleanup, act, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import App, { getHashPage } from './App'
 
-// Mock all page components so the test doesn't need their full dependency tree
 vi.mock('./features/chat/ChatPage', () => ({
   ChatPage: () => <div data-testid="chat-page">ChatPage</div>,
 }))
@@ -12,6 +11,12 @@ vi.mock('./features/graph/GraphPage', () => ({
 }))
 vi.mock('./features/ingest/IngestPage', () => ({
   IngestPage: () => <div data-testid="ingest-page">IngestPage</div>,
+}))
+vi.mock('./features/oz/OzHomePage', () => ({
+  OzHomePage: () => <div data-testid="oz-home-page">OzHomePage</div>,
+}))
+vi.mock('./features/oz/NebulaHubPage', () => ({
+  NebulaHubPage: () => <div data-testid="nebula-hub-page">NebulaHubPage</div>,
 }))
 vi.mock('./features/fieldNotes', () => ({
   FieldNotesPage: () => <div data-testid="field-notes-page">FieldNotesPage</div>,
@@ -41,8 +46,6 @@ afterEach(() => {
   cleanup()
   window.location.hash = ''
 })
-
-// ── getHashPage unit tests ──────────────────────────────────────────────────
 
 describe('getHashPage()', () => {
   it('returns oz for empty hash', () => {
@@ -81,13 +84,11 @@ describe('getHashPage()', () => {
   })
 })
 
-// ── App integration smoke tests ─────────────────────────────────────────────
-
 describe('App', () => {
-  it('renders Oz by default', () => {
+  it('renders the Oz home by default', () => {
     window.location.hash = ''
     render(<App />)
-    expect(screen.getByText('Oz voice command center')).toBeInTheDocument()
+    expect(screen.getByTestId('oz-home-page')).toBeInTheDocument()
   })
 
   it('renders Field Notes when hash is #/field-notes', () => {
@@ -111,7 +112,7 @@ describe('App', () => {
   it('switches to GraphPage on hashchange event', async () => {
     window.location.hash = '#/oz'
     render(<App />)
-    expect(screen.getByText('Oz voice command center')).toBeInTheDocument()
+    expect(screen.getByTestId('oz-home-page')).toBeInTheDocument()
 
     await act(async () => {
       window.location.hash = '#/graph'
@@ -131,7 +132,7 @@ describe('App', () => {
       window.dispatchEvent(new HashChangeEvent('hashchange'))
     })
 
-    expect(screen.getByText('Oz voice command center')).toBeInTheDocument()
+    expect(screen.getByTestId('oz-home-page')).toBeInTheDocument()
   })
 
   it('navigates from lead generation to reports', () => {
@@ -151,5 +152,14 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Call Mining' }))
 
     expect(screen.getByTestId('call-mining-page')).toBeInTheDocument()
+  })
+
+  it('exposes a collapsible sidebar', () => {
+    window.location.hash = '#/oz'
+    render(<App />)
+    const collapseButton = screen.getByRole('button', { name: /Collapse sidebar/i })
+    expect(collapseButton).toBeInTheDocument()
+    fireEvent.click(collapseButton)
+    expect(screen.getByRole('button', { name: /Expand sidebar/i })).toBeInTheDocument()
   })
 })

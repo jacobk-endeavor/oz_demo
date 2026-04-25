@@ -1,4 +1,3 @@
-export { AppShell } from './AppShell'
 export { BackgroundTaskRail } from './BackgroundTaskRail'
 export type { BackgroundTaskItem, BackgroundTaskStatus } from './BackgroundTaskRail'
 export { Button } from './Button'
@@ -12,20 +11,22 @@ export type {
   OzMessageRole,
   OzSuggestedPrompt,
 } from './OzAssistantPanel'
-export { OzOrb } from './OzOrb'
-export type { OzOrbPrompt, OzOrbState } from './OzOrb'
-export { Panel } from './Panel'
-export { Sidebar } from './Sidebar'
-export { TabBar } from './TabBar'
 export { OzWorkflowShell } from './OzWorkflowShell'
 export type { OzWorkflowShellProps } from './OzWorkflowShell'
-export { ozWorkflowNavItems } from './OzWorkflowShell.contract'
-export type { OzWorkflowNavId } from './OzWorkflowShell.contract'
+export {
+  navGroups,
+  ozWorkflowNavItems,
+} from './OzWorkflowShell.contract'
+export type { IconComponent, OzNavGroup, OzNavItem, OzWorkflowNavId } from './OzWorkflowShell.contract'
+export { Panel } from './Panel'
+export { PulseOrb } from './PulseOrb'
+export type { PulseOrbSize } from './PulseOrb'
+export { Tag } from './Tag'
 export {
   joinClasses,
-  ozButtonClasses,
-  ozColors,
-  ozSurfaceClasses,
-  ozToneClasses,
+  surfaces,
+  tokens,
+  toneClasses,
+  toneDot,
 } from './visualSystem'
-export type { OzVisualTone } from './visualSystem'
+export type { Tone } from './visualSystem'

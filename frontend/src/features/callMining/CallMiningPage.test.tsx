@@ -25,19 +25,10 @@ describe('CallMiningPage', () => {
 
     const locationChips = within(table).getAllByTestId('location-chip')
     expect(locationChips).toHaveLength(callMiningInteractions.length)
-    expect(locationChips.some((chip) => chip.dataset.locationTag === 'zoom')).toBe(true)
-    expect(locationChips.some((chip) => chip.dataset.locationTag === 'phone_call')).toBe(true)
-    expect(locationChips.some((chip) => chip.dataset.locationTag === 'in_person')).toBe(true)
-
-    expect(locationChips.find((chip) => chip.dataset.locationTag === 'zoom')).toHaveStyle({
-      borderColor: '#23B8FF',
-    })
-    expect(locationChips.find((chip) => chip.dataset.locationTag === 'phone_call')).toHaveStyle({
-      borderColor: '#E10600',
-    })
-    expect(locationChips.find((chip) => chip.dataset.locationTag === 'in_person')).toHaveStyle({
-      borderColor: '#F5F7FF',
-    })
+    const tags = locationChips.map((chip) => chip.dataset.locationTag)
+    expect(tags).toContain('zoom')
+    expect(tags).toContain('phone_call')
+    expect(tags).toContain('in_person')
   })
 
   it('searches and filters the interaction records', async () => {
@@ -69,7 +60,7 @@ describe('CallMiningPage', () => {
     )
 
     expect(complaintsButton).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText(`Source records: ${complaintRecords.length}`)).toBeInTheDocument()
+    expect(screen.getByText(`Backed by ${complaintRecords.length} source records`)).toBeInTheDocument()
     expect(screen.getByText(/recommended action/i)).toBeInTheDocument()
     expect(screen.getByText(/ranked evidence/i)).toBeInTheDocument()
     expect(within(screen.getByRole('table')).getAllByTestId('call-mining-row')).toHaveLength(
