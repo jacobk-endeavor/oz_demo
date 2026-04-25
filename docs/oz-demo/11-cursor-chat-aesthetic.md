@@ -115,10 +115,11 @@ The panel exposes a `showFloatingMark` boolean prop. `App.tsx` sets it to `page 
 
 ## Behavior
 
-### Always Present
+### Always Present, Toggleable
 
-- The right-side rail is fixed at 360px on screens wider than the breakpoint. Below the breakpoint it is hidden by the shell, not collapsed by the user.
-- No localStorage flag. No collapse button. The shell composes the chat panel unconditionally on every page that wants it.
+- The right-side rail is fixed at 360px when open. It is **toggleable** via a panel-right icon in the workflow header (top-right, next to any per-page header actions). Closed state is persisted in `localStorage` (`oz-demo-assistant-collapsed`).
+- The toggle is the only chat affordance in the workflow header; closing the rail hides it entirely so the workflow canvas can take the full width. Reopening it from the same toggle restores the rail in whatever state the user left it (active session, draft text, mode).
+- The toggle is always visible when the page would otherwise show the chat. Pages that explicitly opt out via `hideAssistant` get neither the rail nor the toggle.
 
 ### Sending Messages
 

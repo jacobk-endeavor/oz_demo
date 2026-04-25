@@ -153,6 +153,24 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /Expand sidebar/i })).toBeInTheDocument()
   })
 
+  it('toggles the Oz chat rail open and closed from the workflow header', () => {
+    window.location.hash = '#/oz'
+    render(<App />)
+
+    expect(screen.getByRole('complementary', { name: 'Oz assistant rail' })).toBeInTheDocument()
+
+    const toggle = screen.getByRole('button', { name: /Hide Oz chat/i })
+    fireEvent.click(toggle)
+
+    expect(
+      screen.queryByRole('complementary', { name: 'Oz assistant rail' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Show Oz chat/i })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Show Oz chat/i }))
+    expect(screen.getByRole('complementary', { name: 'Oz assistant rail' })).toBeInTheDocument()
+  })
+
   it('does not expose legacy chat/graph/ingest navigation', () => {
     window.location.hash = '#/oz'
     render(<App />)

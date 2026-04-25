@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { PanelLeftIcon } from './icons'
+import { PanelLeftIcon, PanelRightIcon } from './icons'
 import { OzAssistantPanel, type OzAssistantPanelProps } from './OzAssistantPanel'
 import {
   navGroups,
@@ -28,6 +28,7 @@ export interface OzWorkflowShellProps {
 }
 
 const SIDEBAR_KEY = 'oz-demo-sidebar-collapsed'
+const ASSISTANT_KEY = 'oz-demo-assistant-collapsed'
 
 function useStoredFlag(storageKey: string, fallback: boolean): [boolean, (value: boolean) => void] {
   const [value, setValue] = useState(fallback)
@@ -193,8 +194,10 @@ export function OzWorkflowShell({
   className,
 }: OzWorkflowShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useStoredFlag(SIDEBAR_KEY, false)
+  const [assistantCollapsed, setAssistantCollapsed] = useStoredFlag(ASSISTANT_KEY, false)
 
-  const showAssistant = !hideAssistant && (assistant !== undefined || assistantProps !== undefined)
+  const hasAssistant = !hideAssistant && (assistant !== undefined || assistantProps !== undefined)
+  const showAssistant = hasAssistant && !assistantCollapsed
 
   return (
     <div className={joinClasses('flex h-screen bg-zinc-50 text-zinc-900', className)}>
@@ -266,9 +269,26 @@ export function OzWorkflowShell({
                   <p className="mt-1 max-w-3xl text-sm text-zinc-600">{subtitle}</p>
                 )}
               </div>
-              {headerActions !== undefined && (
-                <div className="flex shrink-0 items-center gap-2">{headerActions}</div>
-              )}
+              <div className="flex shrink-0 items-center gap-2">
+                {headerActions}
+                {hasAssistant && (
+                  <button
+                    type="button"
+                    onClick={() => setAssistantCollapsed(!assistantCollapsed)}
+                    aria-pressed={!assistantCollapsed}
+                    aria-label={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
+                    title={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
+                    className={joinClasses(
+                      'rounded-md p-1.5 transition-colors',
+                      assistantCollapsed
+                        ? 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
+                        : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200/60',
+                    )}
+                  >
+                    <PanelRightIcon className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </header>
             <div className="min-h-0 flex-1 overflow-auto">
               <div className="mx-auto max-w-[1400px] px-6 py-6">{children}</div>
