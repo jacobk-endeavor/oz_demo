@@ -18,8 +18,29 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 
 - Thin row at the top, ~44px tall, with a bottom border.
 - Left: model/identity pill. We render `Oz` followed by a small chevron, mirroring Cursor's model selector. No real model switching for the demo, but the chevron implies it exists.
-- Right: a small `New chat` action (plus icon + label) and an icon-only overflow button. Both are subtle ghost buttons; no fill until hovered.
+- Right: a `History` button (chevron-down + label or count) that opens the session list dropdown, a small `New chat` action (plus icon + label), and an icon-only overflow button. All ghost buttons.
 - No avatars, no eyebrows like "Persistent copilot". The product name in the header is enough.
+
+### Sticky Title (First Prompt)
+
+- The first user message of an active conversation is promoted to a **sticky title bar** at the top of the conversation column, just below the mode tabs.
+- It uses a slightly heavier zinc-900 weight, truncates to two lines with ellipsis, and stays pinned while the rest of the conversation scrolls below it. Cursor uses this exact pattern: the title summarizes the chat and is always visible.
+- It only appears once at least one user message has been sent. Before that, the column shows the empty state instead.
+- The first user message is **not duplicated** in the conversation flow. The Oz reply renders directly under the title.
+
+### Empty State
+
+- Before the first message, the conversation area shows the seeded greeting (passed as `assistantProps.messages`) as quiet ambient text — not as a "real" message.
+- The empty state also surfaces the suggested prompts more prominently so the user knows what to ask.
+- Once the user sends the first prompt, the empty state disappears and the sticky title takes over.
+
+### Sessions / Multi-Chat
+
+- The chat supports **multiple sessions**, like Cursor's chat history.
+- A `History` dropdown in the header lists all sessions for the current page surface. Each row shows the session title (= first user prompt or `New chat` when empty) and a relative timestamp.
+- Clicking a row switches to that session. The composer, conversation, and sticky title all swap to that session's state.
+- `New chat` creates a fresh empty session and switches to it. The previous session is preserved in history.
+- Sessions are panel-local (not persisted across reloads). They reset when the seeded `messages` prop changes (i.e., when the user navigates between pages — each page has its own chat history).
 
 ### Mode Tabs
 
@@ -95,7 +116,9 @@ Cursor's chat panel is quiet, dense, and code-tool-shaped. Almost everything is 
 
 ### Suggested Prompts
 
-- Three small prompts under the composer act as quick-fire inputs. Clicking one sends it as if typed.
+- Three short prompts surface as **floating Try chips just above the @ Add context strip**, not under the composer. They sit between the conversation and the context row, giving the user a one-tap way to ask Oz the most useful question for the current page.
+- They look like Cursor's suggestion chips: `rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-xs`, with a small `Try` eyebrow above them.
+- Clicking one sends it as if typed. They are visible whether the conversation is empty or has messages, since Cursor keeps them present so users can pivot quickly.
 - Suggestions are page-scoped and come from `assistantProps.suggestedPrompts`. If absent, fall back to a small global default.
 
 ### Mode Tabs
@@ -115,7 +138,9 @@ The panel feels like Cursor's chat:
 
 - Quiet white surface with a thin top header.
 - Small role labels above each message, no bubbles around the assistant.
-- Context pills above a clean composer.
+- The first user prompt sticks at the top of the column once a chat has started, replacing the seeded greeting.
+- Try chips float just above the @ Add context strip.
+- A History dropdown in the header switches between multiple sessions; New chat starts a fresh one without losing prior chats for the page.
 - Send is an arrow icon, not a button with a word.
 - The user can actually type and receive a scripted reply.
 - The rail is always visible on every page.
