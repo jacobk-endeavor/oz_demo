@@ -168,7 +168,8 @@ Optional:
 
 - Email provider key for report sending.
 - DigitalOcean Spaces keys for storing generated/uploaded files.
-- Mapbox or Google Maps key for real route maps.
+
+The route map is mocked for the demo. Do not add Mapbox or Google Maps keys.
 
 ## Implementation Bias
 

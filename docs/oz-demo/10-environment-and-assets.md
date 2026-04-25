@@ -34,7 +34,10 @@ Optional keys:
 
 - `RESEND_API_KEY`, `SENDGRID_API_KEY`, or `POSTMARK_API_KEY`: required only when report emails actually send.
 - `DO_SPACES_KEY`, `DO_SPACES_SECRET`, `DO_SPACES_ENDPOINT`, `DO_SPACES_BUCKET`, `DO_SPACES_REGION`: required only when storing generated reports, PDFs, uploads, or Excel files in DigitalOcean Spaces.
-- `MAPBOX_ACCESS_TOKEN` or `GOOGLE_MAPS_API_KEY`: required only if the route planner uses a real map.
+
+## Route Map Rule
+
+The lead route map is mocked for the entire demo. Do not wire Mapbox, Google Maps, or any other mapping provider. The Lead Generation page renders the route as an ordered list of stops with travel time, talking points, and product angles. If the team later wants a real map, treat that as a follow-on workstream with its own scoped decision; do not add map provider keys to `.env` until that decision is made.
 
 ## ElevenLabs Voice Rule
 

@@ -66,7 +66,7 @@ The future implementation should fit a DigitalOcean deployment, preferably on Di
 - Styling: Tailwind CSS or CSS modules with a small design-token file.
 - Motion: Framer Motion or CSS keyframes.
 - Charts: Recharts, Nivo, or lightweight custom SVG.
-- Maps/routes: mocked route view first, Mapbox/Google later only if needed.
+- Maps/routes: render the route as an ordered, mocked stop list. No real mapping provider (no Mapbox, no Google Maps) for the demo.
 - Voice: ElevenLabs for Oz speech synthesis, hidden behind a small voice service adapter so scripted demo audio can be swapped for live generation later.
 - Email: Resend, SendGrid, or Postmark later, hidden behind a small `sendReportEmail()` adapter.
 - AI calls: use a lightweight Node service only when needed so API keys are not exposed in the browser.

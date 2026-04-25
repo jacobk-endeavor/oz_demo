@@ -48,13 +48,15 @@ Lead generation creates the “what should we do?” moment. Reporting creates t
 
 ## Route Behavior
 
-The route can be mocked for the first demo. It should show:
+The route is mocked for the demo. Do not call a real mapping provider. The route view should show:
 
 - Ordered stops.
-- Estimated travel time.
+- Estimated travel time (deterministic strings).
 - Reason for each stop.
 - Suggested talking point.
 - Product or quote angle.
+
+Render the route as a styled list, not a live map widget. Reaching for Mapbox or Google Maps is out of scope until the team decides explicitly otherwise.
 
 ## Reporting UI
 
