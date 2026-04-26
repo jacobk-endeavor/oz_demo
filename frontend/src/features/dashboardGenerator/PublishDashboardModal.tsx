@@ -17,7 +17,6 @@ interface PublishDashboardModalProps {
   open: boolean
   onClose: () => void
   defaultTitle: string
-  /** Existing publication (if any) so the modal can show the manage view. */
   published: PublishedDashboardSnapshot | null
   onPublish: (snapshot: PublishedDashboardSnapshot) => void
   onUnpublish: () => void
@@ -80,8 +79,7 @@ export function PublishDashboardModal({
   onPublish,
   onUnpublish,
 }: PublishDashboardModalProps) {
-  const initialStage: ModalStage = published ? 'published' : 'configure'
-  const [stage, setStage] = useState<ModalStage>(initialStage)
+  const [stage, setStage] = useState<ModalStage>(published ? 'published' : 'configure')
   const [title, setTitle] = useState(published?.title ?? defaultTitle)
   const [visibility, setVisibility] = useState<PublishVisibility>(
     published?.visibility ?? 'private_link',
@@ -90,13 +88,12 @@ export function PublishDashboardModal({
     (published?.recipients ?? ['sami@example.com', 'sales@example.com']).join(', '),
   )
   const [message, setMessage] = useState(
-    published?.message ?? 'Latest sales dashboard with the call mining insights from this week.',
+    published?.message ?? 'Here is the latest dashboard you asked to review.',
   )
   const [activeStepIndex, setActiveStepIndex] = useState<number>(publishSteps.length)
   const [snapshot, setSnapshot] = useState<PublishedDashboardSnapshot | null>(published)
   const [copied, setCopied] = useState(false)
 
-  // Reset state when modal opens.
   useEffect(() => {
     if (!open) return
     setStage(published ? 'published' : 'configure')
@@ -105,16 +102,12 @@ export function PublishDashboardModal({
     setRecipientsInput(
       (published?.recipients ?? ['sami@example.com', 'sales@example.com']).join(', '),
     )
-    setMessage(
-      published?.message ??
-        'Latest sales dashboard with the call mining insights from this week.',
-    )
+    setMessage(published?.message ?? 'Here is the latest dashboard you asked to review.')
     setSnapshot(published)
     setCopied(false)
     setActiveStepIndex(published ? publishSteps.length : 0)
   }, [open, published, defaultTitle])
 
-  // Drive the publishing animation. Each step takes ~350ms.
   useEffect(() => {
     if (stage !== 'publishing') return
     if (activeStepIndex >= publishSteps.length) {
@@ -171,7 +164,7 @@ export function PublishDashboardModal({
     if (!snapshot) return
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
       void navigator.clipboard.writeText(snapshot.shareUrl).catch(() => {
-        /* clipboard may be unavailable; the visible link still does the job */
+        // clipboard may be unavailable
       })
     }
     setCopied(true)
@@ -201,7 +194,7 @@ export function PublishDashboardModal({
           ? 'This is a mock publish: nothing leaves the demo. Share the link or update sharing settings.'
           : stage === 'publishing'
             ? 'Oz is preparing a snapshot, building the shareable preview, and sending invitations.'
-            : 'Mock publishing flow inspired by Opal: configure who can see this dashboard, then click publish to generate a fake share link.'
+            : 'Mock publishing flow: configure who can see this dashboard, then click publish to generate a fake share link.'
       }
       footer={
         stage === 'configure' ? (
@@ -228,7 +221,9 @@ export function PublishDashboardModal({
             <Button variant="secondary" onClick={() => setStage('configure')}>
               Edit sharing
             </Button>
-            <Button onClick={onClose}>Done</Button>
+            <Button onClick={onClose}>
+              Done
+            </Button>
           </>
         )
       }
