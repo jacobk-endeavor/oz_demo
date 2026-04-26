@@ -149,9 +149,10 @@ function FieldAppVoiceColumn() {
     [micStatus, chooseMicDevice, setPreferredMicId],
   )
 
+  const ozPulse = useSpeechLikePulse(phase === 'oz')
   const showFullMicUI = !micOnboardingDone || micSetupExpanded
   const drivePulseFromMic = phase === 'listening' || phase === 'speaking'
-  const pulseTarget = drivePulseFromMic ? 1 : phase === 'oz' ? 0.6 : 0.16
+  const pulseTarget = drivePulseFromMic ? 1 : phase === 'oz' ? ozPulse : 0.16
   const stepLabel = stepIndex < queue.length ? queue[stepIndex]!.label : 'Done'
   const stepNumber = Math.min(stepIndex + 1, queue.length)
   const statusLine = statusForPhase(phase, stepNumber, queue.length)
@@ -223,6 +224,38 @@ function FieldAppVoiceColumn() {
       </div>
     </div>
   )
+}
+
+/**
+ * While `active`, returns a value in roughly [0.25, 0.95] that varies on every animation
+ * frame in a speech-like envelope: a fast syllable rhythm (~5 Hz), a slower phrasing
+ * cadence (~0.9 Hz), and a smaller flutter (~11 Hz). The orb's internal smoothing then
+ * chases this target, so the visible pulse breathes the way someone speaking does.
+ * Returns 0 when inactive so callers can decide a resting value.
+ */
+function useSpeechLikePulse(active: boolean): number {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    if (!active) {
+      setValue(0)
+      return
+    }
+    if (typeof window === 'undefined' || typeof requestAnimationFrame === 'undefined') return
+    let raf = 0
+    const start = performance.now()
+    const tick = (now: number) => {
+      const t = now - start
+      const syllable = 0.34 * (1 + Math.sin(t * 0.030)) * 0.5
+      const phrase = 0.22 * (1 + Math.sin(t * 0.0055 + 1.3)) * 0.5
+      const flutter = 0.12 * (1 + Math.sin(t * 0.072 + 0.4)) * 0.5
+      const next = Math.min(1, 0.27 + syllable + phrase + flutter)
+      setValue(next)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [active])
+  return value
 }
 
 function statusForPhase(phase: Phase, stepNumber: number, total: number): string {
