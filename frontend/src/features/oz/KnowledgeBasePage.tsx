@@ -13,6 +13,9 @@ import { PlusIcon, FolderOpenIcon, ChevronRightIcon, CloseIcon, TrashIcon } from
 import {
   classifyKnowledgeFile,
   processKnowledgeFile,
+  KNOWLEDGE_EXCEL_MAX_BYTES,
+  KNOWLEDGE_IMAGE_MAX_BYTES,
+  KNOWLEDGE_PDF_MAX_BYTES,
   type KnowledgeAssetKind,
   type ProcessedKnowledgePreview,
   type ProcessedKnowledgeResult,
@@ -21,7 +24,45 @@ import { tabularFromText, type TabularResult } from './knowledgeBaseTabular'
 
 const KnowledgeBasePdfView = lazy(() => import('./KnowledgeBasePdfView'))
 
-const INGEST_TO_INDEXED = 800
+const PREVIEW_MAX_COLS = 64
+const PREVIEW_MAX_BODY_ROWS = 500
+
+/**
+ * Bytes used for delay heuristics (mirrors read caps in ingest for excel/pdf/image).
+ */
+function effectiveScanBytes(file: File, kind: KnowledgeAssetKind): number {
+  const s = file.size
+  if (kind === 'excel') return Math.min(s, KNOWLEDGE_EXCEL_MAX_BYTES)
+  if (kind === 'pdf') return Math.min(s, KNOWLEDGE_PDF_MAX_BYTES)
+  if (kind === 'image') return Math.min(s, KNOWLEDGE_IMAGE_MAX_BYTES)
+  return s
+}
+
+/**
+ * Perceived “scan / ingest” time before we attach a preview. Scales with file size, slower for big files.
+ */
+function ingestionSimulatedDelayMs(file: File, kind: KnowledgeAssetKind): number {
+  const mb = effectiveScanBytes(file, kind) / (1024 * 1024)
+  // ~2.2s at ~0, ramps with sublinear growth; cap ~50s
+  const base = 2200 + mb ** 0.72 * 10_200
+  const kindBoost = kind === 'pdf' || kind === 'excel' ? 1.2 : kind === 'text' ? 1.08 : 1.1
+  const jitter = 0.92 + Math.random() * 0.16
+  return Math.round(Math.max(2_200, Math.min(50_000, base * kindBoost * jitter)))
+}
+
+/**
+ * How long a row stays “ready” before we mark it “ingested” in the list (does not revoke previews).
+ */
+function readyToIngestedDelayMs(file: File, kind: KnowledgeAssetKind): number {
+  const mb = effectiveScanBytes(file, kind) / (1024 * 1024)
+  const t = 900 + mb ** 0.85 * 2_200
+  const jitter = 0.9 + Math.random() * 0.2
+  return Math.round(Math.max(800, Math.min(20_000, t * jitter)))
+}
+
+function waitMs(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms))
+}
 
 type IngestState = 'staged' | 'processing' | 'ready' | 'ingested'
 
@@ -56,13 +97,6 @@ function formatSize(n: number) {
   if (n < 1024) return `${n} B`
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
   return `${(n / (1024 * 1024)).toFixed(1)} MB`
-}
-
-const PROCESSING_MS = { min: 200, max: 500 }
-
-function processingDelay() {
-  const ms = PROCESSING_MS.min + Math.random() * (PROCESSING_MS.max - PROCESSING_MS.min)
-  return new Promise<void>((r) => setTimeout(r, ms))
 }
 
 function noopRevoke() {}
@@ -151,6 +185,16 @@ function demoNormalizeProcessResult(
   }
 }
 
+function maxColCount(table: TabularResult): number {
+  let m = table.headers.length
+  const cap = table.rows.length
+  for (let i = 0; i < cap; i++) {
+    const n = table.rows[i]!.length
+    if (n > m) m = n
+  }
+  return Math.max(1, m)
+}
+
 function TablePreviewView({
   table,
   sheetName,
@@ -160,7 +204,12 @@ function TablePreviewView({
   sheetName?: string
   excelReadTruncated?: boolean
 }) {
-  const cols = Math.max(1, table.headers.length, ...table.rows.map((r) => r.length))
+  const fullCols = maxColCount(table)
+  const cols = Math.min(PREVIEW_MAX_COLS, fullCols)
+  const rowCount = table.rows.length
+  const showRows = table.rows.length > PREVIEW_MAX_BODY_ROWS ? table.rows.slice(0, PREVIEW_MAX_BODY_ROWS) : table.rows
+  const widthTrunc = fullCols > PREVIEW_MAX_COLS
+  const heightTrunc = rowCount > PREVIEW_MAX_BODY_ROWS
   return (
     <div className="min-h-0 flex-1 overflow-auto">
       {sheetName != null && sheetName.length > 0 && (
@@ -171,6 +220,12 @@ function TablePreviewView({
       {excelReadTruncated && (
         <p className="shrink-0 text-[11px] text-amber-800">
           Only the first segment of a larger file was read (demo). The full spreadsheet may be longer.
+        </p>
+      )}
+      {(widthTrunc || heightTrunc) && (
+        <p className="shrink-0 text-[11px] text-zinc-500">
+          {widthTrunc && `Showing first ${cols} of ${fullCols} columns. `}
+          {heightTrunc && `Showing first ${showRows.length} of ${rowCount} rows in the preview.`}
         </p>
       )}
       <div className="mt-1 inline-block min-w-full max-w-full rounded-lg border border-zinc-200 bg-zinc-50/40">
@@ -195,7 +250,7 @@ function TablePreviewView({
             </tr>
           </thead>
           <tbody>
-            {table.rows.map((row, ri) => (
+            {showRows.map((row, ri) => (
               <tr key={ri} className="hover:bg-white/60">
                 <th
                   className="sticky left-0 z-10 w-9 border-b border-r border-zinc-200/80 bg-zinc-50/95 py-0.5 pr-1 pl-0.5 text-right font-medium text-zinc-400"
@@ -232,7 +287,7 @@ function PreviewBody({ preview, fileName }: { preview: ProcessedKnowledgePreview
   }
   if (preview.kind === 'image') {
     return (
-      <div className="min-h-0 flex-1 overflow-auto p-2">
+      <div className="flex min-h-0 flex-1 items-start justify-center overflow-auto p-2">
         <img
           src={preview.objectUrl}
           alt={preview.fileName}
@@ -242,7 +297,7 @@ function PreviewBody({ preview, fileName }: { preview: ProcessedKnowledgePreview
     )
   }
   return (
-    <div className="min-h-0 min-w-0 flex-1 p-0">
+    <div className="flex min-h-0 min-h-[12rem] w-full min-w-0 flex-1 flex-col p-0">
       <Suspense
         fallback={<div className="p-4 text-sm text-zinc-500">Loading PDF viewer…</div>}
       >
@@ -263,7 +318,7 @@ function PanelFrame({
 }) {
   return (
     <aside
-      className="flex w-full min-w-0 max-w-md shrink-0 flex-col border-l border-zinc-200 bg-white shadow-sm md:max-w-[min(100%,24rem)] lg:max-w-[min(100%,32rem)]"
+      className="flex h-full min-h-0 w-full min-w-0 max-w-md shrink-0 flex-col border-l border-zinc-200 bg-white shadow-sm md:max-w-[min(100%,24rem)] lg:max-w-[min(100%,32rem)]"
       data-testid="knowledge-preview-panel"
     >
       <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50/80 px-3 py-2">
@@ -277,7 +332,7 @@ function PanelFrame({
           <CloseIcon className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col p-2">{children}</div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-2">{children}</div>
     </aside>
   )
 }
@@ -328,22 +383,32 @@ export function KnowledgeBasePage() {
   }, [])
 
   const scheduleIngested = useCallback(
-    (id: string) => {
+    (id: string, file: File, kind: KnowledgeAssetKind) => {
       clearIngestTimer(id)
+      const delay = readyToIngestedDelayMs(file, kind)
       const t = window.setTimeout(() => {
-        setEntry(id, (e) => (e.ingest === 'ready' ? { ...e, ingest: 'ingested' } : e))
+        // Do not use setEntry here: it would revoke() blob URLs while the row still
+        // holds the same preview, which breaks PDF/image viewers.
+        setRows((prev) =>
+          prev.map((e) => {
+            if (e.id !== id) return e
+            if (e.entryKind !== 'file' || e.ingest !== 'ready') return e
+            return { ...e, ingest: 'ingested' as const }
+          }),
+        )
         pendingIngestTimerRef.current.delete(id)
-      }, INGEST_TO_INDEXED)
+      }, delay)
       pendingIngestTimerRef.current.set(id, t)
     },
-    [setEntry, clearIngestTimer],
+    [clearIngestTimer],
   )
 
   const loadFilePreview = useCallback(
     async (id: string, file: File, kind: KnowledgeAssetKind) => {
       setEntry(id, (e) => ({ ...e, ingest: 'processing' }))
+      const simulated = ingestionSimulatedDelayMs(file, kind)
       try {
-        await processingDelay()
+        await waitMs(simulated)
         const result = await processKnowledgeFile(file, { kind })
         const { preview, revoke } = demoNormalizeProcessResult(file, result)
         setEntry(id, (e) => ({
@@ -352,7 +417,7 @@ export function KnowledgeBasePage() {
           preview,
           revokeObjectUrl: revoke,
         }))
-        scheduleIngested(id)
+        scheduleIngested(id, file, kind)
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Could not process file'
         const { preview, revoke } = demoNormalizeProcessResult(file, {
@@ -365,7 +430,7 @@ export function KnowledgeBasePage() {
           preview,
           revokeObjectUrl: revoke,
         }))
-        scheduleIngested(id)
+        scheduleIngested(id, file, kind)
       }
     },
     [setEntry, scheduleIngested],
@@ -420,12 +485,13 @@ export function KnowledgeBasePage() {
         },
         ...prev,
       ])
+      const folderIngestMs = Math.round(1600 + Math.random() * 2400)
       window.setTimeout(() => {
         if (!rowsRef.current.some((e) => e.id === id && e.entryKind === 'folder' && e.ingest === 'staged')) {
           return
         }
         setFolderIngest(id, 'ingested')
-      }, 400)
+      }, folderIngestMs)
       setAddModalOpen(false)
     },
     [setFolderIngest],
@@ -510,7 +576,7 @@ export function KnowledgeBasePage() {
     }
     return (
       <PanelFrame title={row.displayName} onClose={closePanel}>
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
           <PreviewBody preview={row.preview} fileName={row.displayName} />
         </div>
       </PanelFrame>
@@ -535,10 +601,7 @@ export function KnowledgeBasePage() {
       className="flex h-full min-h-0 min-w-0 flex-col gap-3 p-4"
       data-testid="knowledge-base-page"
     >
-      <p className="shrink-0 text-sm text-zinc-600">
-        New files land at the top as <span className="font-medium">staged</span>, then move to <span className="font-medium">ready</span> and <span className="font-medium">ingested</span>. The default list shows ingested
-        only. Use <span className="font-medium">Add</span> to open the upload dialog.
-      </p>
+      <h1 className="sr-only">Knowledge Base</h1>
 
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         <button
@@ -657,8 +720,8 @@ export function KnowledgeBasePage() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden md:flex-row">
-        <div className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-0 overflow-hidden md:flex-row">
+        <div className="h-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
           <div className="max-h-full overflow-auto">
             <table className="w-full min-w-[520px] border-collapse text-left text-sm text-zinc-800">
               <thead className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50/95 text-xs font-semibold uppercase tracking-wide text-zinc-500">
