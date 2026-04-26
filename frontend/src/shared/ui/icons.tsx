@@ -52,6 +52,15 @@ export function FileStackIcon({ className, ...props }: IconProps) {
   )
 }
 
+/** Open folder — used for “add folder” (directory) picker. */
+export function FolderOpenIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <path d="M3.5 7.2h2.1l1.1-1.1h4.6l1.1 1.1h1.1a1.1 1.1 0 0 1 1.1 1.1v6.1a1.1 1.1 0 0 1-1.1 1.1H3.5a1.1 1.1 0 0 1-1.1-1.1V8.3a1.1 1.1 0 0 1 1.1-1.1Z" />
+    </svg>
+  )
+}
+
 /** Handheld / on-site (Field App) — stroke rounded rect + home indicator. */
 export function FieldAppIcon({ className, ...props }: IconProps) {
   return (

@@ -206,6 +206,8 @@ export default defineConfig(({ mode }) => ({
     port: 4173,
     strictPort: false,
   },
+  /** One pdfjs build for `react-pdf` main thread + our worker `?url` import. */
+  resolve: { dedupe: ['pdfjs-dist'] },
   plugins: [
     react(),
     tailwindcss(),

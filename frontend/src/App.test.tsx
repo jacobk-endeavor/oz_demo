@@ -59,9 +59,9 @@ describe('getHashPage()', () => {
     expect(getHashPage()).toBe('field-app')
   })
 
-  it('returns a field mobile workflow id for #/field-mw--customer-interactions', () => {
+  it('defaults to oz for legacy field mobile workflow hashes when not in the nav', () => {
     window.location.hash = '#/field-mw--customer-interactions'
-    expect(getHashPage()).toBe('field-mw--customer-interactions')
+    expect(getHashPage()).toBe('oz')
   })
 
   it('defaults to oz for unknown hash including legacy routes', () => {
@@ -98,22 +98,12 @@ describe('App', () => {
     expect(screen.queryByRole('complementary', { name: 'Oz chat' })).not.toBeInTheDocument()
   })
 
-  it('lists field mobile workflows in the left nav and deep-links a workflow', async () => {
-    const user = userEvent.setup()
+  it('does not list mobile workflow shortcuts in the left nav', () => {
     window.location.hash = '#/field-app'
     render(<App />)
-    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument()
-    expect(
-      within(screen.getByRole('navigation', { name: 'Primary navigation' })).getByText('Mobile workflows'),
-    ).toBeInTheDocument()
-    await user.click(
-      within(screen.getByRole('navigation', { name: 'Primary navigation' })).getByRole('button', {
-        name: 'Customer history',
-      }),
-    )
-    expect(window.location.hash).toBe('#/field-mw--customer-interactions')
-    expect(screen.getByTestId('field-mobile-workflow-bench')).toBeInTheDocument()
-    expect(screen.getByTestId('field-workflow-card-customer-interactions')).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: 'Primary navigation' })
+    expect(within(nav).queryByText('Mobile workflows')).not.toBeInTheDocument()
+    expect(within(nav).queryByRole('button', { name: 'Customer history' })).not.toBeInTheDocument()
   })
 
   it('renders Field Notes when hash is #/field-notes', () => {

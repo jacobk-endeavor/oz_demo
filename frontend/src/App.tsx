@@ -60,6 +60,7 @@ import {
   type BackgroundAgentFlowState,
 } from './features/backgroundAgents/backgroundAgentModel'
 import { BackgroundAgentsPage } from './features/backgroundAgents/BackgroundAgentsPage'
+import { KnowledgeBasePage } from './features/oz/KnowledgeBasePage'
 import { DashboardGeneratorPage } from './features/dashboardGenerator/DashboardGeneratorPage'
 import { FieldNotesPage } from './features/fieldNotes/FieldNotesPage'
 import { QuotesReadyForReviewPage } from './features/quotesReady/QuotesReadyForReviewPage'
@@ -93,8 +94,6 @@ const allPages = new Set<Page>([
   'tables',
   'files',
   'knowledge-base',
-  'scheduled-tasks',
-  'logs',
   'nebula',
   'field-notes',
   'quotes-ready',
@@ -127,8 +126,7 @@ const pageMeta: Record<Exclude<Page, FieldMobileNavId>, PageMeta> = {
   'field-app': {
     eyebrow: 'Workspace',
     title: 'Field App',
-    subtitle:
-      'Voice-only. Home is the orb. Open each mobile workflow from the left nav to iterate in isolation (prototype).',
+    subtitle: 'Voice-only. Home is the orb.',
   },
   tables: {
     eyebrow: 'Workspace',
@@ -144,17 +142,7 @@ const pageMeta: Record<Exclude<Page, FieldMobileNavId>, PageMeta> = {
   'knowledge-base': {
     eyebrow: 'Workspace',
     title: 'Knowledge Base',
-    subtitle: 'Playbooks, specs, and source material the team can cite in customer conversations.',
-  },
-  'scheduled-tasks': {
-    eyebrow: 'Workspace',
-    title: 'Scheduled Tasks',
-    subtitle: 'Recurring and one-off automations for this workspace.',
-  },
-  logs: {
-    eyebrow: 'Workspace',
-    title: 'Logs',
-    subtitle: 'Execution history and errors for runs launched from the command center.',
+    subtitle: 'Add files from your machine; each one is ingested and shown as a table.',
   },
   nebula: {
     eyebrow: 'Workflow',
@@ -1049,6 +1037,12 @@ export default function App() {
                     />
                   </div>
                 )
+            : page === 'knowledge-base'
+              ? (
+                  <div className="h-full min-h-0 min-w-0 overflow-hidden">
+                    <KnowledgeBasePage />
+                  </div>
+                )
               : (
                   <PlaceholderSubtabPage name={meta.title} pageId={page} />
                 )
@@ -1092,6 +1086,7 @@ export default function App() {
       fullBleed={
         page === 'dashboards' ||
         page === 'background-agents' ||
+        page === 'knowledge-base' ||
         page === 'quotes-ready' ||
         page === 'quote-automation' ||
         (showLeadForWorkspace && page !== 'oz' && !showLumberYard)
@@ -1099,6 +1094,7 @@ export default function App() {
       contextWide={
         page === 'dashboards' ||
         page === 'background-agents' ||
+        page === 'knowledge-base' ||
         page === 'quotes-ready' ||
         page === 'quote-automation' ||
         showLumberYard ||
