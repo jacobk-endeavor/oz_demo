@@ -13,8 +13,8 @@ export const QUOTES_READY_CHANGED_EVENT = 'oz-quotes-ready-changed' as const
 
 const MAX_QUOTES = 12
 
-export const JCR_CROWN_REVIEW_ID = 'QRV-DEMO-JCR-CROWN' as const
-export const JCR_CROWN_REVIEW_FILE = 'voice-quote-crown-tsp-rc-cell-build.xlsx' as const
+export const JCR_CROWN_REVIEW_ID = 'QRV-DEMO-JCR-CARTER' as const
+export const JCR_CROWN_REVIEW_FILE = 'voice-quote-sammy-carter-tsp-rc-cell-build.xlsx' as const
 export const JCR_KENNY_REVIEW_ID = 'QRV-DEMO-JCR-KENNY' as const
 export const JCR_KENNY_REVIEW_FILE = 'voice-quote-kenny-hills-deck-package.xlsx' as const
 
@@ -167,9 +167,9 @@ export function applyJcrQuoteValues(id: string, values: Record<string, string | 
 }
 
 /**
- * Seeds the voice-quote demo card (Crown · TSP RC Cell Build) so users can click into it
- * from #/quotes-ready and edit the Excel-like Job Cost Recap directly. Skipped if the
- * card was already present (e.g. user removed it — we do not re-add).
+ * Seeds the voice-quote demo card (Sammy Carter · automation cell upgrade) so users can click
+ * into it from #/quotes-ready and edit the Excel-like Job Cost Recap directly. Skipped
+ * if the card was already present (e.g. user removed it — we do not re-add).
  */
 export function seedJcrCrownQuoteIfAbsent(): void {
   if (import.meta.env.VITEST || typeof window === 'undefined') return
@@ -181,7 +181,7 @@ export function seedJcrCrownQuoteIfAbsent(): void {
     createdAt: new Date().toISOString(),
     source: 'jcr-quote',
     pdfBase64: '',
-    customerSummary: 'Crown · TSP RC Cell Build (Q25-1102) — voice quote template',
+    customerSummary: 'Sammy Carter · automation cell upgrade (Q25-1102) — voice quote template',
     jcrSeed: 'crown',
   }
   writeLocal([entry, ...list].slice(0, MAX_QUOTES))

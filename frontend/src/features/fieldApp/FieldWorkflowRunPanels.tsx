@@ -533,7 +533,7 @@ function ProspectQuoteSheetCard({
 
 export function RunBackgroundQuote() {
   const [invoiceMsg, setInvoiceMsg] = useState<string | null>(null)
-  // The schema's literal example is Crown / Q25-1102 / TSP RC Cell Build —
+  // The voice-demo example is Sammy Carter / Q25-1102 / automation cell upgrade —
   // populate every cell so the demo reads as a finished, formula-balanced
   // Excel quote from the JSON template.
   const overrides = useMemo(() => ({ ...JCR_JSON_EXAMPLE_DEFAULTS }), [])
@@ -552,12 +552,12 @@ export function RunBackgroundQuote() {
         data-testid="field-bg-quote-status"
       >
         <p className="text-sm font-medium text-emerald-900">
-          Quote sheet ready — pre-filled from the <strong>Q25-1102 (Crown / TSP RC Cell Build)</strong> example.
+          Quote sheet ready — pre-filled from the <strong>Q25-1102 (Sammy Carter · automation cell upgrade)</strong> example.
         </p>
       </div>
       <JobCostEstimateRecapSheet
         initialOverrides={overrides}
-        caption="Quote sheet — Crown · TSP RC Cell Build (Q25-1102, demo)"
+        caption="Quote sheet — Sammy Carter · automation cell upgrade (Q25-1102, demo)"
         onCreateInvoice={({ computed }) => {
           const total = computed.total_cost ?? 0
           const profit = computed.profit ?? 0

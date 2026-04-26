@@ -1,7 +1,7 @@
 /**
  * Job Cost Estimate Recap — Excel-like demo quote schema.
  *
- * Mirrors the "Job Cost Recap" sheet of Q26-0002-04 (TSP RC Cell Build) used
+ * Mirrors the "Job Cost Recap" sheet of Q26-0002-04 (automation cell upgrade) used
  * for on-site field entry. The Field App voice flow renders this as an
  * editable, formula-live grid in place of the old PDF/spinner so the rep can
  * walk through each section like an Excel sheet and hand off to invoicing.
@@ -54,11 +54,11 @@ export interface JcrSection {
 export type JcrFieldRef = { kind: 'input'; field: JcrInputField } | { kind: 'computed'; field: JcrComputedField }
 
 /**
- * JSON-template example: Crown / TSP RC Cell Build (Q25-1102), the literal
- * "Job Cost Recap" demo embedded in the form schema spec. The schema's own
- * defaults are sparse (most are null) — this set fills in realistic numbers
- * for every field so the sheet loads as a fully-populated, formula-balanced
- * quote and works as a "render an actual quote from this JSON" demo.
+ * Voice-demo example: Sammy Carter / automation cell upgrade (ref Q25-1102). The
+ * sheet loads fully populated so the demo "renders an actual quote from the
+ * JSON template" with formula-balanced totals. Sammy Carter is the buyer —
+ * a person (small-fab-shop owner), not a company — so the script can run as
+ * a one-on-one voice walkthrough.
  *
  * Sanity check (matches what the live formulas should compute):
  *   mech design  120h × $68 = 8,160 ; elec design  80h × $68 = 5,440  → design  13,600
@@ -72,11 +72,12 @@ export const JCR_JSON_EXAMPLE_DEFAULTS = {
   date: '2026-04-26',
   project_number: 'Q26-0002-04',
   ref_quote_numbers: 'Q25-1102',
-  customer_name: 'Crown',
+  customer_name: 'Sammy Carter',
   project_manager: 'James',
-  customer_po_number: 'PO-CRN-26-0002',
+  // Empty by default → auto-generated at sheet load by `buildInitialJcrValues`.
+  customer_po_number: '',
   job_description:
-    'TSP RC Cell Build — robotic cell with conveyor integration, programmable PLC controls, safety guarding, vision pick verification, and on-site commissioning at Crown’s plant. Includes FAT, training package, and 90-day post-install support.',
+    'Automation cell upgrade for Sammy Carter’s fab shop — robotic pick cell with conveyor integration, programmable PLC controls, safety guarding, vision pick verification, and on-site commissioning. Includes FAT, training package, and 90-day post-install support.',
   order_value: 285_000,
   customer_supplied_equipment_value: 0,
   electrical_components: 38_500,
@@ -111,7 +112,7 @@ export const KENNY_HILLS_JCR_DEFAULTS = {
   project_number: 'P26-0428-KH',
   ref_quote_numbers: 'Q26-0428-KH',
   customer_name: 'Kenny Hills Contracting',
-  project_manager: 'Sami',
+  project_manager: 'Alex',
   customer_po_number: 'PO-KH-2026-0428',
   job_description:
     'Capped composite deck package: lead deck line + Apex hidden fasteners (added day-after on prior order — closing same-trip this time) + color-matched fascia / riser bundle on long runs. Coastal pool surround, ¼″ drainage gap, ICC-ESR backed clip system.',
@@ -469,6 +470,17 @@ export const JCR_TOTAL_ROWS = 46
 export const JCR_TOTAL_COLS = 7
 export const JCR_COL_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const
 
+/** Prefix marker for free-text cell overrides stored alongside field values. */
+export const JCR_CELL_OVERRIDE_PREFIX = '__cell:'
+
+export function jcrCellOverrideKey(row: number, col: number): string {
+  return `${JCR_CELL_OVERRIDE_PREFIX}${row},${col}`
+}
+
+export function isJcrCellOverrideKey(key: string): boolean {
+  return key.startsWith(JCR_CELL_OVERRIDE_PREFIX)
+}
+
 /** Returns input + computed numeric values for formula evaluation. */
 export function evaluateJcr(values: Record<string, string | number>): Record<string, number> {
   const num = (id: string): number => {
@@ -491,6 +503,29 @@ export function evaluateJcr(values: Record<string, string | number>): Record<str
   return ctx
 }
 
+/**
+ * Auto-generate a customer PO from a customer name. Used by `buildInitialJcrValues`
+ * so the rep doesn't have to dictate a PO from scratch — the cell loads pre-filled
+ * with a date-stamped slug, and the rep can edit later if the customer supplies
+ * a real PO. Format: `PO-{slug}-{YYYYMMDD}-{rand4}`.
+ */
+export function autoGenerateCustomerPoNumber(customerName: string | null | undefined): string {
+  const slug =
+    (customerName ?? '')
+      .toString()
+      .trim()
+      .split(/\s+/)
+      .filter((t) => t.length > 0)
+      .map((t) => t[0]!.toUpperCase() + t.slice(1).toLowerCase())
+      .join('')
+      .replace(/[^A-Za-z0-9]/g, '')
+      .slice(0, 12) || 'CUSTOMER'
+  const d = new Date()
+  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase()
+  return `PO-${slug}-${ymd}-${rand}`
+}
+
 export function buildInitialJcrValues(
   overrides?: Partial<Record<string, string | number>>,
 ): Record<string, string | number> {
@@ -504,6 +539,13 @@ export function buildInitialJcrValues(
     for (const [k, v] of Object.entries(overrides)) {
       if (v != null) out[k] = v
     }
+  }
+  // Auto-generate the customer PO if it's still blank after defaults + overrides.
+  // Saves the rep from having to dictate one cold; they can edit if the customer supplies a real PO.
+  const po = out['customer_po_number']
+  if (typeof po !== 'string' || po.trim() === '') {
+    const customer = typeof out['customer_name'] === 'string' ? (out['customer_name'] as string) : ''
+    out['customer_po_number'] = autoGenerateCustomerPoNumber(customer)
   }
   return out
 }

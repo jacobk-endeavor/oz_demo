@@ -290,7 +290,7 @@ export function QuotesReadyForReviewPage() {
                 caption={
                   selected.jcrSeed === 'kenny-hills'
                     ? 'Voice walkthrough quote — Kenny Hills Contracting'
-                    : 'Quote sheet — Crown · TSP RC Cell Build (Q25-1102)'
+                    : 'Quote sheet — Sammy Carter · automation cell upgrade (Q25-1102)'
                 }
                 onValuesChange={(values) => applyJcrQuoteValues(selected.id, values)}
                 onCreateInvoice={({ computed }) => {

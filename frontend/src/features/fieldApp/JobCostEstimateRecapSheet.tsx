@@ -5,6 +5,7 @@ import {
   evaluateJcr,
   formatJcrValue,
   jcrCellAddress,
+  jcrCellOverrideKey,
   JCR_COL_LETTERS,
   JCR_COMPUTED,
   JCR_SECTIONS,
@@ -122,6 +123,24 @@ export function JobCostEstimateRecapSheet({
     setValues((v) => ({ ...v, [id]: value }))
   }
 
+  function setCellOverride(row: number, col: number, text: string) {
+    const key = jcrCellOverrideKey(row, col)
+    setValues((v) => {
+      if (text === '') {
+        if (!(key in v)) return v
+        const next = { ...v }
+        delete next[key]
+        return next
+      }
+      return { ...v, [key]: text }
+    })
+  }
+
+  function getCellOverride(row: number, col: number): string | undefined {
+    const v = values[jcrCellOverrideKey(row, col)]
+    return typeof v === 'string' ? v : undefined
+  }
+
   const activeContent = activeCell ? cellMap.get(cellKey(activeCell.row, activeCell.col)) ?? null : null
   const activeAddress = activeCell ? jcrCellAddress(activeCell.row, activeCell.col) : ''
   const activeFormula =
@@ -236,6 +255,8 @@ export function JobCostEstimateRecapSheet({
                       values={values}
                       computed={computed}
                       setField={setField}
+                      cellOverride={getCellOverride(row, col)}
+                      setCellOverride={(text) => setCellOverride(row, col, text)}
                     />
                   )
                 })}
@@ -257,20 +278,40 @@ interface CellProps {
   values: Record<string, string | number>
   computed: Record<string, number>
   setField: (id: string, value: string | number) => void
+  cellOverride: string | undefined
+  setCellOverride: (text: string) => void
 }
 
-function SheetCell({ row, col, content, isActive, onActivate, values, computed, setField }: CellProps) {
+function SheetCell({
+  row,
+  col,
+  content,
+  isActive,
+  onActivate,
+  values,
+  computed,
+  setField,
+  cellOverride,
+  setCellOverride,
+}: CellProps) {
   const baseClass = joinClasses(
     'border border-zinc-200 align-middle',
     isActive ? 'outline outline-2 outline-emerald-500/80 outline-offset-[-2px]' : '',
   )
 
   if (!content) {
+    // Empty cells are still editable — typed text becomes a free-text annotation.
     return (
-      <td
-        className={joinClasses(baseClass, 'h-7 bg-white px-1 py-0.5 text-zinc-400')}
-        onClick={onActivate}
-      />
+      <td className={joinClasses(baseClass, 'h-7 bg-white p-0')} onClick={onActivate}>
+        <input
+          type="text"
+          value={cellOverride ?? ''}
+          onChange={(e) => setCellOverride(e.target.value)}
+          onFocus={onActivate}
+          className="block h-full w-full border-0 bg-transparent px-1.5 py-0.5 text-[12.5px] text-zinc-700 focus:outline-none focus:ring-0"
+          aria-label={`Free cell ${jcrCellAddress(row, col)}`}
+        />
+      </td>
     )
   }
 
@@ -279,13 +320,17 @@ function SheetCell({ row, col, content, isActive, onActivate, values, computed, 
     return (
       <td
         colSpan={span}
-        className={joinClasses(
-          baseClass,
-          'bg-emerald-100/80 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-emerald-900',
-        )}
+        className={joinClasses(baseClass, 'bg-emerald-100/80 p-0')}
         onClick={onActivate}
       >
-        {content.title}
+        <input
+          type="text"
+          value={cellOverride ?? content.title}
+          onChange={(e) => setCellOverride(e.target.value === content.title ? '' : e.target.value)}
+          onFocus={onActivate}
+          className="block w-full border-0 bg-transparent px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-emerald-900 focus:outline-none focus:ring-0"
+          aria-label={`Section title ${jcrCellAddress(row, col)}`}
+        />
       </td>
     )
   }
@@ -295,12 +340,18 @@ function SheetCell({ row, col, content, isActive, onActivate, values, computed, 
     return (
       <td
         colSpan={span}
-        className={joinClasses(baseClass, 'bg-zinc-50/80 px-2 py-1 text-zinc-700')}
+        className={joinClasses(baseClass, 'bg-zinc-50/80 p-0')}
         title={content.helpText}
         onClick={onActivate}
       >
-        {content.text}
-        {content.helpText ? <span className="ml-1 text-[10px] text-zinc-400">ⓘ</span> : null}
+        <input
+          type="text"
+          value={cellOverride ?? content.text}
+          onChange={(e) => setCellOverride(e.target.value === content.text ? '' : e.target.value)}
+          onFocus={onActivate}
+          className="block w-full border-0 bg-transparent px-2 py-1 text-[12.5px] text-zinc-700 focus:outline-none focus:ring-0"
+          aria-label={`Label ${jcrCellAddress(row, col)}`}
+        />
       </td>
     )
   }
@@ -308,16 +359,30 @@ function SheetCell({ row, col, content, isActive, onActivate, values, computed, 
   if (content.kind === 'computed') {
     const f = content.field
     const value = computed[f.id] ?? 0
+    const formatted = formatJcrValue(value, f.format)
+    const display = cellOverride ?? formatted
+    const isOverridden = cellOverride != null
     return (
       <td
         className={joinClasses(
           baseClass,
-          'bg-blue-50/70 px-2 py-1 text-right font-mono tabular-nums text-blue-900',
+          'p-0',
+          isOverridden ? 'bg-amber-50/80' : 'bg-blue-50/70',
         )}
         title={f.formulaSrc ?? ''}
         onClick={onActivate}
       >
-        {formatJcrValue(value, f.format)}
+        <input
+          type="text"
+          value={display}
+          onChange={(e) => setCellOverride(e.target.value === formatted ? '' : e.target.value)}
+          onFocus={onActivate}
+          className={joinClasses(
+            'block w-full border-0 bg-transparent px-2 py-1 text-right font-mono tabular-nums focus:outline-none focus:ring-0',
+            isOverridden ? 'text-amber-900' : 'text-blue-900',
+          )}
+          aria-label={`Computed cell ${jcrCellAddress(row, col)} (${f.label})`}
+        />
       </td>
     )
   }

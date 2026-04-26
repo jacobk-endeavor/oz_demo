@@ -107,7 +107,7 @@ export function QuoteAutomationWorkspace({
         <div className="space-y-5" data-testid="voice-quote-sheets">
           <JobCostEstimateRecapSheet
             initialOverrides={{ ...JCR_JSON_EXAMPLE_DEFAULTS }}
-            caption="Template example — Crown · TSP RC Cell Build (Q25-1102)"
+            caption="Template example — Sammy Carter · automation cell upgrade (Q25-1102)"
             onCreateInvoice={({ computed }) => {
               const total = computed.total_cost ?? 0
               const profit = computed.profit ?? 0
