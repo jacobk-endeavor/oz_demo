@@ -17,7 +17,7 @@ import {
   type FieldProductDemoStep,
 } from './FieldWorkflowRunPanels'
 import { useFieldMicrophone } from './useFieldMicrophone'
-import { buildFieldScriptQueue } from './fieldDemoScriptQueue'
+import { buildFieldScriptQueue, nextScriptStartIndex } from './fieldDemoScriptQueue'
 import { useFieldVoiceTurnTaking } from './fieldVoiceTurnTaking'
 
 const safeBottom = 'pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]'
@@ -149,6 +149,21 @@ function FieldAppVoiceColumn() {
     [micStatus, chooseMicDevice, setPreferredMicId],
   )
 
+  const skipTarget = nextScriptStartIndex(queue, stepIndex)
+  const canSkipScript =
+    skipTarget !== null && (phase === 'listening' || phase === 'speaking' || phase === 'oz')
+  const onSkipScript = useCallback(() => {
+    if (skipTarget === null) return
+    cancelTtsRef.current = true
+    stopFieldTts()
+    setTtsError(null)
+    setStepIndex(skipTarget)
+    setPhase('listening')
+  }, [skipTarget])
+
+  const [chromeHidden, setChromeHidden] = useState(false)
+  const toggleChrome = useCallback(() => setChromeHidden((prev) => !prev), [])
+
   const ozPulse = useSpeechLikePulse(phase === 'oz')
   const showFullMicUI = !micOnboardingDone || micSetupExpanded
   const drivePulseFromMic = phase === 'listening' || phase === 'speaking'
@@ -166,15 +181,17 @@ function FieldAppVoiceColumn() {
         safeBottom,
       )}
       data-testid="field-app-surface"
+      onDoubleClick={toggleChrome}
+      title="Double-click to hide or show the surrounding UI"
     >
       <div className="pointer-events-auto flex min-h-0 flex-1 flex-col" data-testid="field-voice-column">
         <div className={joinClasses('flex min-h-0 flex-1 flex-col', safeTop)}>
-          <SessionHeader />
+          {chromeHidden ? null : <SessionHeader />}
           <div
             className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-4 py-3"
             data-testid="field-app-voice-home"
           >
-            {showFullMicUI ? (
+            {!chromeHidden && showFullMicUI ? (
               <FieldMicrophoneControl
                 idPrefix="field-voice-home"
                 devices={devices}
@@ -189,7 +206,7 @@ function FieldAppVoiceColumn() {
                 compact
               />
             ) : null}
-            {ttsError ? (
+            {!chromeHidden && ttsError ? (
               <p
                 className="max-w-sm rounded-xl border border-rose-200/80 bg-rose-50/70 px-3 py-2 text-center text-xs text-rose-900"
                 role="alert"
@@ -212,13 +229,25 @@ function FieldAppVoiceColumn() {
                 label={orbLabel}
               />
             </button>
-            <div className="flex w-full max-w-sm flex-col items-center gap-1 text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                Step {stepNumber} of {queue.length}
-              </p>
-              <p className="text-sm font-medium text-zinc-800">{stepLabel}</p>
-              <p className="text-xs text-zinc-600">{statusLine}</p>
-            </div>
+            {chromeHidden ? null : (
+              <div className="flex w-full max-w-sm flex-col items-center gap-1 text-center">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  Step {stepNumber} of {queue.length}
+                </p>
+                <p className="text-sm font-medium text-zinc-800">{stepLabel}</p>
+                <p className="text-xs text-zinc-600">{statusLine}</p>
+                {canSkipScript ? (
+                  <button
+                    type="button"
+                    onClick={onSkipScript}
+                    className="mt-2 rounded-full border border-zinc-300/80 bg-white/80 px-3 py-1 text-[11px] font-medium text-zinc-700 shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                    data-testid="field-app-skip-script"
+                  >
+                    Skip to next script →
+                  </button>
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
       </div>

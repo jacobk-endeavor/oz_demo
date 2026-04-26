@@ -14,31 +14,20 @@ export const SCRIPT1_OPEN_REPLY =
 export const SCRIPT1_AFTER_AUDIO_SUMMARY =
   'That’s the snapshot. Anytime you want a line read back with the notes and ballpark numbers, just say the word.'
 
-/** Script 2 — home route into product recommend. */
-export const SCRIPT2_OPEN_REPLY =
-  'On it. I’m opening the What to recommend run—start from the visit signal, then you can go deeper on specs and use cases on screen.'
-
-/** Script 2 — visit signal (Kenny). */
+/** Script 2 — recommendation reply (jumps straight into the visit signal, no on-screen routing). */
 export const TTS_RECOMMEND =
   'Last time at Kenny Hills they had to call back a day later to add Apex Hidden Fasteners. Lead with your quoted capped composite line, then place Apex hidden fasteners in the conversation now so they do not leave without them. If they are stepping up, the deck drainage pitch still plays well on wet sites.'
-
-/** Script 2 — after “tell me more about specs.” */
-export const SCRIPT2_SPEC_BRIDGE =
-  'Got it—here are the spec highlights. Jump in when you want the ICC detail, or just hit me with the next question.'
 
 /** Script 2 — use cases. */
 export const TTS_USE_CASES =
   'Coastal decks, pool surrounds, and anywhere you want a clean face with no top screws. Min one-quarter inch gapping for drainage in wet climates.'
 
-/** Script 2 — transition into upsell run. */
-export const SCRIPT2_UPSELL_INTRO =
-  'Makes sense. I’m opening upsell and cross-sell for Kenny—the usual rhythm is lead line, paired fasteners, then the common third add.'
-
-/** Script 2 — bundle walkthrough. */
+/** Script 2 — bundle / cross-sell walkthrough. */
 export const TTS_UPSELL =
   'For accounts like Kenny Hills, when buyers take your primary deck recommendation together with Apex hidden fasteners, history shows a third add: color-matched fascia or a riser bundle on long runs. Position that third line as the typical completion package.'
 
-export const SCRIPT2_EMAIL_REPLY = 'It’ll be in your email when you arrive.'
+/** Script 2 — closing reply when the rep asks for specs by email. */
+export const SCRIPT2_EMAIL_SENDING_REPLY = 'Ok, sending.'
 
 /** Script 5 — drive-time background quote (initial route; aligns with `scripts.md`). */
 export const SCRIPT5_BACKGROUND_QUOTE_OPEN =
