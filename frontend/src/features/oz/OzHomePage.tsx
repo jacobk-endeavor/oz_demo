@@ -13,7 +13,7 @@ const journey = [
   },
   {
     title: 'Work the lead grid in Tables',
-    description: 'Open the Milwaukee distributor set, then sort, filter, and act from chat on Home or here.',
+    description: 'Open the Milwaukee distributor set, then sort, filter, and act from chat on Oz or here.',
     cta: 'Open Tables',
     page: 'tables',
   },

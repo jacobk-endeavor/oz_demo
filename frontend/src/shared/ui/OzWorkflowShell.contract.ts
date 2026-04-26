@@ -78,7 +78,7 @@ export const workspaceNavItems: readonly OzWorkspaceNavItem[] = [
 
 export const topNavItems: ReadonlyArray<{ id: 'oz' | 'search'; label: string; icon: IconComponent }> =
   [
-    { id: 'oz', label: 'Home', icon: HomeIcon },
+    { id: 'oz', label: 'Oz', icon: HomeIcon },
     { id: 'search', label: 'Search', icon: SearchIcon },
   ]
 

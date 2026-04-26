@@ -54,7 +54,7 @@ export function BackgroundAgentsPage({ agents, onNewAgent, onDeleteAgent }: Back
       </div>
       {agents.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/80 px-6 py-10 text-center text-sm text-zinc-600">
-          No background agents yet. Open <strong className="font-medium text-zinc-800">Home</strong> and ask Oz to{' '}
+          No background agents yet. Open <strong className="font-medium text-zinc-800">Oz</strong> and ask Oz to{' '}
           <strong className="font-medium text-zinc-800">Create a Background Agent</strong> with a task and a
           schedule, or use the button above to jump there.
         </div>
