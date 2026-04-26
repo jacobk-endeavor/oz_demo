@@ -1,6 +1,6 @@
 # Field App voice demo — runbook
 
-Single linear demo. You tap the orb once and walk through eight turns. Each turn: read your line aloud, pause, Oz plays the next line, mic re-opens. Repeat until done.
+Single linear demo. You tap the orb once and walk through fourteen turns. Each turn: read your line aloud, pause, Oz plays the next line, mic re-opens. Repeat until done.
 
 A **Skip to next script →** button appears under the status line once the run starts. Tap it to stop the current Oz line, jump past the rest of the active script, and land in `listening` at the first turn of the next script. Disabled on the final script.
 
@@ -21,19 +21,19 @@ A **Skip to next script →** button appears under the status line once the run 
 | **Speaking** | Orb pulses heavily as you talk. Status: *Listening — keep going.* | Finish your line; stop talking. |
 | **Oz** | Orb pulses on its own, speech-like rhythm. Status: *Oz is speaking…* | Wait. The mic is paused; the orb's motion comes from a synthesized envelope, not your voice. |
 | **(loop)** | Orb returns to mic-driven pulse. | Read the next line. |
-| **Done** | Dim orb. Status: *All 8 lines played. Tap the orb to run the demo again.* | Tap to restart, or navigate away. |
+| **Done** | Dim orb. Status: *All 14 lines played. Tap the orb to run the demo again.* | Tap to restart, or navigate away. |
 
 The advance trigger is a 1-second silence after you've actually been speaking (linear-RMS VAD with 0.04 / 0.025 thresholds; tunable in [`fieldVoiceTurnTaking.ts`](../../frontend/src/features/fieldApp/fieldVoiceTurnTaking.ts)). If the room is loud and Oz won't advance, step closer to the mic or speak a bit louder; if Oz advances too eagerly, slow down — make sure you don't have ≥1s pauses mid-line.
 
-## The eight turns
+## The fourteen turns
 
-Read the **You say** column aloud. Oz answers with the **Oz says** column verbatim. The demo arc is Scripts 1–4 (formerly Scripts 1–5; old Scripts 2 and 3 are now merged into one "Recommend & cross-sell" script that ends on the email-the-specs handoff).
+Read the **You say** column aloud. Oz answers with the **Oz says** column verbatim. The demo arc is Scripts 1–5: customer history (Kenny Hills) → recommend & cross-sell → **field-meeting voice memo (lands in Field Notes)** → **Sammy Carter quote (one-by-one Q&A on the Job Cost Recap sheet)** → background quote handoff. Script 3 is the voice-memo turn that runs **before** the quote build so the dictated context is in Field Notes by the time the quote work starts. Script 4 (the quote Q&A) is six turns covering one logical block of the Q26-0002-04 / Q25-1102 sheet each.
 
 ### Script 1 — Customer history (Kenny Hills visit prep)
 
 | # | You say (read aloud) | Oz plays |
 | --- | --- | --- |
-| 1 | *"I'm about to visit contractor Kenny Hills — what have we sold them, and what notes are on the account?"* | *"I've got you, Sami. I'm opening Kenny Hills now—you'll get recent orders, value bands, and the field and service notes so you're not walking in cold."* |
+| 1 | *"I'm about to visit contractor Kenny Hills — what have we sold them, and what notes are on the account?"* | *"I've got you, Alex. I'm opening Kenny Hills now—you'll get recent orders, value bands, and the field and service notes so you're not walking in cold."* |
 | 2 | *"Read me the audio summary."* (or any short prompt — the system only listens for you to stop) | *"Kenny Hills Contracting is a reliable customer that is currently focusing on selling pool deck lines. In November, they bought a heavy lift cap composite resurfacing option, and it's the biggest dollar item on the account. From there, they've bought Westbury Rail to match their pool deck collection and have been looking for hidden fasteners of different types to make their orders pop for their customers. They are really pushing for clean surfaces with no screws showing."* |
 
 ### Script 2 — Recommend & cross-sell
@@ -45,19 +45,36 @@ Read the **You say** column aloud. Oz answers with the **Oz says** column verbat
 | 5 | *"For Kenny Hills, what do accounts usually add when they buy what I am recommending, plus the fasteners?"* | *"For accounts like Kenny Hills, when buyers take your primary deck recommendation together with Apex hidden fasteners, history shows a third add: color-matched fascia or a riser bundle on long runs. Position that third line as the typical completion package."* |
 | 6 | *"Ok send me the product specs to my email."* | *"Ok, sending."* |
 
-### Script 3 — Prospect Q&A
+### Script 3 — Field-meeting voice memo
+
+A short non-quote turn. Oz acks the recording, the rep dictates a free-form memo about the meeting they just left, and the demo automatically saves the memo to **Field Notes → Incoming voice memos** at `#/field-notes`. The dictation below is the canned demo memo for the Sammy Carter walkthrough; in a real run you'd say whatever the meeting needs — the orb advances on silence, no transcription.
 
 | # | You say (read aloud) | Oz plays |
 | --- | --- | --- |
-| 7 | *"Run a visit note for this order — capture who they are, what we are ordering, and where it ships."* | *"Okay, cool. One: Who was the customer, who were you speaking to, and what were they trying to buy? Name any specific products or line items. Two: Who else are they trying to purchase from, and who have they already spoken to? Three: What insights do we have from the call, how was the interaction, and anything else that matters for the note? Four: What are we ordering: parts, SKUs, and quantities, including any alternates you talked through? Five: Where is it shipping: full address, and any job site or delivery notes? I will line your answers up in the order background and your note."* |
+| 7 | *"Just left Sammy Carter's fab shop. Walked the floor with Sammy and his maintenance lead Mike. Sammy wants to upgrade the second packaging line — manual case packing is the bottleneck, about an hour a day on changeover. Robotic pick cell with vision and P-L-C, install before Q3, open to leasing if cap-ex is tight. Action items: pull the Q twenty-five dash eleven oh two spec, get the floor envelope from Mike, walk back with the cost recap."* | *"Cool, recording."* |
 
-### Script 4 — Background quote
+After this turn, open `#/field-notes` and you'll see the memo at the top of the **Incoming voice memos** table (customer "Sammy Carter", salesman "Alex"). Click *View conversation* to see the full dictation.
+
+### Script 4 — Sammy Carter quote (one-by-one Q&A → Job Cost Recap sheet)
+
+The voice walkthrough fills the same Q26-0002-04 / Q25-1102 sheet you see on `#/quotes-ready` and `#/quote-automation`. Each turn covers one block of the JCR template; expected answers below match the seeded demo data — say them as listed and the sheet stays in sync. The customer P-O is **auto-generated** when the sheet first renders (date-stamped, format `PO-SammyCarter-YYYYMMDD-XXXX`), so you don't dictate one — Oz tells you that on turn 8, and you can edit cell B8 later if Sammy supplies a real PO.
 
 | # | You say (read aloud) | Oz plays |
 | --- | --- | --- |
-| 8 | *"Queue a background quote for me while I drive."* | *"Sounds good. I'm queuing a background quote to the web team—you'll get a handoff, not the full five-question visit note."* |
+| 8 | *"Let's spec out Sammy Carter's quote — the automation cell upgrade at his fab shop."* | *"Got it, Alex. First — give me the project basics for Sammy Carter's automation cell upgrade: what project number, which existing quote we're tying to, and which P-M leads on our side? I'll auto-generate the P-O on the sheet — you can edit it after if Sammy supplies a real one."* |
+| 9 | *"Project Q twenty-six dash zero zero zero two dash zero four, ref quote Q twenty-five dash eleven oh two, James leads on our side."* | *"Locked. Next — give me a one-line job description and the order value Sammy sees on the cover."* |
+| 10 | *"Robotic cell — conveyor integration, P-L-C controls, safety guarding, vision pick verification, on-site commissioning at Sammy's shop. Order value two hundred eighty-five thousand."* | *"Got it. Component costs — break it down: electrical, commercial mechanical, manufactured mechanical."* |
+| 11 | *"Thirty-eight thousand five hundred electrical, sixty-two thousand commercial mechanical, no manufactured mechanical."* | *"Labor next. Design hours and assembly hours — mechanical first, then electrical. We'll keep our standard rates: sixty-eight an hour for design, sixty-one for assembly."* |
+| 12 | *"One twenty mechanical design, eighty electrical design, two forty mechanical assembly, one sixty electrical assembly."* | *"Last block — indirect labor, travel, shipping, any sales commission, and the payment schedule. Walk me through it."* |
+| 13 | *"Sixty-five hundred indirect, forty-two hundred travel, twenty-eight hundred shipping, no commission. Payment schedule: half on P-O acceptance, half Net thirty after F-A-T."* | *"Locked in. Sammy's Job Cost Recap is staged — total cost about one hundred fifty-six thousand, profit one hundred twenty-eight thousand, around forty-five percent margin. Open the sheet to review and queue the invoice."* |
 
-After turn 8, the orb dims and the status reads *All 8 lines played. Tap the orb to run the demo again.*
+### Script 5 — Background quote
+
+| # | You say (read aloud) | Oz plays |
+| --- | --- | --- |
+| 14 | *"Queue a background quote for me while I drive."* | *"Sounds good. I'm queuing a background quote to the web team—you'll get a handoff, not the full five-question visit note."* |
+
+After turn 14, the orb dims and the status reads *All 14 lines played. Tap the orb to run the demo again.*
 
 ## If something goes wrong
 
@@ -68,8 +85,9 @@ After turn 8, the orb dims and the status reads *All 8 lines played. Tap the orb
 
 ## Where the lines live
 
-- All eight Oz strings are constants in [`fieldDemoVoiceCopy.ts`](../../frontend/src/features/fieldApp/fieldDemoVoiceCopy.ts), [`fieldDemoKennyData.ts`](../../frontend/src/features/fieldApp/fieldDemoKennyData.ts) (`KENNY_TTS_AUDIO_BRIEF`), and [`prospectNotesData.ts`](../../frontend/src/features/fieldApp/prospectNotesData.ts) (`buildProspectOpeningTtsText()`).
+- All thirteen Oz strings are constants in [`fieldDemoVoiceCopy.ts`](../../frontend/src/features/fieldApp/fieldDemoVoiceCopy.ts) (Scripts 1, 2, 3 turns 1–6, and 4) and [`fieldDemoKennyData.ts`](../../frontend/src/features/fieldApp/fieldDemoKennyData.ts) (`KENNY_TTS_AUDIO_BRIEF`).
 - The order — and which turns belong to which script (used by the **Skip to next script** button) — is the queue in [`fieldDemoScriptQueue.ts`](../../frontend/src/features/fieldApp/fieldDemoScriptQueue.ts).
+- The Sammy Carter / TSP RC Cell Build demo data the Script 3 answers must match is in [`jobCostEstimateRecap.ts`](../../frontend/src/features/fieldApp/jobCostEstimateRecap.ts) (`JCR_JSON_EXAMPLE_DEFAULTS`). Change the seed values there if you want the rep to read different numbers.
 - To rewrite a line, edit the constant. To reorder turns, edit the queue. Tag each step with the right `scriptIndex` so Skip jumps to the correct boundary.
 - To add or remove a turn, edit the queue and (if it's a new constant) the corresponding voice-copy file.
 

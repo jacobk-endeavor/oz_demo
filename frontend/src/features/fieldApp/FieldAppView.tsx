@@ -19,6 +19,7 @@ import {
 import { useFieldMicrophone } from './useFieldMicrophone'
 import { buildFieldScriptQueue, nextScriptStartIndex } from './fieldDemoScriptQueue'
 import { useFieldVoiceTurnTaking } from './fieldVoiceTurnTaking'
+import { captureSammyCarterFieldMemo } from './fieldDemoVoiceMemo'
 
 const safeBottom = 'pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]'
 const safeTop = 'pt-[max(0.5rem,env(safe-area-inset-top,0px))]'
@@ -96,6 +97,16 @@ function FieldAppVoiceColumn() {
     void playFieldElevenTts(step.ozSays, { sessionKey: 'field-script' })
       .then(() => {
         if (cancelTtsRef.current) return
+        if (step.sideEffect === 'capture-field-memo') {
+          // The "Cool, recording" turn — drop the demo memo into Field Notes
+          // so it appears in the "Incoming voice memos" table by the time the
+          // rep navigates there after the run.
+          try {
+            captureSammyCarterFieldMemo()
+          } catch {
+            /* demo-only persistence — ignore failures (e.g. localStorage off) */
+          }
+        }
         const next = stepIndex + 1
         setStepIndex(next)
         setPhase(next < queue.length ? 'listening' : 'done')

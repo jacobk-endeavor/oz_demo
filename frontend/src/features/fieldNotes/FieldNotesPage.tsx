@@ -12,6 +12,7 @@ import {
   isMockPriorityBriefId,
   MOCK_PRIORITY_BRIEFS,
 } from './fieldNotesPriorityData'
+import { readStoredVoiceMemos, VOICE_MEMOS_CHANGED_EVENT } from './voiceMemoStore'
 
 const PRIORITY_BRIEFS_KEY = 'field-notes-priority-briefs-v1'
 const DISMISSED_MOCK_BRIEF_IDS_KEY = 'field-notes-mock-briefs-dismissed-v1'
@@ -255,13 +256,39 @@ export function FieldNotesPage() {
   const [userPriorityBriefs, setUserPriorityBriefs] = useState<PriorityBriefCard[]>(() => readUserPriorityBriefs())
   const [dismissedMockBriefIds, setDismissedMockBriefIds] = useState<string[]>(() => readDismissedMockBriefIds())
   const [priorityDraft, setPriorityDraft] = useState('')
+  const [storedMemos, setStoredMemos] = useState<VoiceMemoRow[]>(() => readStoredVoiceMemos())
 
   useEffect(() => {
     setUserPriorityBriefs(readUserPriorityBriefs())
     setDismissedMockBriefIds(readDismissedMockBriefIds())
+    setStoredMemos(readStoredVoiceMemos())
   }, [])
 
-  const rows = useMemo(() => VOICE_MEMO_DEMO, [])
+  // Refresh when the voice flow appends a new memo (or another tab does).
+  useEffect(() => {
+    function onChanged() {
+      setStoredMemos(readStoredVoiceMemos())
+    }
+    window.addEventListener(VOICE_MEMOS_CHANGED_EVENT, onChanged)
+    window.addEventListener('storage', onChanged)
+    return () => {
+      window.removeEventListener(VOICE_MEMOS_CHANGED_EVENT, onChanged)
+      window.removeEventListener('storage', onChanged)
+    }
+  }, [])
+
+  const rows = useMemo<VoiceMemoRow[]>(() => {
+    // Merge runtime-recorded memos (newest first) with the canned demo set,
+    // de-duped by id and sorted by atIso desc so the freshest dictation lands at the top.
+    const seen = new Set<string>()
+    const combined: VoiceMemoRow[] = []
+    for (const r of [...storedMemos, ...VOICE_MEMO_DEMO]) {
+      if (seen.has(r.id)) continue
+      seen.add(r.id)
+      combined.push(r)
+    }
+    return combined.sort((a, b) => b.atIso.localeCompare(a.atIso))
+  }, [storedMemos])
 
   const combinedPriorityBriefs = useMemo(() => {
     const mocks = MOCK_PRIORITY_BRIEFS.filter((b) => !dismissedMockBriefIds.includes(b.id))
