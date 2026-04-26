@@ -13,26 +13,37 @@ export const QUOTES_READY_CHANGED_EVENT = 'oz-quotes-ready-changed' as const
 
 const MAX_QUOTES = 12
 
-function generateReviewCode(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const r = Math.random().toString(36).slice(2, 6).toUpperCase()
-  return `QRV-${y}${m}${day}-${r}`
-}
+export const JCR_CROWN_REVIEW_ID = 'QRV-DEMO-JCR-CROWN' as const
+export const JCR_CROWN_REVIEW_FILE = 'voice-quote-crown-tsp-rc-cell-build.xlsx' as const
+export const JCR_KENNY_REVIEW_ID = 'QRV-DEMO-JCR-KENNY' as const
+export const JCR_KENNY_REVIEW_FILE = 'voice-quote-kenny-hills-deck-package.xlsx' as const
+
+export type JcrSeed = 'crown' | 'kenny-hills'
 
 export type QuoteReadyForReviewEntry = {
   /** Human-readable review code, e.g. QRV-20260425-A3F2 */
   id: string
   fileName: string
   createdAt: string
-  source: 'prospect-order-background' | 'demo-invoice'
-  /** Raw PDF bytes as base64 (no data: prefix) */
+  source: 'prospect-order-background' | 'demo-invoice' | 'jcr-quote'
+  /** Raw PDF bytes as base64 (no data: prefix). Empty for jcr-quote entries. */
   pdfBase64: string
   customerSummary?: string
   /** When source is demo-invoice — used to rebuild the PDF after edits. */
   demoInvoiceFields?: DemoInvoiceEditFields
+  /** When source is jcr-quote — which schema preset to seed the sheet from. */
+  jcrSeed?: JcrSeed
+  /** When source is jcr-quote — last-edited cell values, persisted across navigation. */
+  jcrSavedValues?: Record<string, string | number>
+}
+
+function normalizeJcrSavedValues(raw: unknown): Record<string, string | number> | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const out: Record<string, string | number> = {}
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === 'string' || typeof v === 'number') out[k] = v
+  }
+  return Object.keys(out).length > 0 ? out : undefined
 }
 
 function parseStored(raw: string | null): QuoteReadyForReviewEntry[] {
@@ -41,21 +52,28 @@ function parseStored(raw: string | null): QuoteReadyForReviewEntry[] {
     const p = JSON.parse(raw) as unknown
     if (!Array.isArray(p)) return []
     return p
-      .filter(
-        (x) =>
-          x != null &&
-          typeof (x as QuoteReadyForReviewEntry).id === 'string' &&
-          typeof (x as QuoteReadyForReviewEntry).pdfBase64 === 'string',
-      )
+      .filter((x) => x != null && typeof (x as QuoteReadyForReviewEntry).id === 'string')
       .map((x) => {
         const e = x as QuoteReadyForReviewEntry
-        const source = e.source === 'demo-invoice' ? 'demo-invoice' : 'prospect-order-background'
+        const source: QuoteReadyForReviewEntry['source'] =
+          e.source === 'demo-invoice'
+            ? 'demo-invoice'
+            : e.source === 'jcr-quote'
+              ? 'jcr-quote'
+              : 'prospect-order-background'
         const demoInvoiceFields =
           source === 'demo-invoice' ? normalizeDemoInvoiceFields(e.demoInvoiceFields) : undefined
+        const jcrSeed: JcrSeed | undefined =
+          source === 'jcr-quote' ? (e.jcrSeed === 'kenny-hills' ? 'kenny-hills' : 'crown') : undefined
+        const jcrSavedValues =
+          source === 'jcr-quote' ? normalizeJcrSavedValues(e.jcrSavedValues) : undefined
         return {
           ...e,
           source,
+          pdfBase64: typeof e.pdfBase64 === 'string' ? e.pdfBase64 : '',
           demoInvoiceFields,
+          jcrSeed,
+          jcrSavedValues,
         }
       })
   } catch {
@@ -87,23 +105,6 @@ function writeLocal(entries: QuoteReadyForReviewEntry[]): void {
   }
 }
 
-function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader()
-    r.onload = () => {
-      const s = r.result
-      if (typeof s !== 'string') {
-        reject(new Error('read failed'))
-        return
-      }
-      const i = s.indexOf(',')
-      resolve(i >= 0 ? s.slice(i + 1) : s)
-    }
-    r.onerror = () => reject(r.error ?? new Error('read failed'))
-    r.readAsDataURL(blob)
-  })
-}
-
 export function base64ToPdfBlob(b64: string): Blob {
   const bin = atob(b64)
   const bytes = new Uint8Array(bin.length)
@@ -117,30 +118,6 @@ function dispatchChanged(): void {
   } catch {
     /* ignore */
   }
-}
-
-/**
- * When a Field prospect / order background PDF is generated, register it for the “Quotes ready” review queue.
- */
-export async function registerQuoteReadyFromProspectOrder(opts: {
-  blob: Blob
-  fileName: string
-  answers: Record<number, string>
-}): Promise<QuoteReadyForReviewEntry | null> {
-  if (import.meta.env.VITEST) return null
-  const pdfBase64 = await blobToBase64(opts.blob)
-  const entry: QuoteReadyForReviewEntry = {
-    id: generateReviewCode(),
-    fileName: opts.fileName,
-    createdAt: new Date().toISOString(),
-    source: 'prospect-order-background',
-    pdfBase64,
-    customerSummary: (opts.answers[0] ?? '').trim().slice(0, 200) || undefined,
-  }
-  const next = [entry, ...readQuotesReadyForReview()].slice(0, MAX_QUOTES)
-  writeLocal(next)
-  dispatchChanged()
-  return entry
 }
 
 export function removeQuoteReady(id: string): void {
@@ -166,6 +143,48 @@ export function applyDemoInvoiceFieldsUpdate(id: string, fields: DemoInvoiceEdit
     customerSummary: buildCustomerSummaryFromDemoFields(fields),
   }
   writeLocal(list)
+  dispatchChanged()
+}
+
+/** Persist edited Job Cost Recap values for a jcr-quote entry. */
+export function applyJcrQuoteValues(id: string, values: Record<string, string | number>): void {
+  if (import.meta.env.VITEST || typeof window === 'undefined') return
+  const list = readQuotesReadyForReview()
+  const idx = list.findIndex((e) => e.id === id)
+  if (idx < 0) return
+  const e = list[idx]
+  if (e.source !== 'jcr-quote') return
+  const customer = typeof values.customer_name === 'string' ? values.customer_name : ''
+  const ref = typeof values.ref_quote_numbers === 'string' ? values.ref_quote_numbers : ''
+  const summaryBits = [customer, ref].filter(Boolean).join(' · ')
+  list[idx] = {
+    ...e,
+    jcrSavedValues: { ...values },
+    customerSummary: summaryBits || e.customerSummary,
+  }
+  writeLocal(list)
+  dispatchChanged()
+}
+
+/**
+ * Seeds the voice-quote demo card (Crown · TSP RC Cell Build) so users can click into it
+ * from #/quotes-ready and edit the Excel-like Job Cost Recap directly. Skipped if the
+ * card was already present (e.g. user removed it — we do not re-add).
+ */
+export function seedJcrCrownQuoteIfAbsent(): void {
+  if (import.meta.env.VITEST || typeof window === 'undefined') return
+  const list = readQuotesReadyForReview()
+  if (list.some((e) => e.id === JCR_CROWN_REVIEW_ID)) return
+  const entry: QuoteReadyForReviewEntry = {
+    id: JCR_CROWN_REVIEW_ID,
+    fileName: JCR_CROWN_REVIEW_FILE,
+    createdAt: new Date().toISOString(),
+    source: 'jcr-quote',
+    pdfBase64: '',
+    customerSummary: 'Crown · TSP RC Cell Build (Q25-1102) — voice quote template',
+    jcrSeed: 'crown',
+  }
+  writeLocal([entry, ...list].slice(0, MAX_QUOTES))
   dispatchChanged()
 }
 

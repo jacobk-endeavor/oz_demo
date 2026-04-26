@@ -322,19 +322,11 @@ function orbLabelForPhase(phase: Phase): string {
 function FieldWorkflowMobileRoute({ workflowId }: { workflowId: FieldMobileWorkflowId }) {
   const w = getFieldMobileWorkflow(workflowId)
   const [productDemo, setProductDemo] = useState<FieldProductDemoStep>('answer')
-  const [quoteDemoDone, setQuoteDemoDone] = useState(false)
   const [prospectLocal, setProspectLocal] = useState<Record<number, string>>({})
 
   useEffect(() => {
     setProductDemo('answer')
-    setQuoteDemoDone(false)
     setProspectLocal({})
-  }, [workflowId])
-
-  useEffect(() => {
-    if (workflowId !== 'background-quote') return
-    const t = window.setTimeout(() => setQuoteDemoDone(true), 2800)
-    return () => window.clearTimeout(t)
   }, [workflowId])
 
   if (!w) return null
@@ -363,7 +355,6 @@ function FieldWorkflowMobileRoute({ workflowId }: { workflowId: FieldMobileWorkf
               workflow={w}
               productDemo={productDemo}
               onProductDemo={setProductDemo}
-              quoteDone={quoteDemoDone}
               prospectNotesValue={workflowId === 'prospect-notes' ? prospectLocal : undefined}
               onProspectNotesChange={workflowId === 'prospect-notes' ? setProspectLocal : undefined}
             />
@@ -413,14 +404,12 @@ function WorkflowRunPanel({
   workflow,
   productDemo,
   onProductDemo,
-  quoteDone,
   prospectNotesValue,
   onProspectNotesChange,
 }: {
   workflow: FieldMobileWorkflow
   productDemo: FieldProductDemoStep
   onProductDemo: (s: FieldProductDemoStep) => void
-  quoteDone: boolean
   prospectNotesValue?: Record<number, string>
   onProspectNotesChange?: (next: Record<number, string>) => void
 }) {
@@ -434,7 +423,7 @@ function WorkflowRunPanel({
       {workflow.id === 'prospect-notes' && (
         <RunProspectNotes value={prospectNotesValue} onChange={onProspectNotesChange} />
       )}
-      {workflow.id === 'background-quote' && <RunBackgroundQuote done={quoteDone} />}
+      {workflow.id === 'background-quote' && <RunBackgroundQuote />}
     </div>
   )
 }

@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useId, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import { playFieldElevenTts, stopFieldTts, subscribeTtsSessionKey } from '../../services/fieldElevenTts'
-import { PauseIcon, PlayIcon, SpinnerIcon } from '../../shared/ui/icons'
+import { PauseIcon, PlayIcon } from '../../shared/ui/icons'
 import { joinClasses } from '../../shared/ui'
-import { downloadProspectOrderPdf } from './prospectOrderPdf'
 import { appendFieldNotesVisitLog, buildFullNoteFromParts } from './fieldNotesVisitLog'
 import { buildProspectOpeningTtsText, isProspectCoreQuoteReady, PROSPECT_QS } from './prospectNotesData'
 import {
@@ -13,6 +12,9 @@ import {
   KENNY_SALES_ROWS,
 } from './fieldDemoKennyData'
 import { KENNY_TTS_AUDIO_BRIEF, TTS_RECOMMEND, TTS_UPSELL } from './fieldDemoVoiceCopy'
+import { JobCostEstimateRecapSheet } from './JobCostEstimateRecapSheet'
+import { jcrOverridesFromProspectAnswers } from './jcrFromProspectAnswers'
+import { JCR_JSON_EXAMPLE_DEFAULTS } from './jobCostEstimateRecap'
 
 export type FieldProductDemoStep = 'answer' | 'specPrompt' | 'useCases'
 
@@ -366,9 +368,9 @@ export function RunProspectNotes({
         This is the <strong>visit order + note</strong> session (five on-screen fields). The <strong>Background quote (drive
         time)</strong> tool in the top strip is a <strong>separate</strong> handoff for queuing a quote in the app — use
         both or one. Oz asks the five visit topics; when you have <strong>customer, line items, and ship-to</strong>,
-        you can go straight to quote and Oz will not push the optional lines unless you are still adding them. Download
-        a PDF, log to <strong>Field notes</strong>, and open Quote Automation as needed; add a need-by in the quote modal
-        if asked.
+        you can go straight to quote and Oz will not push the optional lines unless you are still adding them. The
+        <strong> Job Cost Recap sheet</strong> below pre-fills from your answers — edit any cell, then{' '}
+        <strong>Log to Field notes</strong> or <strong>Open Quote Automation</strong>.
       </p>
       {quoteCoreReady ? (
         <div
@@ -388,34 +390,7 @@ export function RunProspectNotes({
         className="border-fuchsia-200/80 bg-fuchsia-50/50 text-fuchsia-950"
       />
 
-      <div className="rounded-2xl border border-fuchsia-200/80 bg-fuchsia-50/40 p-3">
-        <p className="text-xs font-semibold uppercase text-fuchsia-900">Order background template (demo)</p>
-        <p className="mt-1 text-sm text-fuchsia-950/90">
-          Populated from your answers below — line items and ship-to are the handoff for fulfillment and quote.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:gap-2">
-            <button
-              type="button"
-              onClick={() => downloadProspectOrderPdf({ answers, repLabel: 'Field rep (demo)' })}
-              className="rounded-xl border border-fuchsia-300/80 bg-white px-3 py-1.5 text-sm font-medium text-fuchsia-950 hover:bg-fuchsia-100/50"
-            >
-              Download PDF
-            </button>
-            <p className="text-[11px] text-fuchsia-900/80">
-              Each download adds a <strong>review code</strong> (QRV-…) to the <strong>Quotes Ready for Review</strong>{' '}
-              workflow, where you can open the same file in a PDF viewer.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={logVisitToFieldNotes}
-            className="rounded-xl border border-fuchsia-600/40 bg-fuchsia-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-fuchsia-700"
-          >
-            Log visit to Field notes
-          </button>
-        </div>
-      </div>
+      <ProspectQuoteSheetCard answers={answers} onLogVisit={logVisitToFieldNotes} />
 
       <ol className="list-decimal space-y-3 pl-4 text-sm text-zinc-800">
         {PROSPECT_QS.map((q, i) => (
@@ -507,23 +482,99 @@ export function RunProspectNotes({
   )
 }
 
-export function RunBackgroundQuote({ done }: { done: boolean }) {
+/**
+ * Editable Excel-like quote sheet, pre-filled from the prospect Q&A answers.
+ * Replaces the prior PDF download flow — same template (Job Cost Recap),
+ * same handoff to Field notes, but the rep edits cells directly instead of
+ * generating a static PDF.
+ */
+function ProspectQuoteSheetCard({
+  answers,
+  onLogVisit,
+}: {
+  answers: Record<number, string>
+  onLogVisit: () => void
+}) {
+  const overrides = useMemo(() => jcrOverridesFromProspectAnswers(answers), [answers])
+  // Re-mount the sheet when the seeded fields change so prospect edits flow into the cells.
+  const sheetKey = useMemo(
+    () => `${overrides.customer_name ?? ''}|${(overrides.job_description ?? '') as string}`,
+    [overrides],
+  )
   return (
-    <div className="space-y-3">
+    <div
+      className="rounded-2xl border border-fuchsia-200/80 bg-fuchsia-50/40 p-3"
+      data-testid="prospect-quote-sheet-card"
+    >
+      <p className="text-xs font-semibold uppercase text-fuchsia-900">Quote sheet (Job Cost Recap, demo)</p>
+      <p className="mt-1 text-sm text-fuchsia-950/90">
+        Pre-filled with your visit answers and Kenny Hills demo defaults. Edit any cell, then log the visit or
+        kick off the invoice.
+      </p>
+      <div className="mt-3">
+        <JobCostEstimateRecapSheet
+          key={sheetKey}
+          initialOverrides={overrides}
+          caption="Quote sheet from prospect visit (editable)"
+        />
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onLogVisit}
+          className="rounded-xl border border-fuchsia-600/40 bg-fuchsia-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-fuchsia-700"
+        >
+          Log visit to Field notes
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export function RunBackgroundQuote() {
+  const [invoiceMsg, setInvoiceMsg] = useState<string | null>(null)
+  // The schema's literal example is Crown / Q25-1102 / TSP RC Cell Build —
+  // populate every cell so the demo reads as a finished, formula-balanced
+  // Excel quote from the JSON template.
+  const overrides = useMemo(() => ({ ...JCR_JSON_EXAMPLE_DEFAULTS }), [])
+  return (
+    <div className="space-y-3" data-testid="field-bg-quote">
       <div className="rounded-2xl border border-violet-200/80 bg-violet-50/50 p-3">
         <p className="text-xs font-semibold uppercase text-violet-800">Web app agent (background)</p>
-        <p className="mt-0.5 text-sm text-violet-950/90">Quote job queued. Field stays voice-first; open Nebula for line detail.</p>
+        <p className="mt-0.5 text-sm text-violet-950/90">
+          Voice-triggered quote drafted into the <strong>Job Cost Recap</strong> sheet below (Q26-0002-04 template).
+          Every cell is editable, formulas update live as you change hours, rates, or component costs. When the
+          numbers look right, hit <strong>Create invoice from sheet</strong>.
+        </p>
       </div>
-      <div className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-3">
-        {!done ? (
-          <>
-            <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin text-violet-600" aria-hidden="true" />
-            <p className="text-sm text-zinc-800">Generating quote… (demo progress)</p>
-          </>
-        ) : (
-          <p className="text-sm font-medium text-emerald-800">Ready for review in Quote Automation (mock)</p>
-        )}
+      <div
+        className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3"
+        data-testid="field-bg-quote-status"
+      >
+        <p className="text-sm font-medium text-emerald-900">
+          Quote sheet ready — pre-filled from the <strong>Q25-1102 (Crown / TSP RC Cell Build)</strong> example.
+        </p>
       </div>
+      <JobCostEstimateRecapSheet
+        initialOverrides={overrides}
+        caption="Quote sheet — Crown · TSP RC Cell Build (Q25-1102, demo)"
+        onCreateInvoice={({ computed }) => {
+          const total = computed.total_cost ?? 0
+          const profit = computed.profit ?? 0
+          const margin = computed.profit_margin ?? 0
+          setInvoiceMsg(
+            `Invoice queued (demo). Total cost $${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}, profit $${profit.toLocaleString(undefined, { maximumFractionDigits: 2 })} (${(margin * 100).toFixed(1)}% margin).`,
+          )
+        }}
+      />
+      {invoiceMsg ? (
+        <p
+          className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-900"
+          role="status"
+        >
+          {invoiceMsg}
+        </p>
+      ) : null}
     </div>
   )
 }

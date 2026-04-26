@@ -59,7 +59,7 @@ export interface OzWorkflowNavItem {
 export const workflowNavItems: readonly OzWorkflowNavItem[] = [
   { id: 'nebula', label: 'Overview', accent: 'zinc' },
   { id: 'field-notes', label: 'Field notes', accent: 'emerald' },
-  { id: 'quotes-ready', label: 'Quotes Ready for Review', accent: 'rose' },
+  { id: 'quotes-ready', label: 'Voice Quote Automation', accent: 'rose' },
   { id: 'dashboards', label: 'Dashboards', accent: 'sky' },
   { id: 'background-agents', label: 'Background agents', accent: 'violet' },
 ] as const

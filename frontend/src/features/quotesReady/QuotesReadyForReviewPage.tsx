@@ -10,13 +10,17 @@ import {
 } from './dummyDemoInvoice'
 import {
   applyDemoInvoiceFieldsUpdate,
+  applyJcrQuoteValues,
   base64ToPdfBlob,
   type QuoteReadyForReviewEntry,
   QUOTES_READY_CHANGED_EVENT,
   readQuotesReadyForReview,
   removeQuoteReady,
   seedDummyInvoiceIfAbsent,
+  seedJcrCrownQuoteIfAbsent,
 } from './quotesReadyForReviewStore'
+import { JobCostEstimateRecapSheet } from '../fieldApp/JobCostEstimateRecapSheet'
+import { JCR_JSON_EXAMPLE_DEFAULTS } from '../fieldApp/jobCostEstimateRecap'
 
 function formatWhen(iso: string): string {
   try {
@@ -57,6 +61,7 @@ export function QuotesReadyForReviewPage() {
 
   useEffect(() => {
     seedDummyInvoiceIfAbsent()
+    seedJcrCrownQuoteIfAbsent()
     sync()
   }, [sync])
 
@@ -181,8 +186,8 @@ export function QuotesReadyForReviewPage() {
       <div className="rounded-2xl border border-sky-200/80 bg-gradient-to-r from-sky-50/90 to-white px-4 py-3 shadow-sm sm:px-5">
         <h2 className="text-sm font-semibold text-zinc-900">Quotes ready for review</h2>
         <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-          <strong>Pick a card</strong> to open details — the PDF only loads after you choose to preview it, so the list
-          stays light. The sample invoice is fully editable; Field PDFs are view-only here.
+          <strong>Pick a card</strong> to open details. <strong>Voice quote</strong> cards open the editable Job Cost
+          Recap sheet (formulas live). The sample invoice is line-item editable; Field PDFs are view-only here.
         </p>
       </div>
 
@@ -214,6 +219,10 @@ export function QuotesReadyForReviewPage() {
                       {e.source === 'demo-invoice' ? (
                         <span className="rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-rose-800">
                           Demo
+                        </span>
+                      ) : e.source === 'jcr-quote' ? (
+                        <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
+                          Voice quote
                         </span>
                       ) : (
                         <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600">
@@ -258,6 +267,43 @@ export function QuotesReadyForReviewPage() {
             </div>
           </div>
 
+          {selected?.source === 'jcr-quote' ? (
+            <div
+              className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-4"
+              data-testid="quotes-ready-jcr-detail"
+            >
+              <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-950">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+                  Voice quote (Job Cost Recap)
+                </p>
+                <p className="mt-0.5">
+                  {selected.customerSummary ?? selected.fileName}. Edit any cell — formulas update live and your
+                  changes save back to this card automatically.
+                </p>
+              </div>
+              <JobCostEstimateRecapSheet
+                key={selected.id}
+                initialOverrides={{
+                  ...(selected.jcrSeed === 'kenny-hills' ? {} : JCR_JSON_EXAMPLE_DEFAULTS),
+                  ...(selected.jcrSavedValues ?? {}),
+                }}
+                caption={
+                  selected.jcrSeed === 'kenny-hills'
+                    ? 'Voice walkthrough quote — Kenny Hills Contracting'
+                    : 'Quote sheet — Crown · TSP RC Cell Build (Q25-1102)'
+                }
+                onValuesChange={(values) => applyJcrQuoteValues(selected.id, values)}
+                onCreateInvoice={({ computed }) => {
+                  const total = computed.total_cost ?? 0
+                  const profit = computed.profit ?? 0
+                  const margin = computed.profit_margin ?? 0
+                  window.alert(
+                    `Invoice queued (demo).\nTotal cost $${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}\nProfit $${profit.toLocaleString(undefined, { maximumFractionDigits: 2 })} (${(margin * 100).toFixed(1)}% margin)`,
+                  )
+                }}
+              />
+            </div>
+          ) : (
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:min-h-[min(100%,32rem)] lg:flex-row">
             {/* Left: editor / field context */}
             <div className="min-h-0 min-w-0 flex-1 overflow-y-auto border-b border-zinc-200/80 p-3 sm:p-4 lg:max-w-[min(100%,24rem)] lg:shrink-0 xl:max-w-md">
@@ -460,6 +506,7 @@ export function QuotesReadyForReviewPage() {
               )}
             </div>
           </div>
+          )}
         </div>
       )}
 

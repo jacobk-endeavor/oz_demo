@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button, Panel, PulseOrb, Tag, joinClasses } from '../../shared/ui'
 import { quoteAutomationDemoData } from './demoData'
 import type { QuoteAutomationDemoData, TaskStatus } from './types'
+import { JobCostEstimateRecapSheet } from '../fieldApp/JobCostEstimateRecapSheet'
+import { JCR_JSON_EXAMPLE_DEFAULTS } from '../fieldApp/jobCostEstimateRecap'
 
 interface QuoteAutomationWorkspaceProps {
   data?: QuoteAutomationDemoData
@@ -36,6 +38,9 @@ export function QuoteAutomationWorkspace({
   const [fieldHandoff, setFieldHandoff] = useState<string | null>(null)
   const [activeTaskIndex, setActiveTaskIndex] = useState(0)
   const [isReviewSubmitted, setIsReviewSubmitted] = useState(false)
+  const [showVoiceWalkthroughQuote, setShowVoiceWalkthroughQuote] = useState(false)
+  const [templateInvoiceMsg, setTemplateInvoiceMsg] = useState<string | null>(null)
+  const [voiceInvoiceMsg, setVoiceInvoiceMsg] = useState<string | null>(null)
 
   useEffect(() => {
     try {
@@ -56,7 +61,12 @@ export function QuoteAutomationWorkspace({
         p.needBy && `Need by: ${p.needBy}`,
         p.po && `PO: ${p.po}`,
       ].filter(Boolean)
-      if (bits.length) setFieldHandoff(bits.join(' · '))
+      if (bits.length) {
+        setFieldHandoff(bits.join(' · '))
+        // A field handoff means the rep already walked the voice process — surface
+        // the second quote card immediately.
+        setShowVoiceWalkthroughQuote(true)
+      }
     } catch {
       /* ignore */
     }
@@ -88,6 +98,82 @@ export function QuoteAutomationWorkspace({
           <p className="mt-1 leading-relaxed">{fieldHandoff}</p>
         </div>
       ) : null}
+
+      <Panel
+        eyebrow="Voice quote automation"
+        title="Editable Job Cost Recap sheets"
+        description="Excel-like quote sheets — formulas live as you edit. The first card is the schema template loaded by default; the second card is generated from the field voice walkthrough."
+      >
+        <div className="space-y-5" data-testid="voice-quote-sheets">
+          <JobCostEstimateRecapSheet
+            initialOverrides={{ ...JCR_JSON_EXAMPLE_DEFAULTS }}
+            caption="Template example — Crown · TSP RC Cell Build (Q25-1102)"
+            onCreateInvoice={({ computed }) => {
+              const total = computed.total_cost ?? 0
+              const profit = computed.profit ?? 0
+              const margin = computed.profit_margin ?? 0
+              setTemplateInvoiceMsg(
+                `Invoice queued (demo). Total cost $${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}, profit $${profit.toLocaleString(undefined, { maximumFractionDigits: 2 })} (${(margin * 100).toFixed(1)}% margin).`,
+              )
+            }}
+          />
+          {templateInvoiceMsg ? (
+            <p
+              className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-900"
+              role="status"
+            >
+              {templateInvoiceMsg}
+            </p>
+          ) : null}
+
+          {showVoiceWalkthroughQuote ? (
+            <div data-testid="voice-walkthrough-quote-card" className="space-y-3">
+              <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50/60 px-3 py-2 text-sm text-fuchsia-950">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-fuchsia-800">From voice walkthrough</p>
+                <p className="mt-0.5">
+                  Generated from the Field voice scripts (capped composite line, Apex hidden fasteners, color-matched
+                  fascia). Edit any cell — formulas recompute live.
+                </p>
+              </div>
+              <JobCostEstimateRecapSheet
+                caption="Voice walkthrough quote — Kenny Hills Contracting"
+                onCreateInvoice={({ computed }) => {
+                  const total = computed.total_cost ?? 0
+                  const profit = computed.profit ?? 0
+                  const margin = computed.profit_margin ?? 0
+                  setVoiceInvoiceMsg(
+                    `Invoice queued (demo). Total cost $${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}, profit $${profit.toLocaleString(undefined, { maximumFractionDigits: 2 })} (${(margin * 100).toFixed(1)}% margin).`,
+                  )
+                }}
+              />
+              {voiceInvoiceMsg ? (
+                <p
+                  className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-900"
+                  role="status"
+                >
+                  {voiceInvoiceMsg}
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-fuchsia-300/80 bg-fuchsia-50/30 p-4">
+              <p className="text-sm text-fuchsia-950">
+                After the rep walks the voice process, a second quote sheet lands here pre-filled with the visit
+                answers (customer, line items, ship-to, call insights).
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowVoiceWalkthroughQuote(true)}
+                className="mt-3 inline-flex items-center justify-center rounded-xl border border-fuchsia-300 bg-fuchsia-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400"
+                data-testid="voice-walkthrough-generate"
+              >
+                Generate quote from voice walkthrough →
+              </button>
+            </div>
+          )}
+        </div>
+      </Panel>
+
       <Panel
         eyebrow="Quote automation"
         title={`Review workspace for ${data.customerName}`}
