@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useState, type MouseEvent } from 'react'
-import { ChevronLeftIcon } from '../../shared/ui/icons'
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { joinClasses } from '../../shared/ui'
+import { playFieldElevenTts, stopFieldTts } from '../../services/fieldElevenTts'
 import { FieldVoiceSphere } from './FieldVoiceSphere'
 import {
   type FieldMobileWorkflow,
   type FieldMobileWorkflowId,
-  FIELD_MOBILE_WORKFLOWS,
   getFieldMobileWorkflow,
 } from './fieldMobileWorkflows'
 import { FieldMicrophoneControl } from './FieldMicrophoneControl'
@@ -18,6 +17,8 @@ import {
   type FieldProductDemoStep,
 } from './FieldWorkflowRunPanels'
 import { useFieldMicrophone } from './useFieldMicrophone'
+import { buildFieldScriptQueue } from './fieldDemoScriptQueue'
+import { useFieldVoiceTurnTaking } from './fieldVoiceTurnTaking'
 
 const safeBottom = 'pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]'
 const safeTop = 'pt-[max(0.5rem,env(safe-area-inset-top,0px))]'
@@ -37,9 +38,13 @@ export function FieldAppView({ mode, workflowId }: FieldAppViewProps) {
   return <FieldAppVoiceColumn />
 }
 
+type Phase = 'idle' | 'listening' | 'speaking' | 'oz' | 'done'
+
 /**
- * Field App home: orb pulses to the live mic input. Eleven Labs TTS plays from the on-screen
- * "Hear" buttons inside each Run panel. No STT or LLM routing.
+ * Field App home: tap the orb to start. The mic opens, the rep speaks the next
+ * scripted line, and when they stop talking the next Eleven Labs line plays.
+ * Loops until every Oz line in `buildFieldScriptQueue()` (Scripts 1–5 from
+ * `scripts.md`, top to bottom) has played.
  */
 function FieldAppVoiceColumn() {
   const {
@@ -49,45 +54,87 @@ function FieldAppVoiceColumn() {
     error: micError,
     status: micStatus,
     connect: connectMic,
+    ensureStream: ensureMicStream,
     chooseDevice: chooseMicDevice,
     setPreferredDeviceId: setPreferredMicId,
     micOnboardingDone,
   } = useFieldMicrophone()
 
-  const [activeWorkflowId, setActiveWorkflowId] = useState<FieldMobileWorkflowId | null>(null)
-  const [productDemo, setProductDemo] = useState<FieldProductDemoStep>('answer')
-  const [quoteDemoDone, setQuoteDemoDone] = useState(false)
-  const [prospectAnswers, setProspectAnswers] = useState<Record<number, string>>({})
+  const queue = useMemo(buildFieldScriptQueue, [])
+  const [phase, setPhase] = useState<Phase>('idle')
+  const [stepIndex, setStepIndex] = useState(0)
+  const [ttsError, setTtsError] = useState<string | null>(null)
   const [micSetupExpanded, setMicSetupExpanded] = useState(false)
+  const cancelTtsRef = useRef(false)
 
+  const onSpeechStart = useCallback(() => {
+    setPhase((p) => (p === 'listening' ? 'speaking' : p))
+  }, [])
+
+  const onSpeechEnd = useCallback(() => {
+    setPhase((p) => (p === 'speaking' ? 'oz' : p))
+  }, [])
+
+  useFieldVoiceTurnTaking(
+    micStream,
+    phase === 'listening' || phase === 'speaking',
+    { onSpeechStart, onSpeechEnd },
+  )
+
+  // When phase enters 'oz', play the current step's TTS, then advance to the
+  // next step (or 'done' if we've exhausted the queue). On TTS error, surface
+  // the message and drop back to 'listening' so the rep can re-trigger.
   useEffect(() => {
-    if (activeWorkflowId !== 'background-quote' || quoteDemoDone) return
-    const t = window.setTimeout(() => setQuoteDemoDone(true), 2800)
-    return () => window.clearTimeout(t)
-  }, [activeWorkflowId, quoteDemoDone])
+    if (phase !== 'oz') return
+    const step = queue[stepIndex]
+    if (!step) {
+      setPhase('done')
+      return
+    }
+    cancelTtsRef.current = false
+    setTtsError(null)
+    void playFieldElevenTts(step.ozSays, { sessionKey: 'field-script' })
+      .then(() => {
+        if (cancelTtsRef.current) return
+        const next = stepIndex + 1
+        setStepIndex(next)
+        setPhase(next < queue.length ? 'listening' : 'done')
+      })
+      .catch((e: unknown) => {
+        if (cancelTtsRef.current) return
+        setTtsError(e instanceof Error ? e.message : String(e))
+        setPhase('listening')
+      })
+    return () => {
+      cancelTtsRef.current = true
+      stopFieldTts()
+    }
+  }, [phase, stepIndex, queue])
 
-  const goRun = useCallback((id: FieldMobileWorkflowId) => {
-    setActiveWorkflowId(id)
-    if (id === 'product-recommend') setProductDemo('answer')
-    if (id === 'background-quote') setQuoteDemoDone(false)
-    if (id === 'prospect-notes') setProspectAnswers({})
-  }, [])
+  const startRun = useCallback(async () => {
+    if (micStatus === 'connecting') return
+    const s = await ensureMicStream()
+    if (!s) {
+      setMicSetupExpanded(true)
+      return
+    }
+    setStepIndex(0)
+    setTtsError(null)
+    setPhase('listening')
+  }, [ensureMicStream, micStatus])
 
-  const onBackFromRun = useCallback(() => {
-    setActiveWorkflowId(null)
-    setProductDemo('answer')
-    setQuoteDemoDone(false)
-    setProspectAnswers({})
-  }, [])
-
-  const onHomeOrbClick = useCallback(
+  const onOrbClick = useCallback(
     (e: MouseEvent<HTMLButtonElement>) => {
       if (e.shiftKey && micOnboardingDone) {
         e.preventDefault()
         setMicSetupExpanded(true)
+        return
+      }
+      if (phase === 'idle' || phase === 'done') {
+        void startRun()
       }
     },
-    [micOnboardingDone],
+    [micOnboardingDone, phase, startRun],
   )
 
   const onFieldMicAllow = useCallback(() => {
@@ -102,8 +149,13 @@ function FieldAppVoiceColumn() {
     [micStatus, chooseMicDevice, setPreferredMicId],
   )
 
-  const def = activeWorkflowId ? getFieldMobileWorkflow(activeWorkflowId) : undefined
   const showFullMicUI = !micOnboardingDone || micSetupExpanded
+  const drivePulseFromMic = phase === 'listening' || phase === 'speaking'
+  const pulseTarget = drivePulseFromMic ? 1 : phase === 'oz' ? 0.6 : 0.16
+  const stepLabel = stepIndex < queue.length ? queue[stepIndex]!.label : 'Done'
+  const stepNumber = Math.min(stepIndex + 1, queue.length)
+  const statusLine = statusForPhase(phase, stepNumber, queue.length)
+  const orbLabel = orbLabelForPhase(phase)
 
   return (
     <div
@@ -116,40 +168,93 @@ function FieldAppVoiceColumn() {
     >
       <div className="pointer-events-auto flex min-h-0 flex-1 flex-col" data-testid="field-voice-column">
         <div className={joinClasses('flex min-h-0 flex-1 flex-col', safeTop)}>
-          <SessionHeader onBack={activeWorkflowId ? onBackFromRun : null} />
-          {activeWorkflowId && def ? (
-            <RunView
-              workflow={def}
-              productDemo={productDemo}
-              onProductDemo={setProductDemo}
-              quoteDemoDone={quoteDemoDone}
-              prospectAnswers={prospectAnswers}
-              onProspectAnswers={setProspectAnswers}
-              onPick={goRun}
-              micStream={micStream}
-            />
-          ) : (
-            <FieldVoiceHome
-              onHomeOrbClick={onHomeOrbClick}
-              showFullMic={showFullMicUI}
-              micOnboardingDone={micOnboardingDone}
-              micStream={micStream}
-              onCollapseMicSetup={() => setMicSetupExpanded(false)}
-              onPickWorkflow={goRun}
-              micProps={{
-                devices,
-                selectedDeviceId,
-                error: micError,
-                status: micStatus,
-                onAllow: onFieldMicAllow,
-                onPickDevice: onFieldMicPick,
-              }}
-            />
-          )}
+          <SessionHeader />
+          <div
+            className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-4 py-3"
+            data-testid="field-app-voice-home"
+          >
+            {showFullMicUI ? (
+              <FieldMicrophoneControl
+                idPrefix="field-voice-home"
+                devices={devices}
+                selectedDeviceId={selectedDeviceId}
+                status={micStatus}
+                error={micError}
+                onAllow={onFieldMicAllow}
+                onPickDevice={onFieldMicPick}
+                onDone={micOnboardingDone ? () => setMicSetupExpanded(false) : undefined}
+                showFirstTimeExplainer={!micOnboardingDone}
+                connectDisabled={micStatus === 'connecting'}
+                compact
+              />
+            ) : null}
+            {ttsError ? (
+              <p
+                className="max-w-sm rounded-xl border border-rose-200/80 bg-rose-50/70 px-3 py-2 text-center text-xs text-rose-900"
+                role="alert"
+              >
+                Voice failed: {ttsError}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={onOrbClick}
+              title={micOnboardingDone ? 'Shift-click to open microphone settings' : undefined}
+              className="touch-manipulation [touch-action:manipulation] flex flex-col items-center gap-3 rounded-3xl p-2 outline-none ring-blue-500/0 transition-transform active:scale-[0.99] focus-visible:ring-2"
+              aria-label={orbLabel}
+              data-testid="field-app-orb"
+            >
+              <FieldVoiceSphere
+                pulseTarget={pulseTarget}
+                micStream={drivePulseFromMic ? micStream : null}
+                drivePulseFromMic={drivePulseFromMic}
+                label={orbLabel}
+              />
+            </button>
+            <div className="flex w-full max-w-sm flex-col items-center gap-1 text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                Step {stepNumber} of {queue.length}
+              </p>
+              <p className="text-sm font-medium text-zinc-800">{stepLabel}</p>
+              <p className="text-xs text-zinc-600">{statusLine}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )
+}
+
+function statusForPhase(phase: Phase, stepNumber: number, total: number): string {
+  switch (phase) {
+    case 'idle':
+      return 'Tap the orb to start the demo.'
+    case 'listening':
+      return stepNumber === 1
+        ? 'Read your first line aloud. The next Oz line plays when you pause.'
+        : 'Read the next line aloud. The next Oz line plays when you pause.'
+    case 'speaking':
+      return 'Listening — keep going. Oz will pick up when you stop.'
+    case 'oz':
+      return 'Oz is speaking…'
+    case 'done':
+      return `All ${total} lines played. Tap the orb to run the demo again.`
+  }
+}
+
+function orbLabelForPhase(phase: Phase): string {
+  switch (phase) {
+    case 'idle':
+      return 'Tap the orb to start the demo. Oz answers between your lines.'
+    case 'listening':
+      return 'Listening. Speak your next line; Oz will reply when you pause.'
+    case 'speaking':
+      return 'Hearing you speak. Oz will reply when you stop.'
+    case 'oz':
+      return 'Oz is speaking. Wait for the line to finish.'
+    case 'done':
+      return 'Demo complete. Tap to start over.'
+  }
 }
 
 function FieldWorkflowMobileRoute({ workflowId }: { workflowId: FieldMobileWorkflowId }) {
@@ -234,196 +339,10 @@ function SingleWorkflowAuthoringCard({ workflow }: { workflow: FieldMobileWorkfl
   )
 }
 
-type HomeMic = {
-  devices: readonly MediaDeviceInfo[]
-  selectedDeviceId: string
-  error: string | null
-  status: 'idle' | 'connecting' | 'live' | 'denied' | 'unavailable'
-  onAllow: () => void
-  onPickDevice: (deviceId: string) => void
-}
-
-function FieldVoiceHome({
-  onHomeOrbClick,
-  showFullMic,
-  micOnboardingDone,
-  onCollapseMicSetup,
-  micStream,
-  onPickWorkflow,
-  micProps,
-}: {
-  onHomeOrbClick: (e: MouseEvent<HTMLButtonElement>) => void
-  showFullMic: boolean
-  micOnboardingDone: boolean
-  onCollapseMicSetup: () => void
-  micStream: MediaStream | null
-  onPickWorkflow: (id: FieldMobileWorkflowId) => void
-  micProps: HomeMic
-}) {
+function SessionHeader() {
   return (
-    <div
-      className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto px-4 py-3"
-      data-testid="field-app-voice-home"
-    >
-      {showFullMic ? (
-        <FieldMicrophoneControl
-          idPrefix="field-voice-home"
-          devices={micProps.devices}
-          selectedDeviceId={micProps.selectedDeviceId}
-          status={micProps.status}
-          error={micProps.error}
-          onAllow={micProps.onAllow}
-          onPickDevice={micProps.onPickDevice}
-          onDone={micOnboardingDone ? onCollapseMicSetup : undefined}
-          showFirstTimeExplainer={!micOnboardingDone}
-          connectDisabled={micProps.status === 'connecting'}
-          compact
-        />
-      ) : null}
-      <button
-        type="button"
-        onClick={onHomeOrbClick}
-        title={micOnboardingDone ? 'Shift-click to open microphone settings' : undefined}
-        className="touch-manipulation [touch-action:manipulation] flex flex-col items-center gap-4 rounded-3xl p-2 outline-none ring-blue-500/0 transition-transform active:scale-[0.99] focus-visible:ring-2"
-        aria-label="Field orb — pulses to your microphone level. Press a hotkey to play an Oz line."
-        data-testid="field-app-orb"
-      >
-        <FieldVoiceSphere
-          pulseTarget={1}
-          micStream={micStream}
-          drivePulseFromMic
-          label="Orb pulses to your mic input. Press a hotkey (see legend below) to play an Oz line."
-        />
-      </button>
-      <WorkflowPicker onPick={onPickWorkflow} />
-    </div>
-  )
-}
-
-function WorkflowPicker({ onPick }: { onPick: (id: FieldMobileWorkflowId) => void }) {
-  return (
-    <div className="w-full max-w-md space-y-2" data-testid="field-voice-intent-list">
-      <p className="px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Open a workflow</p>
-      {FIELD_MOBILE_WORKFLOWS.map((w) => (
-        <button
-          key={w.id}
-          type="button"
-          onClick={() => onPick(w.id)}
-          className="w-full rounded-2xl border border-zinc-200/80 bg-white/90 px-3 py-3 text-left shadow-sm transition hover:border-blue-200 hover:bg-sky-50/50"
-        >
-          <p className="text-xs font-medium text-zinc-500">{w.shortTitle}</p>
-          <p className="mt-0.5 text-sm leading-snug text-zinc-900">&ldquo;{w.examplePhrases[0]}&rdquo;</p>
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function RunView({
-  workflow,
-  productDemo,
-  onProductDemo,
-  quoteDemoDone,
-  prospectAnswers,
-  onProspectAnswers,
-  onPick,
-  micStream,
-}: {
-  workflow: FieldMobileWorkflow
-  productDemo: FieldProductDemoStep
-  onProductDemo: (s: FieldProductDemoStep) => void
-  quoteDemoDone: boolean
-  prospectAnswers: Record<number, string>
-  onProspectAnswers: (next: Record<number, string>) => void
-  onPick: (id: FieldMobileWorkflowId) => void
-  micStream: MediaStream | null
-}) {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col" data-testid="field-voice-session">
-      <FieldWorkflowChainBar activeId={workflow.id} onPick={onPick} />
-      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-2">
-        <WorkflowRunPanel
-          workflow={workflow}
-          productDemo={productDemo}
-          onProductDemo={onProductDemo}
-          quoteDone={quoteDemoDone}
-          prospectNotesValue={workflow.id === 'prospect-notes' ? prospectAnswers : undefined}
-          onProspectNotesChange={workflow.id === 'prospect-notes' ? onProspectAnswers : undefined}
-        />
-      </div>
-      <div
-        className="pointer-events-auto relative z-20 w-full max-w-lg shrink-0 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]"
-        data-testid="field-run-voice-dock"
-      >
-        <div className="flex flex-col items-center pb-1">
-          <FieldVoiceSphere
-            size="md"
-            pulseTarget={1}
-            micStream={micStream}
-            drivePulseFromMic
-            label="Orb pulses to your mic input. Press a hotkey to play an Oz line."
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FieldWorkflowChainBar({
-  activeId,
-  onPick,
-}: {
-  activeId: FieldMobileWorkflowId
-  onPick: (id: FieldMobileWorkflowId) => void
-}) {
-  return (
-    <div
-      className="shrink-0 border-b border-zinc-200/50 bg-zinc-50/60 px-2 py-1.5"
-      role="tablist"
-      aria-label="Switch workflow"
-    >
-      <div className="flex min-h-0 gap-1 overflow-x-auto [scrollbar-width:thin]">
-        {FIELD_MOBILE_WORKFLOWS.map((w) => {
-          const active = w.id === activeId
-          return (
-            <button
-              key={w.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onPick(w.id)}
-              className={joinClasses(
-                'shrink-0 touch-manipulation [touch-action:manipulation] rounded-lg px-2 py-1 text-xs font-medium transition',
-                active
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white/90 text-zinc-700 ring-1 ring-zinc-200/80 hover:bg-sky-50/80',
-              )}
-            >
-              {w.shortTitle}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function SessionHeader({ onBack }: { onBack: (() => void) | null }) {
-  return (
-    <div className="flex items-center gap-1 border-b border-zinc-200/60 bg-white/60 px-1 py-1">
-      {onBack ? (
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-200/50"
-          aria-label="Back"
-        >
-          <ChevronLeftIcon className="h-5 w-5" />
-        </button>
-      ) : (
-        <span className="inline-block h-10 w-10" aria-hidden="true" />
-      )}
-      <p className="min-w-0 flex-1 truncate pr-2 text-sm font-medium text-zinc-800">Voice with Oz</p>
+    <div className="flex items-center gap-1 border-b border-zinc-200/60 bg-white/60 px-3 py-2">
+      <p className="min-w-0 flex-1 text-sm font-medium text-zinc-800">Voice with Oz</p>
     </div>
   )
 }
