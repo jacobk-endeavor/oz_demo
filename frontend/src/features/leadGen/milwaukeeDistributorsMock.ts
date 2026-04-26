@@ -81,11 +81,12 @@ function buildRowFromSeed(i: number, seed: (typeof MILWAUKEE_COMPANY_SEED)[0]): 
 const POOL: DistributorRow[] = MILWAUKEE_COMPANY_SEED.map((s, i) => buildRowFromSeed(i, s))
 
 /**
- * @param set — `standard` (first 28) or `expanded` (all ~50; “491 results” is UI-only for scale)
+ * @param set — `standard` (first 48: 23 exterior-buyer rows + the next 25 generic Milwaukee
+ *              companies) or `expanded` (all ~70). “511 results” is UI-only for scale.
  */
 export function buildMilwaukeeDistributorRows(set: 'standard' | 'expanded' = 'standard'): DistributorRow[] {
-  const n = set === 'expanded' ? POOL.length : 28
+  const n = set === 'expanded' ? POOL.length : 48
   return POOL.slice(0, n)
 }
 
-export const MILWAUKEE_LEAD_RESULT_TOTAL = 491
+export const MILWAUKEE_LEAD_RESULT_TOTAL = 511

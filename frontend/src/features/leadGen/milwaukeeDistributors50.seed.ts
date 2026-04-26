@@ -59,6 +59,253 @@ export const MILWAUKEE_COMPANY_SEED: MilwaukeeCompanySeed[] = [
     linkedInUrl: 'https://www.linkedin.com/company/kenwood-siding-window-co',
   },
   {
+    name: 'Lakeshore Outdoor Living Group',
+    description:
+      'Premium deck and outdoor-room builder for lakefront and shoreline homes. Standard spec is Thermory Ash on cladding plus AZEK Vintage decking with Deckorators ALX rail; Millboard goes on shaded porches where movement is a concern. Long-running Russin account with weekly will-call out of Mequon.',
+    productsRequested:
+      'Standing draw: Thermory Ash 1×6 (cladding), AZEK Vintage wide board (deck field), Deckorators ALX top + bottom rail, Voyage fascia in matching tone — Salesforce opp tied to a 14-home lakefront subdivision.',
+    primaryIndustry: 'Residential Building Construction',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Mequon, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/lakeshore-outdoor-living-group',
+  },
+  {
+    name: 'Cream City Deck Works',
+    description:
+      'Boutique Milwaukee deck and porch builder, eight to ten projects a year, all in the premium tier. They lead with Thermory cladding plus AZEK Harvest decking and have started repping Millboard for shaded back-porch jobs where surface temperature matters. Russin handles the dimensional pulls; trim and rail go through the same PO.',
+    productsRequested:
+      'HubSpot deal “Cream City — Bay View porch”: Thermory Drift 1×6, AZEK Harvest, Millboard Enhanced Grain (shaded porch), Deckorators Contemporary aluminum rail, Boral 5/4 trim.',
+    primaryIndustry: 'Residential Building Construction',
+    size: '2-10 employees',
+    type: 'Privately Held',
+    location: 'Milwaukee, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/cream-city-deck-works',
+  },
+  {
+    name: 'Capitol Lumber & Building Supply',
+    description:
+      'Independent yard serving Madison-area trade contractors with a real pro desk, will-call lane, and a small specialty showroom for cap-stock and exterior trim. They route premium specs (Thermory, AZEK, Deckorators) through Russin rather than carrying full inventory; standing weekly tickets keep two contractor crews moving.',
+    productsRequested:
+      'Outlook PO thread for the Wednesday will-call: Thermory Ash 1×6 (32 bdl), AZEK Vintage Mahogany 5/4×6, Deckorators ALX rail kits, plus ad-hoc Boral TruExterior trim — Salesforce account tagged “premium-exterior, Russin-routed”.',
+    primaryIndustry: 'Building Materials',
+    size: '51-200 employees',
+    type: 'Privately Held',
+    location: 'Madison, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/capitol-lumber-building-supply',
+  },
+  {
+    name: 'Northshore Marine Carpentry',
+    description:
+      'Specialty carpentry shop for marinas, boathouses, and shoreline decks. Salt and freeze-thaw drive the spec, so they almost exclusively run Thermory thermo-modified cladding and AZEK Porch on the wet side; Deckorators composite rail wraps every dock side. Russin is the distribution backbone.',
+    productsRequested:
+      'Apollo cadence “marina re-clad”: Thermory Pine 1×8 (open-joint), AZEK Porch 3-1/8″ T&G, Deckorators Estate rail, stainless Simpson connectors — RingCentral standing call with the boatyard PM.',
+    primaryIndustry: 'Construction',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Sturgeon Bay, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/northshore-marine-carpentry',
+  },
+  {
+    name: 'Pewaukee Lake Custom Homes',
+    description:
+      'Custom-home builder doing six to eight luxury lakefront homes a year. Exterior package is fixed: Thermory cladding on accent walls, AZEK Vintage decking, Deckorators rail, Boral trim. They do not value-engineer the cladding line — Russin gets the standing PO and the homeowner sees the finished face.',
+    productsRequested:
+      'Salesforce opp “Pewaukee North Shore Build”: Thermory Ash 1×6 (cladding 1,800 lf), AZEK Vintage Dark Hickory deck, Deckorators ALX cable rail, Voyage fascia, Boral 5/4 trim package.',
+    primaryIndustry: 'Residential Building Construction',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Pewaukee, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/pewaukee-lake-custom-homes',
+  },
+  {
+    name: 'Riverstone Pro Lumber',
+    description:
+      'Pro-only contractor desk that pulls premium exterior lines through Russin for the cabinet of small custom builders they serve. Thermory and AZEK are the two SKUs they keep on a non-stocking, will-call rhythm; Deckorators rail comes in on the same trucks. Fully B2B — no retail walk-ins.',
+    productsRequested:
+      'HubSpot opportunity “weekly will-call lane”: Thermory Ash 1×6, AZEK Vintage 5/4×6 (Mahogany + English Walnut), Deckorators ALX aluminum rail, Boral 1×6 trim.',
+    primaryIndustry: 'Wholesale Building Materials',
+    size: '51-200 employees',
+    type: 'Privately Held',
+    location: 'Cedarburg, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/riverstone-pro-lumber',
+  },
+  {
+    name: 'Mid-Atlantic Deck & Patio Co.',
+    description:
+      'Westchester / Fairfield County deck and patio specialist. They have moved their deck book almost entirely to AZEK and Millboard for the high-end coastal program, with Thermory cladding accents on screened porches and pool houses. Russin handles fulfillment from the New Windsor warehouse.',
+    productsRequested:
+      'Salesforce — “Sound Shore deck book Q3”: AZEK Vintage English Walnut, Millboard Enhanced Grain Antique Oak, Thermory Ash 1×6 (porch ceiling), Deckorators Contemporary rail, AZEK trim package.',
+    primaryIndustry: 'Residential Building Construction',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Rye, NY',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/mid-atlantic-deck-patio',
+  },
+  {
+    name: 'Bayshore Building Supply',
+    description:
+      'Independent lumberyard along Green Bay with a small but loyal contractor base. Exterior cap-stock, fasteners, and rail come from Russin (Thermory + AZEK + Deckorators); they keep dimensional and OSB in-house but do not compete on premium decking inventory. Pro desk and will-call only.',
+    productsRequested:
+      'Outlook recurring PO “Russin Tuesday”: Thermory Drift 1×6, AZEK Vintage capped 5/4×6, Deckorators rail kits, color-matched fascia — HubSpot deal closed for the season is auto-renewed.',
+    primaryIndustry: 'Building Materials',
+    size: '51-200 employees',
+    type: 'Privately Held',
+    location: 'Green Bay, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/bayshore-building-supply',
+  },
+  {
+    name: 'Heritage Porch & Rail Restoration',
+    description:
+      'Historic-home restorer specializing in porches, balustrades, and front facades. They pull Thermory thermo-treated wood for cladding repairs that need to look real (not composite) and use AZEK trim with custom-milled profiles for porch ceilings. Deckorators ALX is their default rail when code requires aluminum.',
+    productsRequested:
+      'Apollo sequence “Heritage porch restorations 2026”: Thermory Ash 1×6 (porch floor + ceiling), AZEK Vintage trim (custom mill), Deckorators ALX rail with traditional balusters — ZoomInfo on the principal architect.',
+    primaryIndustry: 'Construction',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Lake Forest, IL',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/heritage-porch-rail-restoration',
+  },
+  {
+    name: 'Concourse Cladding Group',
+    description:
+      'Commercial cladding installer working the North Shore and downtown Chicago corridors. They run Thermory open-joint cladding on mid-rise residential and Millboard on roof-deck amenity spaces; ALX from Deckorators handles guard rails on the same jobs. Russin is the only distribution they specify.',
+    productsRequested:
+      'Salesforce opp “300 N Wabash amenity deck”: Millboard Lasta Grip Antique Oak (5,400 sf), Thermory Pine 1×8 open-joint cladding, Deckorators ALX guardrail, Boral fascia.',
+    primaryIndustry: 'Construction',
+    size: '51-200 employees',
+    type: 'Privately Held',
+    location: 'Skokie, IL',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/concourse-cladding-group',
+  },
+  {
+    name: 'Kettle Moraine Decking Supply',
+    description:
+      'Specialty distributor for the small custom-deck shops between Milwaukee and Madison. They consolidate Russin Thermory and AZEK pulls into a weekly milk run; Deckorators rail and Boral trim come on the same truck. No retail; everything ships to job site or contractor yard.',
+    productsRequested:
+      'HubSpot pipeline “weekly milk run”: Thermory Ash 1×6, AZEK Vintage Mahogany, AZEK Vintage Coastline, Deckorators ALX top rail, Boral TruExterior 5/4 trim, Voyage fascia in two tones.',
+    primaryIndustry: 'Wholesale Building Materials',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Hartland, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/kettle-moraine-decking-supply',
+  },
+  {
+    name: 'Hudson River Marina Construction',
+    description:
+      'Marina, dock, and waterside-deck builder for the lower Hudson. Thermory thermo-modified pine and AZEK Porch on every wet-side job; Millboard is the upgrade SKU for boathouse interiors. Russin runs the Newburgh fulfillment, with Salesforce opps tied to each marina contract.',
+    productsRequested:
+      'Salesforce — “Lower Hudson marina contracts 2026”: Thermory Pine 1×8 open-joint, AZEK Porch 3-1/8″ T&G, Millboard Enhanced Grain (boathouse), Deckorators Estate rail, stainless fasteners.',
+    primaryIndustry: 'Construction',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Tarrytown, NY',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/hudson-river-marina-construction',
+  },
+  {
+    name: 'North Atlantic Cladding Pros',
+    description:
+      'Coastal cladding installer working Westport, Greenwich, and the Connecticut shoreline. Salt-air durability is the spec driver: Thermory Ash and Pine on cladding, AZEK on trim and porch, Deckorators rail on every guardrail run. Russin is the named source on every architect spec they bid.',
+    productsRequested:
+      'Apollo cadence “coastal architect spec packs”: Thermory Ash 1×6 (cladding), Thermory Pine 1×8 (open-joint), AZEK Vintage trim, Deckorators ALX rail with cable infill — Outlook thread with two project architects.',
+    primaryIndustry: 'Construction',
+    size: '51-200 employees',
+    type: 'Privately Held',
+    location: 'Westport, CT',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/north-atlantic-cladding-pros',
+  },
+  {
+    name: 'Meridian Outdoor Living',
+    description:
+      'Multi-location outdoor-living dealer with showrooms in Brookfield and Oconomowoc. They display Thermory cladding, AZEK Vintage decking, and Deckorators rail; everything ordered ships from Russin under a standing dealer agreement. Recently added Millboard to the showroom for the shaded-porch upsell.',
+    productsRequested:
+      'Salesforce dealer agreement — quarterly draw: Thermory Ash 1×6, AZEK Vintage (Mahogany + English Walnut + Coastline), Millboard Enhanced Grain, Deckorators ALX rail, Voyage fascia in three tones.',
+    primaryIndustry: 'Building Materials',
+    size: '51-200 employees',
+    type: 'Privately Held',
+    location: 'Brookfield, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/meridian-outdoor-living',
+  },
+  {
+    name: 'Greenport Coastal Builders',
+    description:
+      'Long Island North Fork builder doing custom waterfront homes and boathouses. Thermory cladding on every elevation that faces water; AZEK Vintage on the field deck; Deckorators rail wraps the entire deck and dock perimeter. Russin is a Salesforce-flagged strategic supplier.',
+    productsRequested:
+      'Salesforce opp “Greenport waterfront 8-home phase”: Thermory Ash 1×6 (3,200 lf), AZEK Vintage Dark Hickory 5/4×6, Deckorators ALX rail with cable infill, Voyage fascia, Boral trim.',
+    primaryIndustry: 'Residential Building Construction',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Greenport, NY',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/greenport-coastal-builders',
+  },
+  {
+    name: 'Cape Ann Decking Co.',
+    description:
+      "Cape Ann and North Shore deck specialist; almost every job is a tear-off on a coastal home. They moved off PT a few years ago and now spec AZEK and Millboard exclusively for the deck field, with Thermory cladding on the abutting wall when the architect calls for a wood look. Russin is the consistent route.",
+    productsRequested:
+      'HubSpot deals tagged “coastal tear-off”: AZEK Vintage Coastline (deck field), Millboard Enhanced Grain (shaded porch), Thermory Ash 1×6 (accent cladding), Deckorators Contemporary aluminum rail, AZEK fascia.',
+    primaryIndustry: 'Residential Building Construction',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Gloucester, MA',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/cape-ann-decking-co',
+  },
+  {
+    name: 'Old Saybrook Lumber & Marine Supply',
+    description:
+      'Independent yard with a marine bent: most of their pro-desk traffic is dock builders, marina operators, and shoreline contractors. They do not stock premium decking but route every Thermory, AZEK, Millboard, and Deckorators line through Russin on a will-call cadence the contractor PMs run themselves.',
+    productsRequested:
+      "Outlook recurring will-call “Russin Friday”: Thermory Pine 1×8 open-joint, AZEK Porch T&G, Millboard for boathouse interiors, Deckorators Estate dock rail — RingCentral hotline with the Russin inside-sales rep.",
+    primaryIndustry: 'Building Materials',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Old Saybrook, CT',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/old-saybrook-lumber-marine-supply',
+  },
+  {
+    name: 'Birchwood Custom Carpentry',
+    description:
+      'Two-person shop building one or two custom homes a year, plus three or four high-end deck rebuilds. Their entire exterior package is the Russin premium spec: Thermory cladding, AZEK Vintage decking, Deckorators rail, Boral trim. They never substitute on the cladding line.',
+    productsRequested:
+      'HubSpot opp “Birchwood 2026 build calendar”: Thermory Ash 1×6 (cladding 1,400 lf), AZEK Vintage Mahogany 5/4×6, Deckorators ALX rail, Boral TruExterior 5/4 trim, Voyage fascia.',
+    primaryIndustry: 'Residential Building Construction',
+    size: '2-10 employees',
+    type: 'Privately Held',
+    location: 'Bayside, WI',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/birchwood-custom-carpentry',
+  },
+  {
+    name: 'Seaboard Architectural Millwork',
+    description:
+      'Architectural millwork shop running custom porch ceilings, soffits, and trim profiles for the residential exterior trade. They pull Thermory cladding stock and Boral trim through Russin and re-mill in the shop; AZEK and Deckorators arrive pre-spec for the installer they partner with.',
+    productsRequested:
+      'Salesforce — “Seaboard partner installer pulls”: Thermory Ash 1×6 (custom mill blanks), AZEK Vintage trim (custom profile), Deckorators ALX rail, Boral 5/4 trim — ZoomInfo + LinkedIn on the architect partners.',
+    primaryIndustry: 'Wholesale Building Materials',
+    size: '11-50 employees',
+    type: 'Privately Held',
+    location: 'Portland, ME',
+    country: 'United States',
+    linkedInUrl: 'https://www.linkedin.com/company/seaboard-architectural-millwork',
+  },
+  {
     name: 'Sensient Technologies Corporation',
     description:
       "We Bring Life to Products. Our name communicates what we do: Enhance SENSory experiences through specialized ingredIENTs, delivered through proprietary TECHNOLOGIES. Sensient Technologies Corporation is a leading global manufacturer and marketer of colors, flavors, essential oils and extracts.",
