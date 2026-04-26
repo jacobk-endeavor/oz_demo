@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Panel, PulseOrb, Tag } from '../../shared/ui'
+import { FieldNotesVisitLogTable } from './FieldNotesVisitLogTable'
 import { fieldNotesDemo } from './demoData'
 import type { FieldNotesStage, OrbState } from './types'
 
@@ -95,7 +96,9 @@ export function FieldNotesPage() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+    <div className="space-y-8">
+      <FieldNotesVisitLogTable />
+      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
       {/* Mobile-shaped voice panel */}
       <section className="rounded-3xl border border-zinc-200 bg-white p-3 shadow-sm">
         <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
@@ -261,6 +264,7 @@ export function FieldNotesPage() {
           </Panel>
         </div>
       </div>
+    </div>
     </div>
   )
 }
