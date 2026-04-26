@@ -16,6 +16,8 @@ export type {
 export { PlaceholderSubtabPage } from './PlaceholderSubtabPage'
 export { OzWorkflowShell } from './OzWorkflowShell'
 export type { OzWorkflowShellProps } from './OzWorkflowShell'
+export { WORKFLOW_PAGE_META } from './workflowPageMeta'
+export type { WorkflowPageId, WorkflowPageMeta } from './workflowPageMeta'
 export {
   isWorkflowPage,
   navGroupIdForPage,

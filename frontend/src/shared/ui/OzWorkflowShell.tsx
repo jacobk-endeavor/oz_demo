@@ -664,7 +664,11 @@ export function OzWorkflowShell({
             className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-white"
             aria-label="Context"
           >
-            {fullBleed ? (
+            {/**
+             * `fullBleed` used to skip the page header entirely; workflows need the same eyebrow + title
+             * bar as other routes, with only the *body* running edge-to-edge below it.
+             */}
+            {fullBleed && hideContextHeader ? (
               <div className="flex h-full min-h-0 flex-1 flex-col">{children}</div>
             ) : (
               <>
@@ -694,9 +698,9 @@ export function OzWorkflowShell({
                           {eyebrow}
                         </p>
                       )}
-                      <h1 className="mt-0.5 truncate text-lg font-semibold text-zinc-900">{title}</h1>
+                      <h1 className="mt-1 truncate text-xl font-semibold tracking-tight text-zinc-900">{title}</h1>
                       {subtitle !== undefined && (
-                        <p className="mt-0.5 max-w-2xl text-sm text-zinc-600">{subtitle}</p>
+                        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-600">{subtitle}</p>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
@@ -718,7 +722,7 @@ export function OzWorkflowShell({
                 <div
                   className={joinClasses(
                     'min-h-0 flex-1',
-                    contextWide
+                    contextWide || fullBleed
                       ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
                       : 'overflow-auto',
                   )}
@@ -726,7 +730,7 @@ export function OzWorkflowShell({
                   <div
                     className={joinClasses(
                       'mx-auto w-full',
-                      contextWide
+                      contextWide || fullBleed
                         ? 'h-full min-h-0 min-w-0 flex-1 overflow-hidden p-0'
                         : joinClasses('max-w-[1600px] px-5', hideContextHeader ? 'py-3' : 'py-5'),
                     )}

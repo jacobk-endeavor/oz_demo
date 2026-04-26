@@ -76,8 +76,10 @@ import {
   OzAssistantPanel,
   OzWorkflowShell,
   PlaceholderSubtabPage,
+  WORKFLOW_PAGE_META,
   type OzAssistantMessage,
   type OzChatTurnContext,
+  type WorkflowPageMeta,
 } from './shared/ui'
 import { augmentUserMessageWithTableContext, type TableRowContextAttachment } from './shared/tableRowContext'
 import type { FieldMobileNavId, OzWorkflowNavId } from './shared/ui'
@@ -104,90 +106,12 @@ const allPages = new Set<Page>([
   'settings',
 ])
 
-interface PageMeta {
-  title: string
-  subtitle?: string
-  eyebrow?: string
-}
-
-const pageMeta: Record<Exclude<Page, FieldMobileNavId>, PageMeta> = {
-  oz: {
-    eyebrow: 'Command center',
-    title: 'Oz',
-    subtitle:
-      'Chat is front and center. After a competitor product search on activity, ask who is likely to buy if you stock those lines—the lead grid opens with a demo filter (not a Milwaukee-only look-up).',
-  },
-  search: {
-    eyebrow: 'Workspace',
-    title: 'Search',
-    subtitle: 'Search across tables, files, and logs — wire to your index when you are ready.',
-  },
-  'field-app': {
-    eyebrow: 'Workspace',
-    title: 'Field App',
-    subtitle: 'Voice-only. Home is the orb.',
-  },
-  tables: {
-    eyebrow: 'Workspace',
-    title: 'Tables',
-    subtitle:
-      'The Milwaukee distributor lead grid stays open here. Chat to sort, sub-sort, filter by source, or say “find more leads”.',
-  },
-  'knowledge-base': {
-    eyebrow: 'Workspace',
-    title: 'Knowledge Base',
-    subtitle: 'Add files from your machine; each one is ingested and shown as a table.',
-  },
-  nebula: {
-    eyebrow: 'Workflow',
-    title: 'Overview',
-    subtitle: 'Nebula hub — pick a workflow below in the sidebar or ask Oz to route you.',
-  },
-  'field-notes': {
-    eyebrow: 'Workflow',
-    title: 'Field Notes',
-    subtitle: 'Turn messy visit context into sharper next questions and product recommendations.',
-  },
-  'quotes-ready': {
-    eyebrow: 'Workflow',
-    title: 'Quotes Ready for Review',
-    subtitle: 'Order-background PDFs from the Field App with a review code — open and proof before quote automation.',
-  },
-  dashboards: {
-    eyebrow: 'Workflow',
-    title: 'Dashboards',
-    subtitle: 'Describe charts in natural language, then publish individual charts to a mock link.',
-  },
-  'quote-automation': {
-    eyebrow: 'Workflow',
-    title: 'Quote Automation',
-    subtitle: 'Review specs, assumptions, and pricing evidence before sending an 80%-complete quote.',
-  },
-  'lead-generation': {
-    eyebrow: 'Workflow',
-    title: 'Lead Generation',
-    subtitle: 'Find lookalike accounts near tomorrow’s route and convert them into concrete visits.',
-  },
-  'background-agents': {
-    eyebrow: 'Workflow',
-    title: 'Background agents',
-    subtitle: 'Automations you define in chat: each agent shows what it does and when it runs.',
-  },
-  help: {
-    title: 'Help',
-    subtitle: 'Documentation and support — replace with your help center when you are ready.',
-  },
-  settings: {
-    title: 'Settings',
-    subtitle: 'Workspace and profile preferences (shell only in this demo).',
-  },
-}
 
 function isPage(value: string): value is Page {
   return allPages.has(value as Page)
 }
 
-function getPageMeta(p: Page): PageMeta {
+function getPageMeta(p: Page): WorkflowPageMeta {
   if (isFieldMobileNavId(p)) {
     const w = getFieldMobileWorkflow(fieldWorkflowIdForPage(p))!
     return {
@@ -196,7 +120,7 @@ function getPageMeta(p: Page): PageMeta {
       subtitle: w.summary,
     }
   }
-  return pageMeta[p as keyof typeof pageMeta]
+  return WORKFLOW_PAGE_META[p as keyof typeof WORKFLOW_PAGE_META]
 }
 
 function isFieldAppCommandCenter(p: Page): boolean {
