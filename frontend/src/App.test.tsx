@@ -109,7 +109,9 @@ describe('App', () => {
   it('renders Field Notes when hash is #/field-notes', () => {
     window.location.hash = '#/field-notes'
     render(<App />)
-    expect(screen.getByText(/Visit log \(from Field\)/i)).toBeInTheDocument()
+    const page = screen.getByTestId('field-notes-page')
+    expect(page).toBeInTheDocument()
+    expect(within(page).getByRole('heading', { name: /Incoming voice memos/i })).toBeInTheDocument()
   })
 
   it('defaults #/call-mining to home when route is not registered', () => {

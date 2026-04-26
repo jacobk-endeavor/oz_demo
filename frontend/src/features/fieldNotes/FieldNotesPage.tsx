@@ -1,323 +1,423 @@
-import { useMemo, useState, type ReactNode } from 'react'
-import { Panel, PulseOrb, Tag } from '../../shared/ui'
-import { FieldNotesVisitLogTable } from './FieldNotesVisitLogTable'
-import { fieldNotesDemo } from './demoData'
-import type { FieldNotesStage, OrbState } from './types'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
+import { joinClasses } from '../../shared/ui'
+import { CheckIcon, CloseIcon, TrashIcon } from '../../shared/ui/icons'
+import {
+  type VoiceMemoRow,
+  VOICE_MEMO_DEMO,
+  WEEKLY_IMPORTANT_BOXES,
+} from './fieldNotesDashboardData'
+import {
+  type PriorityBriefCard,
+  DEMO_FIELD_SALES_REPS,
+  isMockPriorityBriefId,
+  MOCK_PRIORITY_BRIEFS,
+} from './fieldNotesPriorityData'
 
-const orbStateByStage: Record<FieldNotesStage, OrbState> = {
-  idle: 'idle',
-  listening: 'listening',
-  thinking: 'thinking',
-  followup: 'thinking',
-  output: 'speaking',
-  pushed: 'running_action',
-}
+const PRIORITY_BRIEFS_KEY = 'field-notes-priority-briefs-v1'
+const DISMISSED_MOCK_BRIEF_IDS_KEY = 'field-notes-mock-briefs-dismissed-v1'
 
-const stageCopy: Record<FieldNotesStage, { label: string; helper: string; button: string; tone: 'zinc' | 'blue' | 'amber' | 'emerald' }> = {
-  idle: {
-    label: 'Ready',
-    helper: 'Tap the orb to run the scripted field note. No microphone needed.',
-    button: 'Tap to speak',
-    tone: 'zinc',
-  },
-  listening: {
-    label: 'Listening...',
-    helper: 'Oz is capturing the rep’s sales context.',
-    button: 'Finish note',
-    tone: 'blue',
-  },
-  thinking: {
-    label: 'Thinking',
-    helper: 'Oz is structuring the note and ranking next questions.',
-    button: 'Prepare follow-up',
-    tone: 'blue',
-  },
-  followup: {
-    label: 'Follow-up needed',
-    helper: 'Ask the benefit prompt before Oz recommends a product or pushes specs.',
-    button: 'Choose prompt below',
-    tone: 'amber',
-  },
-  output: {
-    label: 'Speaking',
-    helper: 'Oz produced the note, follow-up questions, pricing angle, and product idea.',
-    button: 'Push to Nebula',
-    tone: 'blue',
-  },
-  pushed: {
-    label: 'Pushed to Nebula',
-    helper: 'Product specs, draft quote, and follow-up tasks are live in the web app.',
-    button: 'Reset demo',
-    tone: 'emerald',
-  },
-}
-
-const nextStageByStage: Record<FieldNotesStage, FieldNotesStage> = {
-  idle: 'listening',
-  listening: 'thinking',
-  thinking: 'followup',
-  followup: 'followup',
-  output: 'pushed',
-  pushed: 'idle',
-}
-
-const visibleTranscriptCount: Record<FieldNotesStage, number> = {
-  idle: 0,
-  listening: 2,
-  thinking: 3,
-  followup: 3,
-  output: 3,
-  pushed: 3,
-}
-
-const benefitPrompt = 'Anything else they might benefit from?'
-const suggestedPrompts = ['What should I ask next?', 'How should I price this?', benefitPrompt]
-
-export function FieldNotesPage() {
-  const [stage, setStage] = useState<FieldNotesStage>('idle')
-  const copy = stageCopy[stage]
-  const showOutput = stage === 'output' || stage === 'pushed'
-  const showSalesActions = stage === 'pushed'
-  const isBenefitPromptStep = stage === 'followup'
-  const orbActive = stage !== 'idle' && stage !== 'pushed'
-  const orbState = orbStateByStage[stage]
-
-  const visibleTranscript = useMemo(
-    () => fieldNotesDemo.transcript.slice(0, visibleTranscriptCount[stage]),
-    [stage],
-  )
-
-  function advanceDemo() {
-    setStage((current) => nextStageByStage[current])
+function formatDateTime(iso: string) {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  } catch {
+    return iso
   }
+}
 
-  function askBenefitPrompt() {
-    setStage('output')
+function isRepSeenMap(x: unknown): x is Record<string, string> {
+  if (x == null || typeof x !== 'object' || Array.isArray(x)) return false
+  return Object.values(x as Record<string, unknown>).every((v) => typeof v === 'string')
+}
+
+function readUserPriorityBriefs(): PriorityBriefCard[] {
+  try {
+    if (typeof window === 'undefined') return []
+    const raw = window.localStorage.getItem(PRIORITY_BRIEFS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((b): b is PriorityBriefCard => {
+      if (b == null || typeof b !== 'object' || isMockPriorityBriefId(String((b as PriorityBriefCard).id))) {
+        return false
+      }
+      const o = b as PriorityBriefCard
+      return (
+        typeof o.id === 'string' &&
+        o.id.length > 0 &&
+        typeof o.text === 'string' &&
+        typeof o.createdAtIso === 'string' &&
+        o.seenBy != null &&
+        typeof o.seenBy === 'object' &&
+        isRepSeenMap(o.seenBy)
+      )
+    })
+  } catch {
+    return []
   }
+}
+
+function writeUserPriorityBriefs(briefs: PriorityBriefCard[]) {
+  try {
+    const userOnly = briefs.filter((b) => !isMockPriorityBriefId(b.id))
+    window.localStorage.setItem(PRIORITY_BRIEFS_KEY, JSON.stringify(userOnly))
+  } catch {
+    // ignore
+  }
+}
+
+function readDismissedMockBriefIds(): string[] {
+  try {
+    if (typeof window === 'undefined') return []
+    const raw = window.localStorage.getItem(DISMISSED_MOCK_BRIEF_IDS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((x): x is string => typeof x === 'string' && x.length > 0)
+  } catch {
+    return []
+  }
+}
+
+function writeDismissedMockBriefIds(ids: string[]) {
+  try {
+    window.localStorage.setItem(DISMISSED_MOCK_BRIEF_IDS_KEY, JSON.stringify([...new Set(ids)]))
+  } catch {
+    // ignore
+  }
+}
+
+function formatShortSeen(iso: string) {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  } catch {
+    return iso
+  }
+}
+
+function ConversationModal({
+  open,
+  onClose,
+  row,
+}: {
+  open: boolean
+  onClose: () => void
+  row: VoiceMemoRow | null
+}) {
+  const titleId = useId()
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  if (!open || !row) return null
 
   return (
-    <div className="space-y-8">
-      <FieldNotesVisitLogTable />
-      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-      {/* Mobile-shaped voice panel */}
-      <section className="rounded-3xl border border-zinc-200 bg-white p-3 shadow-sm">
-        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-          <div className="mb-4 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-            <span>Oz Mobile</span>
-            <span>{fieldNotesDemo.meetingType}</span>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[min(90vh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-4 py-3">
+          <div className="min-w-0">
+            <p id={titleId} className="truncate text-sm font-semibold text-zinc-900">
+              {row.customer}
+            </p>
+            <p className="text-xs text-zinc-500">
+              {row.salesman} · {formatDateTime(row.atIso)}
+            </p>
           </div>
-
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-600">
-                  Field Notes
-                </p>
-                <h2 className="mt-1 truncate text-lg font-semibold text-zinc-900">
-                  {fieldNotesDemo.customer}
-                </h2>
-                <p className="mt-0.5 text-sm text-zinc-500">
-                  {fieldNotesDemo.rep} · {fieldNotesDemo.meetingDate}
-                </p>
-              </div>
-              <Tag tone={copy.tone} dot>
-                {copy.label}
-              </Tag>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800"
+            aria-label="Close"
+          >
+            <CloseIcon className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Recorded conversation</p>
+          {row.conversation.map((turn, i) => (
+            <div
+              key={i}
+              className={joinClasses(
+                'rounded-xl border px-3 py-2.5 text-sm',
+                turn.speaker === 'Rep' && 'border-sky-200/80 bg-sky-50/80 text-zinc-800',
+                turn.speaker === 'Customer' && 'border-zinc-200 bg-zinc-50/90 text-zinc-800',
+                turn.speaker === 'System' && 'border-amber-200/80 bg-amber-50/90 text-amber-950/90',
+              )}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">{turn.speaker}</p>
+              <p className="mt-1 leading-relaxed">{turn.text}</p>
             </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
+function FieldPriorityBriefCardView({
+  brief,
+  onToggleRepSeen,
+  onDelete,
+}: {
+  brief: PriorityBriefCard
+  onToggleRepSeen: (briefId: string, repId: string) => void
+  onDelete: (id: string) => void
+}) {
+  const mock = isMockPriorityBriefId(brief.id)
+  return (
+    <article
+      data-testid="field-notes-priority-brief"
+      className="rounded-lg border border-amber-200/70 bg-white/95 p-3 shadow-sm ring-1 ring-amber-100/40"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 flex-1 text-sm font-medium leading-relaxed text-zinc-900">{brief.text}</p>
+        <button
+          type="button"
+          onClick={() => onDelete(brief.id)}
+          className="shrink-0 rounded-md p-1.5 text-zinc-400 transition hover:bg-red-50 hover:text-red-700"
+          aria-label="Delete brief"
+        >
+          <TrashIcon className="h-4 w-4" />
+        </button>
+      </div>
+      <p className="mt-1.5 text-[11px] text-zinc-500">{formatDateTime(brief.createdAtIso)}</p>
+      <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Field team</p>
+      <ul className="mt-1.5 flex list-none flex-wrap gap-1.5 p-0">
+        {DEMO_FIELD_SALES_REPS.map((rep) => {
+          const at = brief.seenBy[rep.id]
+          const seen = at != null
+          const first = rep.name.split(' ')[0] ?? rep.name
+          const chip = joinClasses(
+            'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs',
+            seen
+              ? 'border-emerald-200/90 bg-emerald-50/90 text-emerald-950'
+              : 'border-zinc-200/90 bg-zinc-50/90 text-zinc-600',
+          )
+          if (mock) {
+            return (
+              <li key={rep.id} className={chip} title={seen ? `Opened ${formatDateTime(at!)}` : 'Not yet opened in app'}>
+                {seen ? <CheckIcon className="h-3.5 w-3.5 shrink-0" /> : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-300" aria-hidden />}
+                <span className="font-medium">{first}</span>
+                {seen && <span className="text-[10px] text-emerald-800/80">{formatShortSeen(at!)}</span>}
+                {!seen && <span className="text-[10px] text-zinc-500">Pending</span>}
+              </li>
+            )
+          }
+          return (
+            <li key={rep.id}>
+              <button
+                type="button"
+                className={joinClasses(chip, 'text-left transition hover:opacity-90')}
+                onClick={() => onToggleRepSeen(brief.id, rep.id)}
+                title={seen ? 'Click to mark as not received (demo)' : 'Click to mark as received (demo)'}
+              >
+                {seen ? <CheckIcon className="h-3.5 w-3.5 shrink-0" /> : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-300" aria-hidden />}
+                <span className="font-medium">{first}</span>
+                {seen && <span className="text-[10px] text-emerald-800/80">{formatShortSeen(at!)}</span>}
+                {!seen && <span className="text-[10px] text-zinc-500">Pending</span>}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </article>
+  )
+}
+
+export function FieldNotesPage() {
+  const [modalRow, setModalRow] = useState<VoiceMemoRow | null>(null)
+  const [userPriorityBriefs, setUserPriorityBriefs] = useState<PriorityBriefCard[]>(() => readUserPriorityBriefs())
+  const [dismissedMockBriefIds, setDismissedMockBriefIds] = useState<string[]>(() => readDismissedMockBriefIds())
+  const [priorityDraft, setPriorityDraft] = useState('')
+
+  useEffect(() => {
+    setUserPriorityBriefs(readUserPriorityBriefs())
+    setDismissedMockBriefIds(readDismissedMockBriefIds())
+  }, [])
+
+  const rows = useMemo(() => VOICE_MEMO_DEMO, [])
+
+  const combinedPriorityBriefs = useMemo(() => {
+    const mocks = MOCK_PRIORITY_BRIEFS.filter((b) => !dismissedMockBriefIds.includes(b.id))
+    return [...mocks, ...userPriorityBriefs].sort((a, b) => b.createdAtIso.localeCompare(a.createdAtIso))
+  }, [userPriorityBriefs, dismissedMockBriefIds])
+
+  const sendPriority = useCallback(() => {
+    const t = priorityDraft.trim()
+    if (t.length === 0) return
+    const next: PriorityBriefCard = {
+      id: `user-brief-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      text: t,
+      createdAtIso: new Date().toISOString(),
+      seenBy: {},
+    }
+    setUserPriorityBriefs((prev) => {
+      const m = [next, ...prev]
+      writeUserPriorityBriefs(m)
+      return m
+    })
+    setPriorityDraft('')
+  }, [priorityDraft])
+
+  const toggleRepSeen = useCallback((briefId: string, repId: string) => {
+    if (isMockPriorityBriefId(briefId)) return
+    setUserPriorityBriefs((prev) => {
+      const i = prev.findIndex((b) => b.id === briefId)
+      if (i < 0) return prev
+      const b = prev[i]!
+      const had = b.seenBy[repId]
+      const nextSeen: Partial<Record<string, string>> = { ...b.seenBy }
+      if (had) delete nextSeen[repId]
+      else nextSeen[repId] = new Date().toISOString()
+      const u: PriorityBriefCard = { ...b, seenBy: nextSeen }
+      const out = [...prev.slice(0, i), u, ...prev.slice(i + 1)]
+      writeUserPriorityBriefs(out)
+      return out
+    })
+  }, [])
+
+  const deleteBrief = useCallback((id: string) => {
+    if (isMockPriorityBriefId(id)) {
+      setDismissedMockBriefIds((prev) => {
+        if (prev.includes(id)) return prev
+        const next = [...prev, id]
+        writeDismissedMockBriefIds(next)
+        return next
+      })
+      return
+    }
+    setUserPriorityBriefs((prev) => {
+      const out = prev.filter((b) => b.id !== id)
+      writeUserPriorityBriefs(out)
+      return out
+    })
+  }, [])
+
+  return (
+    <div
+      className="mx-auto flex h-full min-h-0 min-w-0 max-w-6xl flex-col gap-6 p-4 md:p-6"
+      data-testid="field-notes-page"
+    >
+      <h1 className="sr-only">Field notes</h1>
+
+      <section
+        className="w-full min-w-0 shrink-0 rounded-xl border border-amber-200/90 bg-gradient-to-b from-amber-50/90 via-white to-zinc-50/80 p-3 shadow-sm ring-1 ring-amber-100/60 md:p-4"
+        data-testid="field-notes-priority-panel"
+        aria-label="High priority information"
+      >
+        <div className="flex w-full min-w-0 flex-col gap-3">
+          <h2 className="text-sm font-semibold text-zinc-900">High priority information</h2>
+          <div className="flex w-full min-w-0 flex-row items-center gap-2">
+            <input
+              type="text"
+              value={priorityDraft}
+              onChange={(e) => setPriorityDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') sendPriority()
+              }}
+              placeholder="New brief for the field team…"
+              className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
+            />
             <button
               type="button"
-              data-testid="field-notes-advance"
-              onClick={advanceDemo}
-              disabled={isBenefitPromptStep}
-              className="mx-auto mt-7 flex flex-col items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-2xl"
-              aria-label={`${copy.button} field note demo`}
+              onClick={sendPriority}
+              className="shrink-0 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
             >
-              <span data-testid="oz-orb" data-state={orbState}>
-                <PulseOrb size="lg" paused={!orbActive} label="Oz voice indicator" />
-              </span>
-              <span
-                className={[
-                  'rounded-xl px-5 py-2 text-sm font-semibold transition-colors',
-                  isBenefitPromptStep
-                    ? 'bg-zinc-100 text-zinc-500'
-                    : 'bg-blue-600 text-white hover:bg-blue-700',
-                ].join(' ')}
-              >
-                {copy.button}
-              </span>
+              Add brief
             </button>
-
-            <p className="mt-4 text-center text-sm text-zinc-600">{copy.helper}</p>
           </div>
-
-          <div className="mt-4 space-y-2" aria-label="Suggested prompts">
-            {suggestedPrompts.map((prompt) => {
-              const isActionable = isBenefitPromptStep && prompt === benefitPrompt
-              return (
-                <button
-                  key={prompt}
-                  type="button"
-                  disabled={!isActionable}
-                  onClick={askBenefitPrompt}
-                  className={[
-                    'w-full rounded-xl border px-3 py-2.5 text-left text-sm transition-colors',
-                    isActionable
-                      ? 'border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100'
-                      : 'border-zinc-200 bg-white text-zinc-700',
-                  ].join(' ')}
-                >
-                  {prompt}
-                  {isActionable && (
-                    <span className="mt-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700">
-                      Tap to ask before Oz recommends
-                    </span>
-                  )}
-                </button>
-              )
-            })}
+          <div className="max-h-[min(28rem,55vh)] space-y-3 overflow-y-auto pr-0.5 [scrollbar-gutter:stable]">
+            {combinedPriorityBriefs.map((b) => (
+              <FieldPriorityBriefCardView key={b.id} brief={b} onToggleRepSeen={toggleRepSeen} onDelete={deleteBrief} />
+            ))}
           </div>
         </div>
       </section>
 
-      <div className="flex flex-col gap-6">
-        <Panel
-          eyebrow="Scripted transcript"
-          title="Messy voice note"
-          action={<Tag tone={stage === 'listening' ? 'blue' : 'zinc'}>{stage === 'listening' ? 'Streaming' : 'Deterministic demo'}</Tag>}
-        >
-          {visibleTranscript.length > 0 ? (
-            <div className="space-y-3">
-              {visibleTranscript.map((line) => (
-                <div key={line.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                    {line.speaker}
-                  </p>
-                  <p className="mt-1.5 text-sm text-zinc-800">{line.text}</p>
-                </div>
+      <section className="min-w-0 shrink-0">
+        <h2 className="text-sm font-semibold text-zinc-900">Incoming voice memos</h2>
+        <p className="mb-3 text-xs text-zinc-500">Recent recordings. Open a row to read the rep&apos;s full conversation after the visit.</p>
+        <div className="overflow-x-auto rounded-xl border border-zinc-200/90 bg-white shadow-sm">
+          <table className="w-full min-w-[720px] border-collapse text-left text-sm text-zinc-800" data-testid="field-notes-memo-table">
+            <thead>
+              <tr className="border-b border-zinc-200 bg-zinc-50/95 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                <th className="whitespace-nowrap px-3 py-2.5">Customer</th>
+                <th className="whitespace-nowrap px-3 py-2.5">Sales rep</th>
+                <th className="whitespace-nowrap px-3 py-2.5">Date &amp; time</th>
+                <th className="px-3 py-2.5">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-b border-zinc-100 last:border-0">
+                  <td className="whitespace-nowrap px-3 py-2.5 font-medium text-zinc-900">{r.customer}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-zinc-700">{r.salesman}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 tabular-nums text-zinc-600">{formatDateTime(r.atIso)}</td>
+                  <td className="max-w-[20rem] px-3 py-2.5">
+                    <p className="line-clamp-1 text-zinc-600">{r.notesPreview}</p>
+                    <button
+                      type="button"
+                      onClick={() => setModalRow(r)}
+                      className="mt-0.5 text-left text-sm font-medium text-sky-700 underline decoration-sky-300 underline-offset-2 hover:text-sky-900"
+                    >
+                      View conversation
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </div>
-          ) : (
-            <EmptyState>Transcript appears here as the presenter advances the listening state.</EmptyState>
-          )}
-        </Panel>
-
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <Panel
-            eyebrow="Oz output"
-            title="Structured sales note"
-            action={<Tag tone={showOutput ? 'emerald' : 'zinc'}>{showOutput ? 'Ready' : 'Waiting'}</Tag>}
-          >
-            {showOutput ? (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-zinc-900">Summary</h3>
-                  <p className="mt-1 text-sm text-zinc-700">{fieldNotesDemo.structuredSummary}</p>
-                </div>
-                <SourceEvidence />
-                <List title="Follow-up questions" items={fieldNotesDemo.questionsToAsk} />
-                <List title="Upsell and cross-sell" items={fieldNotesDemo.upsellSuggestions} />
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
-                  <h3 className="text-sm font-semibold text-blue-900">Pricing guidance</h3>
-                  <p className="mt-1 text-sm text-blue-900/80">{fieldNotesDemo.pricingGuidance}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {['Normalize meeting context', 'Rank customer intent', 'Prepare sales actions'].map((task) => (
-                  <div key={task} className="h-10 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60" aria-label={task} />
-                ))}
-              </div>
-            )}
-          </Panel>
-
-          <Panel
-            eyebrow="Nebula sync"
-            title="Concrete sales actions"
-            action={
-              <Tag tone={showSalesActions ? 'emerald' : showOutput ? 'blue' : 'zinc'}>
-                {showSalesActions ? 'Pushed' : showOutput ? 'Ready to push' : 'Locked'}
-              </Tag>
-            }
-          >
-            {showSalesActions ? (
-              <div className="space-y-3">
-                {fieldNotesDemo.salesActions.map((action) => (
-                  <article key={action.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-sm font-semibold text-zinc-900">{action.label}</h3>
-                      <Tag tone="zinc">{action.owner}</Tag>
-                    </div>
-                    <p className="mt-1 text-xs text-zinc-600">{action.detail}</p>
-                  </article>
-                ))}
-                <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                  Pushed to Nebula: product specs, draft quote, and follow-up task are live for {fieldNotesDemo.rep}.
-                </div>
-              </div>
-            ) : (
-              <EmptyState>
-                Sales actions stay locked until Oz has structured the note, the rep asks the benefit follow-up, and the
-                presenter pushes the result to Nebula.
-              </EmptyState>
-            )}
-          </Panel>
+            </tbody>
+          </table>
         </div>
-      </div>
-    </div>
-    </div>
-  )
-}
+      </section>
 
-function EmptyState({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-3 text-sm text-zinc-600">
-      {children}
-    </div>
-  )
-}
+      <section
+        className="shrink-0 rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-5 ring-1 ring-zinc-100/80 md:p-6"
+        aria-label="Important information"
+      >
+        <div className="mb-4 border-b border-zinc-200/80 pb-3">
+          <h2 className="text-base font-semibold text-zinc-900">Important information</h2>
+          <p className="mt-1 text-sm text-zinc-600">This week — key themes from memos and transcripts</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3" data-testid="field-notes-important-boxes">
+          {WEEKLY_IMPORTANT_BOXES.map((box) => (
+            <article
+              key={box.title}
+              className="flex min-h-[10rem] flex-col rounded-xl border border-white bg-white p-4 shadow-sm ring-1 ring-zinc-200/60"
+            >
+              <h3 className="text-sm font-semibold text-zinc-900">{box.title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-zinc-600">{box.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-function SourceEvidence() {
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-      <h3 className="text-sm font-semibold text-zinc-900">Source evidence</h3>
-      <dl className="mt-2 space-y-2 text-sm">
-        <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-600">Product context</dt>
-          <dd className="mt-0.5 text-zinc-700">{fieldNotesDemo.productContext}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-600">Raw note</dt>
-          <dd className="mt-0.5 text-zinc-700">{fieldNotesDemo.rawNote}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-600">Prior interactions</dt>
-          <dd className="mt-0.5">
-            <ul className="space-y-1.5">
-              {fieldNotesDemo.priorInteractions.map((interaction) => (
-                <li key={interaction} className="rounded-md bg-white px-3 py-1.5 text-zinc-700 ring-1 ring-zinc-200">
-                  {interaction}
-                </li>
-              ))}
-            </ul>
-          </dd>
-        </div>
-      </dl>
-    </div>
-  )
-}
-
-function List({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div>
-      <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
-      <ul className="mt-2 space-y-1.5">
-        {items.map((item) => (
-          <li key={item} className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700">
-            {item}
-          </li>
-        ))}
-      </ul>
+      <ConversationModal open={modalRow != null} onClose={() => setModalRow(null)} row={modalRow} />
     </div>
   )
 }

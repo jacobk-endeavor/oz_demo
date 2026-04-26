@@ -1,3 +1,5 @@
 export { FieldNotesPage } from './FieldNotesPage'
 export { fieldNotesDemo } from './demoData'
+export { VOICE_MEMO_DEMO, WEEKLY_IMPORTANT_BOXES } from './fieldNotesDashboardData'
 export type { FieldNotesDemo, FieldNotesStage, OrbState, SalesAction, TranscriptLine } from './types'
+export type { VoiceMemoRow, VoiceMemoConversationTurn } from './fieldNotesDashboardData'
