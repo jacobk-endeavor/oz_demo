@@ -122,6 +122,7 @@ describe('App', () => {
   it('renders Dashboards when hash is #/dashboards', () => {
     window.location.hash = '#/dashboards'
     render(<App />)
+    expect(screen.getByRole('heading', { name: /^Dashboards$/i, level: 1 })).toBeInTheDocument()
     expect(screen.getByTestId('dashboard-workflow')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '→ Build charts' })).toBeInTheDocument()
   })
@@ -155,10 +156,10 @@ describe('App', () => {
   it('navigates from nebula to dashboards via sidebar', async () => {
     window.location.hash = '#/nebula'
     render(<App />)
-    expectPlaceholder('nebula', 'Overview')
+    expect(screen.getByTestId('nebula-hub-page')).toBeInTheDocument()
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Dashboards' }))
+      fireEvent.click(screen.getByRole('link', { name: /Dashboards/i }))
     })
 
     expect(screen.getByTestId('dashboard-workflow')).toBeInTheDocument()
@@ -190,7 +191,7 @@ describe('App', () => {
     expect(screen.queryByRole('region', { name: 'Command center chat' })).not.toBeInTheDocument()
     expect(screen.queryByRole('complementary', { name: 'Oz chat' })).not.toBeInTheDocument()
     expect(screen.getByRole('main', { name: 'Context' })).toBeInTheDocument()
-    expect(screen.getByTestId('workflow-placeholder')).toBeInTheDocument()
+    expect(screen.getByTestId('nebula-hub-page')).toBeInTheDocument()
   })
 
   it('does not expose legacy chat/graph/ingest navigation', () => {

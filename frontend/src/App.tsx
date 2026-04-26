@@ -61,6 +61,7 @@ import {
 } from './features/backgroundAgents/backgroundAgentModel'
 import { BackgroundAgentsPage } from './features/backgroundAgents/BackgroundAgentsPage'
 import { KnowledgeBasePage } from './features/oz/KnowledgeBasePage'
+import { NebulaHubPage } from './features/oz/NebulaHubPage'
 import { DashboardGeneratorPage } from './features/dashboardGenerator/DashboardGeneratorPage'
 import { FieldNotesPage } from './features/fieldNotes/FieldNotesPage'
 import { QuotesReadyForReviewPage } from './features/quotesReady/QuotesReadyForReviewPage'
@@ -960,6 +961,12 @@ export default function App() {
               ? (
                   <div className="h-full min-h-0 min-w-0 overflow-hidden">
                     <KnowledgeBasePage />
+                  </div>
+                )
+            : page === 'nebula'
+              ? (
+                  <div className="h-full min-h-0 min-w-0 overflow-auto">
+                    <NebulaHubPage onNavigate={(id) => navigate(id as Page)} />
                   </div>
                 )
               : (
