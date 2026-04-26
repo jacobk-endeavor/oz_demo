@@ -19,7 +19,7 @@ Use this file to run the demo step by step. Tick or edit lines as you validate e
 
 **Routing replies** in the table below are **canonical demo copy** to standardize in product (today the live app may differ because the router uses an LLM). **Button and prospect opening** text is **exact** from the codebase where noted.
 
-**Field App keyboard TTS:** With focus outside inputs/buttons, press a **hotkey** to play that Oz line via Eleven Labs (`fieldAppTtsHotkeys.tsx`). **Enter** stops playback. See also **Keyboard TTS (demo)** in the Field UI.
+**Field App TTS:** Each Run panel has on-screen **Hear / Play** buttons that fire the canonical Eleven Labs lines (constants in `fieldDemoVoiceCopy.ts` / `fieldDemoKennyData.ts`). Tap the same button while it is playing to stop.
 
 ### Script 1 — Customer history (initial route)
 

@@ -18,7 +18,6 @@ import {
   type FieldProductDemoStep,
 } from './FieldWorkflowRunPanels'
 import { useFieldMicrophone } from './useFieldMicrophone'
-import { FieldTtsHotkeyLegend, useFieldAppTtsHotkeys } from './fieldAppTtsHotkeys'
 
 const safeBottom = 'pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]'
 const safeTop = 'pt-[max(0.5rem,env(safe-area-inset-top,0px))]'
@@ -39,9 +38,8 @@ export function FieldAppView({ mode, workflowId }: FieldAppViewProps) {
 }
 
 /**
- * Field App home: orb pulses to the live mic input; hotkeys (see {@link FieldTtsHotkeyLegend})
- * play the canonical Eleven Labs lines from `fieldDemoVoiceCopy.ts`. There is no STT or LLM
- * routing — the mic stream is purely a visual driver for the orb.
+ * Field App home: orb pulses to the live mic input. Eleven Labs TTS plays from the on-screen
+ * "Hear" buttons inside each Run panel. No STT or LLM routing.
  */
 function FieldAppVoiceColumn() {
   const {
@@ -61,8 +59,6 @@ function FieldAppVoiceColumn() {
   const [quoteDemoDone, setQuoteDemoDone] = useState(false)
   const [prospectAnswers, setProspectAnswers] = useState<Record<number, string>>({})
   const [micSetupExpanded, setMicSetupExpanded] = useState(false)
-
-  useFieldAppTtsHotkeys()
 
   useEffect(() => {
     if (activeWorkflowId !== 'background-quote' || quoteDemoDone) return
@@ -152,15 +148,11 @@ function FieldAppVoiceColumn() {
           )}
         </div>
       </div>
-      <div className="pointer-events-auto shrink-0 px-3 pb-1">
-        <FieldTtsHotkeyLegend />
-      </div>
     </div>
   )
 }
 
 function FieldWorkflowMobileRoute({ workflowId }: { workflowId: FieldMobileWorkflowId }) {
-  useFieldAppTtsHotkeys()
   const w = getFieldMobileWorkflow(workflowId)
   const [productDemo, setProductDemo] = useState<FieldProductDemoStep>('answer')
   const [quoteDemoDone, setQuoteDemoDone] = useState(false)
@@ -210,9 +202,6 @@ function FieldWorkflowMobileRoute({ workflowId }: { workflowId: FieldMobileWorkf
             />
           </div>
         </div>
-      </div>
-      <div className="shrink-0 px-3 pb-1">
-        <FieldTtsHotkeyLegend />
       </div>
     </div>
   )
