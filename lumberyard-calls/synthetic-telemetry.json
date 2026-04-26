@@ -1,0 +1,22 @@
+{
+  "intelligenceProvenance": "Demo: Russin-style distributor to the trade in the Hudson Valley / Mid-Atlantic. Activity blends phone calls, rep field notes, Outlook threads, and dealer order-status handoffs. Replace in production with your warehouse, CRM, and partner portals.",
+  "revenueByProductGroupApprox": [
+    { "group": "Premium exteriors (Thermory, AZEK, Millboard, WRC, Deckorators rail)", "approxPercentOfLumberYardRevenue": 19.0, "citedInCallIds": ["lumber-01-cedar-timbertech-diy", "lumber-11-pergola-raw-cedar-kits", "lumber-12-stain-cabot-rival", "lumber-09-siding-lp-vs-composite-mention"] },
+    { "group": "Specifying designers & AIA (CEU, submittals, interface details)", "approxPercentOfLumberYardRevenue": 4.1, "citedInCallIds": ["lumber-06-trim-moulding-package-84-lumber", "lumber-01-cedar-timbertech-diy"] },
+    { "group": "Dealer & lumberyard stock / job packs (independent yard, will-call, order-status handoffs)", "approxPercentOfLumberYardRevenue": 15.2, "citedInCallIds": ["lumber-04-plywood-menards-mention", "lumber-08-wrong-cut-return-jeldwen", "lumber-02-contractor-pt-lumber-homedepot"] },
+    { "group": "Contractors (deck/siding/structural) — pro desk + delivery", "approxPercentOfLumberYardRevenue": 22.0, "citedInCallIds": ["lumber-02-contractor-pt-lumber-homedepot", "lumber-05-lvl-simpson-hangers", "lumber-09-siding-lp-vs-composite-mention"] },
+    { "group": "Structural / engineered (LVL, Simpson, hangers)", "approxPercentOfLumberYardRevenue": 8.0, "citedInCallIds": ["lumber-05-lvl-simpson-hangers"] },
+    { "group": "Homeowners (consult + newsletter, small exterior packages)", "approxPercentOfLumberYardRevenue": 3.0, "citedInCallIds": ["lumber-03-cedar-odor-vs-pt-fence", "lumber-14-farm-gates-posts-tarter"] }
+  ],
+  "channelNotes": "Field Notes capture site walks with contractors; Outlook threads tie **dealers** (e.g. North River) to the same **contractor** jobs as Russin; architects enter via CEU and submittal requests.",
+  "competitorMentionIndex": [
+    { "name": "Beacon (BECN)", "callIds": ["lumber-01-cedar-timbertech-diy"] },
+    { "name": "The Home Depot", "callIds": ["lumber-12-stain-cabot-rival", "lumber-02-contractor-pt-lumber-homedepot"] },
+    { "name": "Menards", "callIds": ["lumber-04-plywood-menards-mention"] },
+    { "name": "Lowe’s", "callIds": ["lumber-07-pro-desk-lowes-compare", "lumber-13-2x4-bulk-lowes-out"] },
+    { "name": "84 Lumber", "callIds": ["lumber-06-trim-moulding-package-84-lumber", "lumber-11-pergola-raw-cedar-kits"] },
+    { "name": "ABC Supply", "callIds": ["lumber-02-contractor-pt-lumber-homedepot", "lumber-10-osb-weyerhaeuser-preference"] },
+    { "name": "L&W Supply (GMS)", "callIds": ["lumber-13-2x4-bulk-lowes-out"] },
+    { "name": "Amazon (kits)", "callIds": ["lumber-11-pergola-raw-cedar-kits"] }
+  ]
+}

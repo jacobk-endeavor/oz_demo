@@ -1,0 +1,428 @@
+{
+  "version": 1,
+  "generated": "2026-04-25T21:51:24.526Z",
+  "sourceRoot": "lumberyard-calls/",
+  "stitch": "mp3-buffer-concat",
+  "defaultCustomerVoice": true,
+  "modelId": "eleven_multilingual_v2",
+  "calls": [
+    {
+      "id": "lumber-01-cedar-timbertech-diy",
+      "title": "Thermory & AZEK samples — Montgomery deck refresh",
+      "tags": [
+        "purchase",
+        "competitor",
+        "product-preference",
+        "contractor",
+        "russin-hero"
+      ],
+      "notable": [
+        "Hudson Valley Deck & Porch: Morgan compares Russin in-yard samples to a Beacon (BECN) photo; wants Thermory + AZEK in one deck pack, factory prefinish, deck/rail takeoff; architect (Studio Ellison) may join Russin CEU."
+      ],
+      "repPersona": "Jordan Hayes — exteriors & decking, Russin",
+      "customerPersona": "Morgan Ellis — project lead, Hudson Valley Deck & Porch Co.",
+      "transcript": "lumberyard-calls/transcripts/01-cedar-timbertech-diy.txt",
+      "audio": "lumberyard-calls/audio/01-cedar-timbertech-diy.mp3",
+      "contentSha256": "dfedf88c61306ee31837ff35b4293bf28fb039a923e8375241d778ffe57c4282",
+      "durationSec": 57.967,
+      "callDate": "2026-04-26",
+      "productTags": [
+        "Thermory Ash 1x6",
+        "AZEK Vintage wide board",
+        "Deckorators ALX aluminum rail"
+      ],
+      "source": "call_recording",
+      "location": "Montgomery, NY",
+      "customerName": "Morgan Ellis"
+    },
+    {
+      "id": "lumber-02-contractor-pt-lumber-homedepot",
+      "title": "Duplex frame — ABC pro desk vs. Russin will-call",
+      "tags": [
+        "purchase",
+        "competitor",
+        "pro-account",
+        "contractor"
+      ],
+      "notable": [
+        "Pro GC mentions ABC Supply for PT bundles; still wants Russin for engineered stock + credit line on structural pulls."
+      ],
+      "repPersona": "Avery Collins — pro desk & commercial, Russin",
+      "customerPersona": "Dante Romero — GC, multifamily in-fill",
+      "transcript": "lumberyard-calls/transcripts/02-contractor-pt-lumber-homedepot.txt",
+      "audio": "lumberyard-calls/audio/02-contractor-pt-lumber-homedepot.mp3",
+      "contentSha256": "1201af852164963e5bc3f81d6f790d815cac8b1e49d6c6bc06055d1cedeb4655",
+      "durationSec": 57.915,
+      "callDate": "2026-04-20",
+      "productTags": [
+        "2x6x12 #2 PT",
+        "7/16 OSB sheathing",
+        "Simpson H2.5A hangers"
+      ],
+      "source": "call_recording",
+      "location": "Hudson, WI",
+      "customerName": "Dante Romero"
+    },
+    {
+      "id": "lumber-03-cedar-odor-vs-pt-fence",
+      "title": "WRC privacy vs. big-box picket color drift",
+      "tags": [
+        "product-preference",
+        "purchase",
+        "homeowner",
+        "russin-narrative"
+      ],
+      "notable": [
+        "Homeowner planning exterior; Russin is B2B but newsletter + consult led her in; she wants true WRC, not box-store return-bin batch."
+      ],
+      "repPersona": "Priya Nair — treated & natural cedar, Russin",
+      "customerPersona": "Lorraine Hale — homeowner, weekend renovation",
+      "transcript": "lumberyard-calls/transcripts/03-cedar-odor-vs-pt-fence.txt",
+      "audio": "lumberyard-calls/audio/03-cedar-odor-vs-pt-fence.mp3",
+      "contentSha256": "a21605bdef09bb66c4f3a85a7268986e05686da7fc1c8f4e5e1f60a14cea4019",
+      "durationSec": 63.818,
+      "callDate": "2026-04-14",
+      "productTags": [
+        "1x6 Western Red Cedar pickets",
+        "4x4x8 #2 PT",
+        "Cedar post cap"
+      ],
+      "source": "call_recording",
+      "location": "Garrison, NY",
+      "customerName": "Lorraine Hale"
+    },
+    {
+      "id": "lumber-04-plywood-menards-mention",
+      "title": "Advantech sheathing — big-box ad vs. dealer delivery",
+      "tags": [
+        "competitor",
+        "product-preference",
+        "purchase",
+        "dealer",
+        "russin-narrative"
+      ],
+      "notable": [
+        "Lumberyard buyer for North River: compares Menards ad to Russin LTL drop for Advantech + job pack."
+      ],
+      "repPersona": "Miguel Vásquez — receiving, Russin",
+      "customerPersona": "Arun Patel — buyer, independent lumberyard (dealer account)",
+      "transcript": "lumberyard-calls/transcripts/04-plywood-menards-mention.txt",
+      "audio": "lumberyard-calls/audio/04-plywood-menards-mention.mp3",
+      "contentSha256": "ddd906b75dbf13ba865733d534d160cef9e71bdd9dc5be9ef030b161fcdcf9fb",
+      "durationSec": 61.18,
+      "callDate": "2026-04-13",
+      "productTags": [
+        "19/32 CDX",
+        "23/32 Advantech",
+        "Stinger cap staples"
+      ],
+      "source": "call_recording",
+      "location": "Poughkeepsie, NY",
+      "customerName": "Arun Patel"
+    },
+    {
+      "id": "lumber-05-lvl-simpson-hangers",
+      "title": "LVL + Simpson — beam pocket that moved (porch sub)",
+      "tags": [
+        "purchase",
+        "product-preference",
+        "contractor"
+      ],
+      "notable": [
+        "Carpenter under Morgan on same exteriors pipeline; L&W mentioned for hangers but wants Russin cut-to-length LVL for tomorrow."
+      ],
+      "repPersona": "Tessa Ibarra — structural desk, Russin",
+      "customerPersona": "Rigo Salazar — lead carpenter, Hudson Valley Deck & Porch",
+      "transcript": "lumberyard-calls/transcripts/05-lvl-simpson-hangers.txt",
+      "audio": "lumberyard-calls/audio/05-lvl-simpson-hangers.mp3",
+      "contentSha256": "10422b3fee0860d33b8f2ef444d805231568fd9a78a5c6fbc0f91509c18389b0",
+      "durationSec": 56.217,
+      "callDate": "2026-04-19",
+      "productTags": [
+        "1.75x11-7/8 LVL 2.0E",
+        "Simpson LUS210",
+        "ABU66Z post cap"
+      ],
+      "source": "call_recording",
+      "location": "Wappingers Falls, NY",
+      "customerName": "Rigo Salazar"
+    },
+    {
+      "id": "lumber-06-trim-moulding-package-84-lumber",
+      "title": "Interior casing — 84 visit vs. Russin milled poplar",
+      "tags": [
+        "competitor",
+        "product-preference",
+        "architect",
+        "russin-narrative"
+      ],
+      "notable": [
+        "Architect (Studio Ellison) cross-shopped 84; Russin custom milling for knife match + CEU follow-up for Hardie/trim integration."
+      ],
+      "repPersona": "Holly Brenner — interior trim, Russin",
+      "customerPersona": "Nina Wexler AIA — specifying principal, residential",
+      "transcript": "lumberyard-calls/transcripts/06-trim-moulding-package-84-lumber.txt",
+      "audio": "lumberyard-calls/audio/06-trim-moulding-package-84-lumber.mp3",
+      "contentSha256": "717973ba5dee88cbf267b4dcbf6caf4c4ec75ec313ee67e2e615ea05b9f349c3",
+      "durationSec": 50.522,
+      "callDate": "2026-04-12",
+      "productTags": [
+        "1x4 finger-joint poplar",
+        "Primed MDF base",
+        "Custom mill re-profile"
+      ],
+      "source": "call_recording",
+      "location": "Kingston, NY",
+      "customerName": "Nina Wexler AIA"
+    },
+    {
+      "id": "lumber-07-pro-desk-lowes-compare",
+      "title": "Hollow metal — Lowe’s pro vs. L&W for anchors",
+      "tags": [
+        "competitor",
+        "purchase",
+        "contractor"
+      ],
+      "notable": [
+        "Site super: Lowe’s lead time; Russin can bundle HM with Tapcons same day; mentions L&W on fasteners."
+      ],
+      "repPersona": "Quentin Okafor — pro desk commercial, Russin",
+      "customerPersona": "Bri Turner — field superintendent, commercial TI",
+      "transcript": "lumberyard-calls/transcripts/07-pro-desk-lowes-compare.txt",
+      "audio": "lumberyard-calls/audio/07-pro-desk-lowes-compare.mp3",
+      "contentSha256": "9e90dbf51f4a76a762c9d1485c18318d94dc638ca158545b4aa64e4e6ac1a566",
+      "durationSec": 50.182,
+      "callDate": "2026-04-11",
+      "productTags": [
+        "Curries 16ga HM frame",
+        "18ga door slab 3-0x7-0",
+        "Tapcon anchors"
+      ],
+      "source": "call_recording",
+      "location": "Albany, NY",
+      "customerName": "Bri Turner"
+    },
+    {
+      "id": "lumber-08-wrong-cut-return-jeldwen",
+      "title": "Jeld-Wen spec stick — return line tension",
+      "tags": [
+        "product-preference",
+        "small-transaction",
+        "dealer",
+        "russin-narrative"
+      ],
+      "notable": [
+        "Dealer (North River) will-call: homeowner spec conflict; she wants the fir slab Russin can swap from existing PO."
+      ],
+      "repPersona": "Sienna Cole — will-call, Russin",
+      "customerPersona": "Sonia Malik — pro buyer, North River Lumber & Building",
+      "transcript": "lumberyard-calls/transcripts/08-wrong-cut-return-jeldwen.txt",
+      "audio": "lumberyard-calls/audio/08-wrong-cut-return-jeldwen.mp3",
+      "contentSha256": "257322363faaa4b7ef30a2b31145bef2574ba1d5a716c5ebe1275d9929039a7b",
+      "durationSec": 53.996,
+      "callDate": "2026-04-10",
+      "productTags": [
+        "JELD-WEN 6055 fir slab 6-8",
+        "Prehung jamb",
+        "ORB hinge pack"
+      ],
+      "source": "call_recording",
+      "location": "Middletown, NY",
+      "customerName": "Sonia Malik"
+    },
+    {
+      "id": "lumber-09-siding-lp-vs-composite-mention",
+      "title": "James Hardie rainscreen — spec builder re-order",
+      "tags": [
+        "competitor",
+        "product-preference",
+        "purchase",
+        "contractor"
+      ],
+      "notable": [
+        "Builder comparing LP vs. Hardie; next leg ties to same Montgomery job Morgan has on the books."
+      ],
+      "repPersona": "Omar Khalil — exteriors, Russin",
+      "customerPersona": "Nadia Fayed — spec home builder, quality sensitive",
+      "transcript": "lumberyard-calls/transcripts/09-siding-lp-vs-composite-mention.txt",
+      "audio": "lumberyard-calls/audio/09-siding-lp-vs-composite-mention.mp3",
+      "contentSha256": "147f7627928434a806c1a2c1837f5db6b0df593529df406ee3e4603b3a997c6b",
+      "durationSec": 51.645,
+      "callDate": "2026-04-18",
+      "productTags": [
+        "James Hardie 8-1/4 HardiePlank",
+        "Cor-A-Vent SV-5",
+        "Tyvek CommercialWrap"
+      ],
+      "source": "call_recording",
+      "location": "Beacon, NY",
+      "customerName": "Nadia Fayed"
+    },
+    {
+      "id": "lumber-10-osb-weyerhaeuser-preference",
+      "title": "Weyerhaeuser Edge sheathing — LTL framer",
+      "tags": [
+        "product-preference",
+        "purchase",
+        "contractor"
+      ],
+      "notable": [
+        "Framer: prefers Weyer; Russin can stage with ABC-style bundle pricing on OSB in season."
+      ],
+      "repPersona": "Cal Fisher — stock desk, Russin",
+      "customerPersona": "Ike Watanabe — owner-operator framer",
+      "transcript": "lumberyard-calls/transcripts/10-osb-weyerhaeuser-preference.txt",
+      "audio": "lumberyard-calls/audio/10-osb-weyerhaeuser-preference.mp3",
+      "contentSha256": "b578608e475bdcbb83d409ee7d50e89a6e592aeda77ddbbd650f159b2704099c",
+      "durationSec": 51.306,
+      "callDate": "2026-04-17",
+      "productTags": [
+        "7/16 Edge Gold OSB",
+        "3/8 edge clips",
+        "2x4x92-5/8 stud"
+      ],
+      "source": "call_recording",
+      "location": "New Paltz, NY",
+      "customerName": "Ike Watanabe"
+    },
+    {
+      "id": "lumber-11-pergola-raw-cedar-kits",
+      "title": "Millboard & Thermory over Amazon kit — outdoor living",
+      "tags": [
+        "competitor",
+        "product-preference",
+        "purchase",
+        "russin-narrative"
+      ],
+      "notable": [
+        "Porch & rail contractor; says Amazon kit looked cheap; wants Millboard + Thermory through Russin with hidden fasteners."
+      ],
+      "repPersona": "Ash Winters — outdoor living, Russin",
+      "customerPersona": "Jada Williams — design-build, Porchnative Co.",
+      "transcript": "lumberyard-calls/transcripts/11-pergola-raw-cedar-kits.txt",
+      "audio": "lumberyard-calls/audio/11-pergola-raw-cedar-kits.mp3",
+      "contentSha256": "38ad2b2dadae96a9fa3257ecd98569f424e448d1bc95aaa77bac49552cf4d99c",
+      "durationSec": 55.093,
+      "callDate": "2026-04-16",
+      "productTags": [
+        "Millboard Envello",
+        "Thermory pine decking",
+        "OWT Ornamental Wood Ties"
+      ],
+      "source": "call_recording",
+      "location": "Rhinebeck, NY",
+      "customerName": "Jada Williams"
+    },
+    {
+      "id": "lumber-12-stain-cabot-rival",
+      "title": "Cabot ATO for Thermory — stain aisle comparison",
+      "tags": [
+        "competitor",
+        "product-preference",
+        "contractor"
+      ],
+      "notable": [
+        "Cabinet/finish sub on Morgan’s project; big-box stain aisle; Russin can bundle Cabot with Thermory care kit."
+      ],
+      "repPersona": "Pilar Duarte — coatings, Russin",
+      "customerPersona": "Hector Ruiz — cabinet & deck finisher, side job",
+      "transcript": "lumberyard-calls/transcripts/12-stain-cabot-rival.txt",
+      "audio": "lumberyard-calls/audio/12-stain-cabot-rival.mp3",
+      "contentSha256": "8a7dac2abcf546fcd2c0b2a2f433e311afc68986e17a983670a9b558a7a89907",
+      "durationSec": 57.026,
+      "callDate": "2026-04-15",
+      "productTags": [
+        "Cabot Australian Timber Oil",
+        "Thermory prefinish touch-up",
+        "Purdy Clearcut"
+      ],
+      "source": "call_recording",
+      "location": "Nyack, NY",
+      "customerName": "Hector Ruiz"
+    },
+    {
+      "id": "lumber-13-2x4-bulk-lowes-out",
+      "title": "2x4 bundle — box out of stock, L&W parallel quote",
+      "tags": [
+        "competitor",
+        "purchase",
+        "russin-narrative"
+      ],
+      "notable": [
+        "Church build volunteer; Russin can fill 2x like L&W; nonprofit pricing sheet in CRM."
+      ],
+      "repPersona": "Ren Park — load-out, Russin",
+      "customerPersona": "Owen Flaherty — volunteer coordinator, community build",
+      "transcript": "lumberyard-calls/transcripts/13-2x4-bulk-lowes-out.txt",
+      "audio": "lumberyard-calls/audio/13-2x4-bulk-lowes-out.mp3",
+      "contentSha256": "3028bff2b8dc9aad5dad039710ec70430efdb9c62dadaeabb52ede6c38c66b43",
+      "durationSec": 55.616,
+      "callDate": "2026-04-12",
+      "productTags": [
+        "2x4x96 #2 SPF",
+        "16d common",
+        "33° strip nails 3-1/4"
+      ],
+      "source": "call_recording",
+      "location": "Carmel, NY",
+      "customerName": "Owen Flaherty"
+    },
+    {
+      "id": "lumber-14-farm-gates-posts-tarter",
+      "title": "Tarter gate vs. Russin WRC + ag package",
+      "tags": [
+        "competitor",
+        "product-preference",
+        "purchase",
+        "homeowner",
+        "russin-narrative"
+      ],
+      "notable": [
+        "Small acreage: compares Tractor Supply / Tarter to Russin PT + fence package."
+      ],
+      "repPersona": "Gus Morrow — ag & ranch, Russin",
+      "customerPersona": "Rita Velásquez — homeowner, equestrian",
+      "transcript": "lumberyard-calls/transcripts/14-farm-gates-posts-tarter.txt",
+      "audio": "lumberyard-calls/audio/14-farm-gates-posts-tarter.mp3",
+      "contentSha256": "52b07d6e6253b6bed97fcc843e08cc570ac12faad659087273713a28f99f70ad",
+      "durationSec": 48.615,
+      "callDate": "2026-04-12",
+      "productTags": [
+        "Tarter 10 ft equestrian gate",
+        "48\" non-climb 12.5ga",
+        "4x4x10 #2 PT"
+      ],
+      "source": "call_recording",
+      "location": "Pine Bush, NY",
+      "customerName": "Rita Velásquez"
+    },
+    {
+      "id": "lumber-15-rush-barn-board-holiday",
+      "title": "Rush T&G — same-week Thermory + Bona (restaurant)",
+      "tags": [
+        "purchase",
+        "competitor",
+        "product-preference",
+        "hospitality"
+      ],
+      "notable": [
+        "F&B fit-out: regional supplier undercut; Russin got barn board + Bona in one drop for health-inspection week."
+      ],
+      "repPersona": "Mira Lugo — night-crew & closings, Russin",
+      "customerPersona": "Benoit Fortier — restaurateur, build-out on clock",
+      "transcript": "lumberyard-calls/transcripts/15-rush-barn-board-holiday.txt",
+      "audio": "lumberyard-calls/audio/15-rush-barn-board-holiday.mp3",
+      "contentSha256": "3c1013af7e80e4dd0a0f33adf104c7b4438c48f763979716b431e22aea0528b6",
+      "durationSec": 49.294,
+      "callDate": "2026-04-19",
+      "productTags": [
+        "1x8 pine T&G shiplap",
+        "Bona R440 sealer",
+        "Clark belt sander"
+      ],
+      "source": "call_recording",
+      "location": "Newburgh, NY",
+      "customerName": "Benoit Fortier"
+    }
+  ]
+}

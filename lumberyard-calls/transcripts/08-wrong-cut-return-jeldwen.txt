@@ -1,0 +1,12 @@
+# Title: “That’s not what I ordered on the copy”
+# Rep: Sienna Cole — will-call counter
+# Customer: Doug Morrow — part-time handyman, prickly
+# Notable: Tension/return; customer says Jeld-Wen is what the homeowner wants, not a substitute brand
+# Tags: product-preference, competitor-mention, small-transaction
+
+Sienna [rep]: You asked for 2x6x10 rough, and the ticket shows hem-fir. That’s the stack the loader grabbed from your PO number.
+Doug [customer]: It is the wrong spec—my order clearly said SPF for this porch repair, and the foreman is waiting with a Jeld-Wen prehung, not a random swap you stock.
+Sienna [rep]: I am not trying to ship the wrong product on purpose. I can re-cut from SPF if we have it, or re-pull if you can wait 15 minutes and stay civil.
+Doug [customer]: The Jeld-Wen is what the client ordered off the spec sheet, and I am not putting a no-name in that opening just because another store had it cheap.
+Sienna [rep]: We carry the line she picked if it is a stock size, and I can look up the jamb while we fix the 2x6. No charge on the re-pull if the ticket was on us.
+Doug [customer]: Make it right, and I will add two gallons of the primer your paint desk matched yesterday because I do not have time to cross town to a different yard.

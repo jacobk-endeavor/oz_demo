@@ -1,0 +1,14 @@
+# Title: Sheathing and the “I saw it on sale” call
+# Rep: Miguel Vásquez — receiving / sales floor
+# Customer: Arun Patel — self-build garage shell
+# Notable: Customer mentions Menards flyer price; order for 19/32 and Advantech comparison
+# Tags: competitor, product-preference, purchase
+
+Miguel [rep]: The garage list says 3/4 T&G OSB for the first lift and 1/2 CDX for upper walls, does that still match the drawings?
+Arun [customer]: Mostly, but a Menards ad last week was screaming cheap on 7/16 OSB and I do not know if I should chase it.
+Miguel [rep]: I do not have their batch or moisture story from here, but I can show you the stickers on the stacks we have and what the span tables expect.
+Arun [customer]: My engineer wants “rated sheathing or equal,” and I have always been happy with a brand panel that holds screws without fuzzy tear-out.
+Miguel [rep]: If you want a stiff floor, we can quote Advantech in the size your plan calls for, next to a straight CDX line for budget.
+Arun [customer]: Your Advantech sample edge looks cleaner than the no-name I fingered in the competitor aisle.
+Miguel [rep]: Then you are not buying a headache on fastener hold-down. I will write twenty sheets plus ten CDX, and a bundle of joist tape for the rim.
+Arun [customer]: Put it on my card, with fork-lift to the side gate by five because my crew is already waiting with coffee.
