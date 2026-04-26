@@ -1,42 +1,27 @@
-import { afterEach, describe, it, expect, vi } from 'vitest'
-import { render, screen, cleanup, act, fireEvent } from '@testing-library/react'
+import { afterEach, describe, it, expect } from 'vitest'
+import { render, screen, within, cleanup, act, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import App, { getHashPage } from './App'
-
-vi.mock('./features/oz/OzHomePage', () => ({
-  OzHomePage: () => <div data-testid="oz-home-page">OzHomePage</div>,
-}))
-vi.mock('./features/oz/NebulaHubPage', () => ({
-  NebulaHubPage: () => <div data-testid="nebula-hub-page">NebulaHubPage</div>,
-}))
-vi.mock('./features/fieldNotes', () => ({
-  FieldNotesPage: () => <div data-testid="field-notes-page">FieldNotesPage</div>,
-}))
-vi.mock('./features/callMining', () => ({
-  CallMiningPage: () => <div data-testid="call-mining-page">CallMiningPage</div>,
-}))
-vi.mock('./features/dashboardGenerator', () => ({
-  DashboardGeneratorPage: () => <div data-testid="dashboards-page">DashboardGeneratorPage</div>,
-}))
-vi.mock('./features/quoteAutomation', () => ({
-  QuoteAutomationWorkspace: () => <div data-testid="quote-automation-page">QuoteAutomationWorkspace</div>,
-}))
-vi.mock('./features/leadsReports', () => ({
-  LeadGenerationScreen: ({ onAddToReport }: { onAddToReport: () => void }) => (
-    <div data-testid="lead-generation-page">
-      LeadGenerationScreen
-      <button type="button" onClick={onAddToReport}>
-        Add to weekly report
-      </button>
-    </div>
-  ),
-  ReportingScreen: () => <div data-testid="reports-page">ReportingScreen</div>,
-}))
 
 afterEach(() => {
   cleanup()
   window.location.hash = ''
+  try {
+    window.localStorage.removeItem('oz-demo-assistant-collapsed')
+    window.localStorage.removeItem('oz-demo-sidebar-collapsed')
+    window.localStorage.removeItem('oz-demo-workflows-expanded')
+    window.localStorage.removeItem('oz-demo-chat-rail-px')
+  } catch {
+    // ignore
+  }
 })
+
+function expectPlaceholder(pageId: string, title: string) {
+  const el = screen.getByTestId('workflow-placeholder')
+  expect(el).toHaveAttribute('data-page', pageId)
+  expect(el).toHaveTextContent(title)
+}
 
 describe('getHashPage()', () => {
   it('returns oz for empty hash', () => {
@@ -64,9 +49,19 @@ describe('getHashPage()', () => {
     expect(getHashPage()).toBe('dashboards')
   })
 
-  it('returns reports for #/reports?focus=int_001', () => {
+  it('defaults to oz for removed routes such as #/reports', () => {
     window.location.hash = '#/reports?focus=int_001'
-    expect(getHashPage()).toBe('reports')
+    expect(getHashPage()).toBe('oz')
+  })
+
+  it('returns field-app for #/field-app', () => {
+    window.location.hash = '#/field-app'
+    expect(getHashPage()).toBe('field-app')
+  })
+
+  it('returns a field mobile workflow id for #/field-mw--customer-interactions', () => {
+    window.location.hash = '#/field-mw--customer-interactions'
+    expect(getHashPage()).toBe('field-mw--customer-interactions')
   })
 
   it('defaults to oz for unknown hash including legacy routes', () => {
@@ -82,66 +77,111 @@ describe('getHashPage()', () => {
 })
 
 describe('App', () => {
-  it('renders the Oz home by default', () => {
+  it('renders the Oz home with chat only (no right-hand placeholder) until a chat or nav opens context', () => {
     window.location.hash = ''
     render(<App />)
-    expect(screen.getByTestId('oz-home-page')).toBeInTheDocument()
+    expect(screen.queryByTestId('workflow-placeholder')).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Command center chat' })).toBeInTheDocument()
+  })
+
+  it('renders Field App as voice-only: orb on home, no text chat, no right-hand placeholder', () => {
+    window.location.hash = '#/field-app'
+    render(<App />)
+    expect(screen.queryByTestId('workflow-placeholder')).not.toBeInTheDocument()
+    expect(screen.getByTestId('field-app-surface')).toBeInTheDocument()
+    expect(screen.getByTestId('field-app-voice-home')).toBeInTheDocument()
+    expect(screen.getByTestId('field-app-orb')).toBeInTheDocument()
+    expect(screen.getByTestId('pulse-orb')).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: 'Command center chat' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Oz chat' })).not.toBeInTheDocument()
+  })
+
+  it('lists field mobile workflows in the left nav and deep-links a workflow', async () => {
+    const user = userEvent.setup()
+    window.location.hash = '#/field-app'
+    render(<App />)
+    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('navigation', { name: 'Primary navigation' })).getByText('Mobile workflows'),
+    ).toBeInTheDocument()
+    await user.click(
+      within(screen.getByRole('navigation', { name: 'Primary navigation' })).getByRole('button', {
+        name: 'Customer history',
+      }),
+    )
+    expect(window.location.hash).toBe('#/field-mw--customer-interactions')
+    expect(screen.getByTestId('field-mobile-workflow-bench')).toBeInTheDocument()
+    expect(screen.getByTestId('field-workflow-card-customer-interactions')).toBeInTheDocument()
   })
 
   it('renders Field Notes when hash is #/field-notes', () => {
     window.location.hash = '#/field-notes'
     render(<App />)
-    expect(screen.getByTestId('field-notes-page')).toBeInTheDocument()
+    expect(screen.getByText(/Visit log \(from Field\)/i)).toBeInTheDocument()
   })
 
-  it('renders Call Mining when hash is #/call-mining', () => {
+  it('defaults #/call-mining to home when route is not registered', () => {
     window.location.hash = '#/call-mining'
     render(<App />)
-    expect(screen.getByTestId('call-mining-page')).toBeInTheDocument()
+    expect(screen.queryByTestId('workflow-placeholder')).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Command center chat' })).toBeInTheDocument()
   })
 
   it('renders Dashboards when hash is #/dashboards', () => {
     window.location.hash = '#/dashboards'
     render(<App />)
-    expect(screen.getByTestId('dashboards-page')).toBeInTheDocument()
+    expect(screen.getByTestId('dashboard-workflow')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '→ Build charts' })).toBeInTheDocument()
   })
 
   it('renders Quote Automation when hash is #/quote-automation', () => {
     window.location.hash = '#/quote-automation'
     render(<App />)
-    expect(screen.getByTestId('quote-automation-page')).toBeInTheDocument()
+    expect(screen.getByText(/Review workspace for Russin Lumber/i)).toBeInTheDocument()
+  })
+
+  it('renders Quotes Ready for Review when hash is #/quotes-ready', () => {
+    window.location.hash = '#/quotes-ready'
+    render(<App />)
+    expect(screen.getByTestId('quotes-ready-for-review-page')).toBeInTheDocument()
   })
 
   it('switches between workflows on hashchange', async () => {
     window.location.hash = '#/oz'
     render(<App />)
-    expect(screen.getByTestId('oz-home-page')).toBeInTheDocument()
+    expect(screen.queryByTestId('workflow-placeholder')).not.toBeInTheDocument()
 
     await act(async () => {
       window.location.hash = '#/dashboards'
       window.dispatchEvent(new HashChangeEvent('hashchange'))
     })
 
-    expect(screen.getByTestId('dashboards-page')).toBeInTheDocument()
+    expect(screen.getByTestId('dashboard-workflow')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '→ Build charts' })).toBeInTheDocument()
   })
 
-  it('navigates from lead generation to reports', () => {
-    window.location.hash = '#/lead-generation'
+  it('navigates from nebula to dashboards via sidebar', async () => {
+    window.location.hash = '#/nebula'
     render(<App />)
-    expect(screen.getByTestId('lead-generation-page')).toBeInTheDocument()
+    expectPlaceholder('nebula', 'Overview')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add to weekly report' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Dashboards' }))
+    })
 
-    expect(screen.getByTestId('reports-page')).toBeInTheDocument()
+    expect(screen.getByTestId('dashboard-workflow')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '→ Build charts' })).toBeInTheDocument()
   })
 
-  it('exposes primary Oz workflow navigation in the sidebar', () => {
-    window.location.hash = '#/oz'
+  it('exposes color-coded workflow navigation in the Workflows list', () => {
+    window.location.hash = '#/nebula'
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Call Mining' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Dashboards' }))
 
-    expect(screen.getByTestId('call-mining-page')).toBeInTheDocument()
+    expect(screen.getByTestId('dashboard-workflow')).toBeInTheDocument()
   })
 
   it('exposes a collapsible sidebar', () => {
@@ -153,22 +193,14 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /Expand sidebar/i })).toBeInTheDocument()
   })
 
-  it('toggles the Oz chat rail open and closed from the workflow header', () => {
-    window.location.hash = '#/oz'
+  it('uses a full-page workflow view on Nebula without a default chat column', () => {
+    window.location.hash = '#/nebula'
     render(<App />)
 
-    expect(screen.getByRole('complementary', { name: 'Oz assistant rail' })).toBeInTheDocument()
-
-    const toggle = screen.getByRole('button', { name: /Hide Oz chat/i })
-    fireEvent.click(toggle)
-
-    expect(
-      screen.queryByRole('complementary', { name: 'Oz assistant rail' }),
-    ).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Show Oz chat/i })).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: /Show Oz chat/i }))
-    expect(screen.getByRole('complementary', { name: 'Oz assistant rail' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Command center chat' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Oz chat' })).not.toBeInTheDocument()
+    expect(screen.getByRole('main', { name: 'Context' })).toBeInTheDocument()
+    expect(screen.getByTestId('workflow-placeholder')).toBeInTheDocument()
   })
 
   it('does not expose legacy chat/graph/ingest navigation', () => {
@@ -177,5 +209,17 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Graph' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ingest' })).not.toBeInTheDocument()
+  })
+
+  it('opens the Milwaukee distributors lead table from chat on the home route', async () => {
+    const user = userEvent.setup()
+    window.location.hash = '#/oz'
+    render(<App />)
+
+    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'distributors in Milwaukee')
+    await user.click(screen.getByRole('button', { name: 'Send message' }))
+
+    expect(await screen.findByTestId('lead-gen-distributors-table')).toBeInTheDocument()
+    expect(screen.getByRole('main', { name: 'Context' })).toBeInTheDocument()
   })
 })

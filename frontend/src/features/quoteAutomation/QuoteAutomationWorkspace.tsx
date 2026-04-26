@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button, Panel, PulseOrb, Tag, joinClasses } from '../../shared/ui'
 import { quoteAutomationDemoData } from './demoData'
 import type { QuoteAutomationDemoData, TaskStatus } from './types'
@@ -28,11 +28,39 @@ const taskDotClasses: Record<TaskStatus, string> = {
   blocked: 'border-red-500 bg-red-500',
 }
 
+const QUOTE_AUTOFILL_KEY = 'oz-quote-autofill' as const
+
 export function QuoteAutomationWorkspace({
   data = quoteAutomationDemoData,
 }: QuoteAutomationWorkspaceProps) {
+  const [fieldHandoff, setFieldHandoff] = useState<string | null>(null)
   const [activeTaskIndex, setActiveTaskIndex] = useState(0)
   const [isReviewSubmitted, setIsReviewSubmitted] = useState(false)
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(QUOTE_AUTOFILL_KEY)
+      if (!raw) return
+      sessionStorage.removeItem(QUOTE_AUTOFILL_KEY)
+      const p = JSON.parse(raw) as {
+        customer?: string
+        lineItems?: string
+        shipTo?: string
+        needBy?: string
+        po?: string
+      }
+      const bits = [
+        p.customer && `Customer: ${p.customer}`,
+        p.lineItems && `Lines: ${p.lineItems}`,
+        p.shipTo && `Ship: ${p.shipTo}`,
+        p.needBy && `Need by: ${p.needBy}`,
+        p.po && `PO: ${p.po}`,
+      ].filter(Boolean)
+      if (bits.length) setFieldHandoff(bits.join(' · '))
+    } catch {
+      /* ignore */
+    }
+  }, [])
   const taskCount = data.tasks.length
   const allTasksComplete = activeTaskIndex >= taskCount
 
@@ -51,6 +79,15 @@ export function QuoteAutomationWorkspace({
 
   return (
     <div className="space-y-5">
+      {fieldHandoff ? (
+        <div
+          className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 text-sm text-sky-950"
+          role="status"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-800">From Field (prospect visit)</p>
+          <p className="mt-1 leading-relaxed">{fieldHandoff}</p>
+        </div>
+      ) : null}
       <Panel
         eyebrow="Quote automation"
         title={`Review workspace for ${data.customerName}`}

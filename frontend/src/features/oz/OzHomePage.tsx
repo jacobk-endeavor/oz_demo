@@ -6,22 +6,22 @@ interface OzHomePageProps {
 
 const journey = [
   {
-    title: 'Capture customer visit context',
-    description: 'Field notes scripts capture messy meeting context and produce structured follow-ups.',
-    cta: 'Open Field Notes',
-    page: 'field-notes',
+    title: 'Turn data into a leader view',
+    description: 'Dashboards summarize demand, source mix, and next actions in one place.',
+    cta: 'Open Dashboards',
+    page: 'dashboards',
   },
   {
-    title: 'Mine scattered interaction evidence',
-    description: 'Call mining ranks demand, complaints, and competitor pressure with cited evidence rows.',
-    cta: 'Open Call Mining',
-    page: 'call-mining',
+    title: 'Work the lead grid in Tables',
+    description: 'Open the Milwaukee distributor set, then sort, filter, and act from chat on Home or here.',
+    cta: 'Open Tables',
+    page: 'tables',
   },
   {
-    title: 'Generate dashboards, quotes, leads, reports',
-    description: 'Each workflow ends in a concrete sales action. Pick one to see the full motion.',
-    cta: 'Open Nebula',
-    page: 'nebula',
+    title: 'Search the workspace',
+    description: 'Search is the cross-surface way to find accounts, files, and logs in one pass.',
+    cta: 'Open Search',
+    page: 'search',
   },
 ]
 
@@ -46,9 +46,9 @@ export function OzHomePage({ onNavigate }: OzHomePageProps) {
             “Find the next best sales action.”
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            <Button onClick={() => onNavigate('field-notes')}>Run field note script</Button>
-            <Button variant="secondary" onClick={() => onNavigate('nebula')}>
-              Open Nebula
+            <Button onClick={() => onNavigate('dashboards')}>Open Dashboards</Button>
+            <Button variant="secondary" onClick={() => onNavigate('tables')}>
+              Open Tables
             </Button>
           </div>
         </div>
