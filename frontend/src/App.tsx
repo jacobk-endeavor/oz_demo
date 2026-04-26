@@ -92,7 +92,6 @@ const allPages = new Set<Page>([
   'field-app',
   ...fieldMobileNavItems.map((e) => e.id),
   'tables',
-  'files',
   'knowledge-base',
   'nebula',
   'field-notes',
@@ -133,11 +132,6 @@ const pageMeta: Record<Exclude<Page, FieldMobileNavId>, PageMeta> = {
     title: 'Tables',
     subtitle:
       'The Milwaukee distributor lead grid stays open here. Chat to sort, sub-sort, filter by source, or say “find more leads”.',
-  },
-  files: {
-    eyebrow: 'Workspace',
-    title: 'Files',
-    subtitle: 'Uploads and exports tied to this workspace.',
   },
   'knowledge-base': {
     eyebrow: 'Workspace',
@@ -213,6 +207,7 @@ function isFieldAppCommandCenter(p: Page): boolean {
 export function getHashPage(): Page {
   const hashPath = window.location.hash.replace(/^#\/?/, '').split('?')[0]
   if (hashPath === '') return 'oz'
+  if (hashPath === 'files') return 'knowledge-base' // legacy: Files was merged into Knowledge Base
   return isPage(hashPath) ? hashPath : 'oz'
 }
 

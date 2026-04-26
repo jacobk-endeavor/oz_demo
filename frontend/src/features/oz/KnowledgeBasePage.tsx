@@ -9,7 +9,7 @@ import {
   type InputHTMLAttributes,
 } from 'react'
 import { joinClasses } from '../../shared/ui'
-import { PlusIcon, FolderOpenIcon, ChevronRightIcon, CloseIcon } from '../../shared/ui/icons'
+import { PlusIcon, FolderOpenIcon, ChevronRightIcon, CloseIcon, TrashIcon } from '../../shared/ui/icons'
 import {
   classifyKnowledgeFile,
   processKnowledgeFile,
@@ -21,7 +21,11 @@ import { tabularFromText, type TabularResult } from './knowledgeBaseTabular'
 
 const KnowledgeBasePdfView = lazy(() => import('./KnowledgeBasePdfView'))
 
-type KbFileEntry =
+const INGEST_TO_INDEXED = 800
+
+type IngestState = 'staged' | 'processing' | 'ready' | 'ingested'
+
+type KbListEntry =
   | {
       id: string
       entryKind: 'file'
@@ -29,7 +33,7 @@ type KbFileEntry =
       file: File
       sizeLabel: string
       kind: KnowledgeAssetKind
-      /** null until background load finishes; demo always eventually gets a value. */
+      ingest: IngestState
       preview: ProcessedKnowledgePreview | null
       revokeObjectUrl: () => void
     }
@@ -38,17 +42,11 @@ type KbFileEntry =
       entryKind: 'folder'
       displayName: string
       sizeLabel: string
+      ingest: 'staged' | 'ingested'
       revokeObjectUrl: () => void
     }
 
-type StagedFile = {
-  id: string
-  file: File
-  displayName: string
-  kind: KnowledgeAssetKind
-}
-type StagedFolder = { id: string; displayName: string; kind: 'folder' }
-type Staged = StagedFile | StagedFolder
+type LibraryView = 'ingested' | 'queue' | 'all'
 
 function nextId() {
   return `kb-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -80,19 +78,11 @@ function folderNameFromDirectoryPicker(fileList: FileList | null): string | null
 
 type TypeBucket = 'folder' | 'excel' | 'pdf' | 'image' | 'text'
 
-function typeBucketForEntry(e: KbFileEntry): TypeBucket {
+function typeBucketForEntry(e: KbListEntry): TypeBucket {
   if (e.entryKind === 'folder') return 'folder'
   if (e.kind === 'pdf') return 'pdf'
   if (e.kind === 'image') return 'image'
   if (e.kind === 'excel') return 'excel'
-  return 'text'
-}
-
-function typeBucketForStaged(s: Staged): TypeBucket {
-  if (s.kind === 'folder') return 'folder'
-  if (s.kind === 'pdf') return 'pdf'
-  if (s.kind === 'image') return 'image'
-  if (s.kind === 'excel') return 'excel'
   return 'text'
 }
 
@@ -111,9 +101,37 @@ function typeSortValue(b: TypeBucket) {
 
 type SortBy = 'type' | 'name' | 'status'
 
-function statusText(e: KbFileEntry): string {
-  if (e.entryKind === 'folder') return '—'
-  return 'Ready'
+function ingestRank(e: KbListEntry): number {
+  if (e.entryKind === 'folder') {
+    return e.ingest === 'staged' ? 0 : 3
+  }
+  const m: Record<IngestState, number> = { staged: 0, processing: 1, ready: 2, ingested: 3 }
+  return m[e.ingest]
+}
+
+function isIngested(e: KbListEntry): boolean {
+  return e.entryKind === 'folder' ? e.ingest === 'ingested' : e.ingest === 'ingested'
+}
+
+function isInQueue(e: KbListEntry): boolean {
+  if (e.entryKind === 'folder') return e.ingest === 'staged'
+  return e.ingest === 'staged' || e.ingest === 'processing' || e.ingest === 'ready'
+}
+
+function statusLabel(e: KbListEntry): string {
+  if (e.entryKind === 'folder') {
+    return e.ingest === 'staged' ? 'Staged' : 'Ingested'
+  }
+  switch (e.ingest) {
+    case 'staged':
+      return 'Staged'
+    case 'processing':
+      return 'Processing'
+    case 'ready':
+      return 'Ready'
+    case 'ingested':
+      return 'Ingested'
+  }
 }
 
 function demoNormalizeProcessResult(
@@ -264,28 +282,26 @@ function PanelFrame({
   )
 }
 
+type KbFileRow = Extract<KbListEntry, { entryKind: 'file' }>
+
 export function KnowledgeBasePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
-  const [staged, setStaged] = useState<Staged[]>([])
-  const [rows, setRows] = useState<KbFileEntry[]>([])
+  const [rows, setRows] = useState<KbListEntry[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const [libraryView, setLibraryView] = useState<LibraryView>('ingested')
   const [sortBy, setSortBy] = useState<SortBy>('type')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [stagedPanel, setStagedPanel] = useState<{
-    id: string
-    preview: ProcessedKnowledgePreview
-    revoke: () => void
-  } | null>(null)
-  const filesForUnmountRef = useRef<KbFileEntry[]>([])
-  const stagedRef = useRef(staged)
-  stagedRef.current = staged
+  const filesForUnmountRef = useRef<KbListEntry[]>([])
+  const pendingIngestTimerRef = useRef<Map<string, number>>(new Map())
+  const rowsRef = useRef(rows)
+  rowsRef.current = rows
 
   useEffect(() => {
     filesForUnmountRef.current = rows
   }, [rows])
 
-  type KbFileRow = Extract<KbFileEntry, { entryKind: 'file' }>
   const setEntry = useCallback((id: string, next: (e: KbFileRow) => KbFileRow) => {
     setRows((prev) =>
       prev.map((e) => {
@@ -297,85 +313,150 @@ export function KnowledgeBasePage() {
     )
   }, [])
 
+  const setFolderIngest = useCallback((id: string, ingest: 'staged' | 'ingested') => {
+    setRows((prev) =>
+      prev.map((e) => (e.id === id && e.entryKind === 'folder' ? { ...e, ingest } : e)),
+    )
+  }, [])
+
+  const clearIngestTimer = useCallback((id: string) => {
+    const t = pendingIngestTimerRef.current.get(id)
+    if (t != null) {
+      window.clearTimeout(t)
+      pendingIngestTimerRef.current.delete(id)
+    }
+  }, [])
+
+  const scheduleIngested = useCallback(
+    (id: string) => {
+      clearIngestTimer(id)
+      const t = window.setTimeout(() => {
+        setEntry(id, (e) => (e.ingest === 'ready' ? { ...e, ingest: 'ingested' } : e))
+        pendingIngestTimerRef.current.delete(id)
+      }, INGEST_TO_INDEXED)
+      pendingIngestTimerRef.current.set(id, t)
+    },
+    [setEntry, clearIngestTimer],
+  )
+
   const loadFilePreview = useCallback(
     async (id: string, file: File, kind: KnowledgeAssetKind) => {
+      setEntry(id, (e) => ({ ...e, ingest: 'processing' }))
       try {
         await processingDelay()
         const result = await processKnowledgeFile(file, { kind })
         const { preview, revoke } = demoNormalizeProcessResult(file, result)
         setEntry(id, (e) => ({
           ...e,
+          ingest: 'ready' as const,
           preview,
           revokeObjectUrl: revoke,
         }))
+        scheduleIngested(id)
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Could not process file'
         const { preview, revoke } = demoNormalizeProcessResult(file, {
           type: 'error',
           message: msg,
         })
-        setEntry(id, (e) => ({ ...e, preview, revokeObjectUrl: revoke }))
+        setEntry(id, (e) => ({
+          ...e,
+          ingest: 'ready' as const,
+          preview,
+          revokeObjectUrl: revoke,
+        }))
+        scheduleIngested(id)
       }
     },
-    [setEntry],
+    [setEntry, scheduleIngested],
   )
 
-  const addFilesToStaged = useCallback((fileList: FileList | null) => {
-    if (!fileList || fileList.length === 0) return
-    const add: StagedFile[] = []
-    for (let i = 0; i < fileList.length; i++) {
-      const file = fileList[i]!
-      const path = (file as File & { webkitRelativePath?: string }).webkitRelativePath
-      const displayName = path && path.length > 0 ? path : file.name
-      const kind = classifyKnowledgeFile(file)
-      add.push({ id: nextId(), file, displayName, kind })
-    }
-    setStaged((p) => [...p, ...add])
-  }, [])
-
-  const addFolderToStaged = useCallback((fileList: FileList | null) => {
-    const name = folderNameFromDirectoryPicker(fileList)
-    if (name == null) return
-    setStaged((p) => [...p, { id: nextId(), displayName: name, kind: 'folder' }])
-  }, [])
-
-  const addAll = useCallback(() => {
-    if (staged.length === 0) return
-    const toAdd: KbFileEntry[] = []
-    for (const s of staged) {
-      if (s.kind === 'folder') {
-        toAdd.push({
-          id: s.id,
-          entryKind: 'folder',
-          displayName: s.displayName,
-          sizeLabel: 'Folder',
-          revokeObjectUrl: noopRevoke,
-        })
-      } else {
-        toAdd.push({
-          id: s.id,
+  const addFiles = useCallback(
+    (fileList: FileList | null) => {
+      if (!fileList || fileList.length === 0) return
+      const newRows: KbListEntry[] = []
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i]!
+        const path = (file as File & { webkitRelativePath?: string }).webkitRelativePath
+        const displayName = path && path.length > 0 ? path : file.name
+        const kind = classifyKnowledgeFile(file)
+        const id = nextId()
+        newRows.push({
+          id,
           entryKind: 'file',
-          file: s.file,
-          displayName: s.displayName,
-          sizeLabel: formatSize(s.file.size),
-          kind: s.kind,
+          file,
+          displayName,
+          sizeLabel: formatSize(file.size),
+          kind,
+          ingest: 'staged',
           preview: null,
           revokeObjectUrl: noopRevoke,
         })
       }
-    }
-    setRows((prev) => [...prev, ...toAdd])
-    for (const s of staged) {
-      if (s.kind === 'folder') continue
-      void loadFilePreview(s.id, s.file, s.kind)
-    }
-    setStaged([])
-  }, [staged, loadFilePreview])
+      setRows((prev) => [...newRows, ...prev])
+      for (const r of newRows) {
+        if (r.entryKind === 'file') {
+          void loadFilePreview(r.id, r.file, r.kind)
+        }
+      }
+      setAddModalOpen(false)
+    },
+    [loadFilePreview],
+  )
 
-  const sortedRows = useMemo(() => {
-    const list = [...rows]
+  const addFolder = useCallback(
+    (fileList: FileList | null) => {
+      const name = folderNameFromDirectoryPicker(fileList)
+      if (name == null) return
+      const id = nextId()
+      setRows((prev) => [
+        {
+          id,
+          entryKind: 'folder',
+          displayName: name,
+          sizeLabel: 'Folder',
+          ingest: 'staged',
+          revokeObjectUrl: noopRevoke,
+        },
+        ...prev,
+      ])
+      window.setTimeout(() => {
+        if (!rowsRef.current.some((e) => e.id === id && e.entryKind === 'folder' && e.ingest === 'staged')) {
+          return
+        }
+        setFolderIngest(id, 'ingested')
+      }, 400)
+      setAddModalOpen(false)
+    },
+    [setFolderIngest],
+  )
+
+  const deleteById = useCallback(
+    (id: string) => {
+      clearIngestTimer(id)
+      setRows((prev) => {
+        const target = prev.find((e) => e.id === id)
+        if (target) target.revokeObjectUrl()
+        return prev.filter((e) => e.id !== id)
+      })
+      setSelectedId((s) => (s === id ? null : s))
+    },
+    [clearIngestTimer],
+  )
+
+  const displayedRows = useMemo(() => {
+    let list = rows.filter((e) => {
+      if (libraryView === 'ingested') return isIngested(e)
+      if (libraryView === 'queue') return isInQueue(e)
+      return true
+    })
     const sign = sortDir === 'asc' ? 1 : -1
-    list.sort((a, b) => {
+    list = [...list].sort((a, b) => {
+      if (libraryView === 'all') {
+        const ra = ingestRank(a)
+        const rb = ingestRank(b)
+        if (ra !== rb) return sign * (ra - rb)
+      }
       if (sortBy === 'name') {
         return sign * a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })
       }
@@ -385,153 +466,69 @@ export function KnowledgeBasePage() {
         if (ta !== tb) return sign * (ta - tb)
         return sign * a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })
       }
-      return sign * statusText(a).localeCompare(statusText(b), undefined, { sensitivity: 'base' })
+      return sign * statusLabel(a).localeCompare(statusLabel(b), undefined, { sensitivity: 'base' })
     })
     return list
-  }, [rows, sortBy, sortDir])
+  }, [rows, libraryView, sortBy, sortDir])
 
-  useEffect(() => {
-    if (selectedId == null) {
-      setStagedPanel((p) => {
-        p?.revoke()
-        return null
-      })
-      return
-    }
-    const currentStaged = stagedRef.current
-    if (!currentStaged.some((s) => s.id === selectedId)) {
-      setStagedPanel((p) => {
-        p?.revoke()
-        return null
-      })
-      return
-    }
-    const st = currentStaged.find((s) => s.id === selectedId)
-    if (!st || st.kind === 'folder') {
-      setStagedPanel((p) => {
-        p?.revoke()
-        return null
-      })
-      return
-    }
-
-    setStagedPanel((p) => {
-      p?.revoke()
-      return null
-    })
-
-    let cancelled = false
-    void (async () => {
-      try {
-        const result = await processKnowledgeFile(st.file, { kind: st.kind })
-        const { preview, revoke } = demoNormalizeProcessResult(st.file, result)
-        if (cancelled) {
-          revoke()
-          return
-        }
-        setStagedPanel({ id: st.id, preview, revoke })
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Could not process file'
-        const { preview, revoke } = demoNormalizeProcessResult(st.file, { type: 'error', message: msg })
-        if (cancelled) {
-          revoke()
-          return
-        }
-        setStagedPanel({ id: st.id, preview, revoke })
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [selectedId])
+  const closePanel = useCallback(() => {
+    setSelectedId(null)
+  }, [])
 
   useEffect(
     () => () => {
       for (const f of filesForUnmountRef.current) {
         f.revokeObjectUrl()
       }
+      for (const t of pendingIngestTimerRef.current.values()) {
+        window.clearTimeout(t)
+      }
+      pendingIngestTimerRef.current.clear()
     },
     [],
   )
-
-  useEffect(
-    () => () => {
-      setStagedPanel((p) => {
-        p?.revoke()
-        return null
-      })
-    },
-    [],
-  )
-
-  const closePanel = useCallback(() => {
-    setSelectedId(null)
-  }, [])
 
   const renderPanel = () => {
     if (selectedId == null) return null
-
-    const st = staged.find((s) => s.id === selectedId)
     const row = rows.find((r) => r.id === selectedId)
+    if (!row) return null
 
-    if (st?.kind === 'folder' || row?.entryKind === 'folder') {
-      const name = st?.kind === 'folder' ? st.displayName : (row as Extract<KbFileEntry, { entryKind: 'folder' }>).displayName
+    if (row.entryKind === 'folder') {
       return (
-        <PanelFrame title={name} onClose={closePanel}>
+        <PanelFrame title={row.displayName} onClose={closePanel}>
           <p className="text-sm text-zinc-600">Folder — contents are not listed in the demo list.</p>
         </PanelFrame>
       )
     }
 
-    if (st && 'file' in st) {
-      if (stagedPanel == null || stagedPanel.id !== st.id) {
-        return (
-          <PanelFrame title={st.displayName} onClose={closePanel}>
-            <p className="text-sm text-zinc-500">Loading preview…</p>
-          </PanelFrame>
-        )
-      }
-      return (
-        <PanelFrame title={st.displayName} onClose={closePanel}>
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <PreviewBody preview={stagedPanel.preview} fileName={st.displayName} />
-          </div>
-        </PanelFrame>
-      )
-    }
-
-    if (row && row.entryKind === 'file') {
-      if (row.preview == null) {
-        return (
-          <PanelFrame title={row.displayName} onClose={closePanel}>
-            <p className="text-sm text-zinc-500">Loading preview…</p>
-          </PanelFrame>
-        )
-      }
+    if (row.preview == null) {
       return (
         <PanelFrame title={row.displayName} onClose={closePanel}>
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <PreviewBody preview={row.preview} fileName={row.displayName} />
-          </div>
+          <p className="text-sm text-zinc-500">Loading preview…</p>
         </PanelFrame>
       )
     }
-
-    return null
+    return (
+      <PanelFrame title={row.displayName} onClose={closePanel}>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <PreviewBody preview={row.preview} fileName={row.displayName} />
+        </div>
+      </PanelFrame>
+    )
   }
 
-  const trClass = (id: string, isStagedRow: boolean) =>
-    joinClasses(
-      'border-b',
-      isStagedRow ? 'border-sky-100 bg-sky-50/50' : 'border-zinc-100 bg-white',
-      'cursor-pointer transition-colors',
-      selectedId === id
-        ? 'bg-sky-100/80'
-        : isStagedRow
-          ? 'hover:bg-sky-50/90'
-          : 'hover:bg-zinc-50/80',
+  const trClass = (e: KbListEntry) => {
+    const inQueue = isInQueue(e) || (e.entryKind === 'file' && e.ingest === 'staged')
+    return joinClasses(
+      'group cursor-pointer border-b border-zinc-100',
+      inQueue && e.entryKind === 'file' && e.ingest === 'staged' ? 'bg-amber-50/70' : '',
+      inQueue && e.entryKind === 'file' && (e.ingest === 'processing' || e.ingest === 'ready')
+        ? 'bg-sky-50/50'
+        : '',
+      e.entryKind === 'folder' && e.ingest === 'staged' ? 'bg-amber-50/50' : '',
+      selectedId === e.id ? 'ring-1 ring-inset ring-sky-300' : 'hover:bg-zinc-50/80',
     )
+  }
 
   return (
     <div
@@ -539,65 +536,101 @@ export function KnowledgeBasePage() {
       data-testid="knowledge-base-page"
     >
       <p className="shrink-0 text-sm text-zinc-600">
-        Add files and folders, then <span className="font-medium">Add all</span> to the list. Click a row to open a
-        preview. Status shows Ready for each document in the demo.
+        New files land at the top as <span className="font-medium">staged</span>, then move to <span className="font-medium">ready</span> and <span className="font-medium">ingested</span>. The default list shows ingested
+        only. Use <span className="font-medium">Add</span> to open the upload dialog.
       </p>
 
-      <div className="flex shrink-0 flex-wrap items-end gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-          multiple
-          onChange={(e) => {
-            addFilesToStaged(e.target.files)
-            e.target.value = ''
-          }}
-        />
-        <input
-          ref={folderInputRef}
-          type="file"
-          className="hidden"
-          multiple
-          {...({ webkitdirectory: '' } as InputHTMLAttributes<HTMLInputElement>)}
-          onChange={(e) => {
-            addFolderToStaged(e.target.files)
-            e.target.value = ''
-          }}
-        />
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => setAddModalOpen(true)}
           className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800"
         >
           <PlusIcon className="h-4 w-4" aria-hidden />
-          Add files
+          Add
         </button>
-        <button
-          type="button"
-          onClick={() => folderInputRef.current?.click()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm transition-colors hover:bg-zinc-50"
-        >
-          <FolderOpenIcon className="h-4 w-4 text-zinc-500" aria-hidden />
-          Add folder
-        </button>
-        <button
-          type="button"
-          onClick={addAll}
-          disabled={staged.length === 0}
-          className={joinClasses(
-            'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition-colors',
-            staged.length === 0
-              ? 'cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400'
-              : 'border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100',
-          )}
-        >
-          Add all{staged.length > 0 ? ` (${staged.length})` : ''}
-        </button>
-        {staged.length > 0 && (
-          <p className="w-full min-w-0 pl-0.5 text-[11px] text-zinc-500">Staged rows are listed below; use Add all to add them to the list.</p>
+        {addModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            role="presentation"
+            onClick={() => setAddModalOpen(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-4 shadow-xl"
+              role="dialog"
+              aria-labelledby="kb-add-title"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="kb-add-title" className="text-base font-semibold text-zinc-900">
+                Add to library
+              </h2>
+              <p className="mt-1 text-sm text-zinc-600">Choose files or a folder. New items appear at the top of the list.</p>
+              <div className="mt-4 flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  multiple
+                  onChange={(e) => {
+                    addFiles(e.target.files)
+                    e.target.value = ''
+                  }}
+                />
+                <input
+                  ref={folderInputRef}
+                  type="file"
+                  className="hidden"
+                  multiple
+                  {...({ webkitdirectory: '' } as InputHTMLAttributes<HTMLInputElement>)}
+                  onChange={(e) => {
+                    addFolder(e.target.files)
+                    e.target.value = ''
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  Add files
+                </button>
+                <button
+                  type="button"
+                  onClick={() => folderInputRef.current?.click()}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800"
+                >
+                  <FolderOpenIcon className="h-4 w-4 text-zinc-500" />
+                  Add folder
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddModalOpen(false)}
+                  className="text-sm text-zinc-500 hover:text-zinc-800"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         )}
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+
+        <div className="ml-auto flex flex-wrap items-end gap-2 sm:items-center">
+          <div className="flex rounded-lg border border-zinc-200 bg-zinc-50/80 p-0.5 text-xs font-medium text-zinc-600">
+            {(['ingested', 'queue', 'all'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setLibraryView(v)}
+                className={joinClasses(
+                  'rounded-md px-2.5 py-1 transition-colors',
+                  libraryView === v ? 'bg-white text-zinc-900 shadow-sm' : 'hover:text-zinc-900',
+                )}
+              >
+                {v === 'ingested' ? 'Ingested' : v === 'queue' ? 'In queue' : 'All'}
+              </button>
+            ))}
+          </div>
           <label className="flex items-center gap-1.5 text-xs text-zinc-600">
             <span className="whitespace-nowrap">Sort by</span>
             <select
@@ -617,8 +650,8 @@ export function KnowledgeBasePage() {
               value={sortDir}
               onChange={(e) => setSortDir(e.target.value as 'asc' | 'desc')}
             >
-              <option value="asc">A → Z / ascending</option>
-              <option value="desc">Z → A / descending</option>
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
             </select>
           </label>
         </div>
@@ -639,74 +672,25 @@ export function KnowledgeBasePage() {
                   <th scope="col" className="w-32 px-3 py-2">
                     Size
                   </th>
-                  <th scope="col" className="min-w-[6rem] px-3 py-2">
+                  <th scope="col" className="min-w-[6.5rem] px-3 py-2">
                     Status
+                  </th>
+                  <th scope="col" className="w-12 px-1 py-2 text-right">
+                    <span className="sr-only">Remove</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {staged.map((s) => {
-                  const t = typeBucketForStaged(s)
-                  if (s.kind === 'folder') {
-                    return (
-                      <tr
-                        key={s.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setSelectedId(s.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            setSelectedId(s.id)
-                          }
-                        }}
-                        className={trClass(s.id, true)}
-                      >
-                        <td className="max-w-0 px-3 py-2">
-                          <span className="flex min-w-0 items-center gap-1.5">
-                            <span className="line-clamp-2 min-w-0 break-all text-zinc-900">{s.displayName}</span>
-                            <span className="shrink-0 text-zinc-300" aria-hidden>
-                              <ChevronRightIcon className="h-3.5 w-3.5" />
-                            </span>
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-zinc-600">{typeLabel[t]}</td>
-                        <td className="px-3 py-2 text-zinc-500">—</td>
-                        <td className="px-3 py-2 text-amber-800">Staged</td>
-                      </tr>
-                    )
-                  }
-                  return (
-                    <tr
-                      key={s.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedId(s.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          setSelectedId(s.id)
-                        }
-                      }}
-                      className={trClass(s.id, true)}
-                    >
-                      <td className="max-w-0 px-3 py-2 text-zinc-900">
-                        <span className="line-clamp-2 min-w-0 break-all">{s.displayName}</span>
-                      </td>
-                      <td className="px-3 py-2 text-zinc-600">{typeLabel[t]}</td>
-                      <td className="px-3 py-2 text-zinc-500 tabular-nums">{formatSize(s.file.size)}</td>
-                      <td className="px-3 py-2 text-amber-800">Staged</td>
-                    </tr>
-                  )
-                })}
-                {rows.length === 0 && staged.length === 0 && (
+                {displayedRows.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-3 py-8 text-center text-sm text-zinc-400">
-                      No rows yet. Add files or a folder, then use Add all.
+                    <td colSpan={5} className="px-3 py-8 text-center text-sm text-zinc-400">
+                      {libraryView === 'ingested'
+                        ? 'Nothing ingested yet. Use Add, then after items become ready they move to Ingested automatically.'
+                        : 'No items in this view.'}
                     </td>
                   </tr>
                 )}
-                {sortedRows.map((e) => {
+                {displayedRows.map((e) => {
                   const t = typeBucketForEntry(e)
                   if (e.entryKind === 'folder') {
                     return (
@@ -721,7 +705,7 @@ export function KnowledgeBasePage() {
                             setSelectedId(e.id)
                           }
                         }}
-                        className={trClass(e.id, false)}
+                        className={trClass(e)}
                       >
                         <td className="max-w-0 px-3 py-2">
                           <span className="flex min-w-0 items-center gap-1.5">
@@ -733,7 +717,20 @@ export function KnowledgeBasePage() {
                         </td>
                         <td className="px-3 py-2 text-zinc-600">{typeLabel[t]}</td>
                         <td className="px-3 py-2 text-zinc-500">—</td>
-                        <td className="px-3 py-2 text-zinc-500">—</td>
+                        <td className="px-3 py-2 text-zinc-700">{statusLabel(e)}</td>
+                        <td className="px-1 py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              deleteById(e.id)
+                            }}
+                            className="inline-flex rounded p-1.5 text-zinc-400 opacity-60 transition-opacity group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-700 md:opacity-0"
+                            aria-label={`Remove ${e.displayName}`}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </td>
                       </tr>
                     )
                   }
@@ -749,14 +746,36 @@ export function KnowledgeBasePage() {
                           setSelectedId(e.id)
                         }
                       }}
-                      className={trClass(e.id, false)}
+                      className={trClass(e)}
                     >
                       <td className="max-w-0 px-3 py-2 text-zinc-900">
                         <span className="line-clamp-2 min-w-0 break-all">{e.displayName}</span>
                       </td>
                       <td className="px-3 py-2 text-zinc-600">{typeLabel[t]}</td>
                       <td className="px-3 py-2 text-zinc-500 tabular-nums">{e.sizeLabel}</td>
-                      <td className="px-3 py-2 text-emerald-800">Ready</td>
+                      <td className="px-3 py-2 text-zinc-700">
+                        {e.ingest === 'processing' ? (
+                          <span className="inline-flex items-center gap-1 text-amber-800">
+                            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                            Processing
+                          </span>
+                        ) : (
+                          statusLabel(e)
+                        )}
+                      </td>
+                      <td className="px-1 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={(ev) => {
+                            ev.stopPropagation()
+                            deleteById(e.id)
+                          }}
+                          className="inline-flex rounded p-1.5 text-zinc-400 opacity-60 transition-opacity group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-700 md:opacity-0"
+                          aria-label={`Remove ${e.displayName}`}
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </td>
                     </tr>
                   )
                 })}

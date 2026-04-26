@@ -1,9 +1,9 @@
 import type { ComponentType, SVGProps } from 'react'
-import { FieldAppIcon, FileStackIcon, HomeIcon, KnowledgeBaseIcon, SearchIcon, TableIcon } from './icons'
+import { FieldAppIcon, HomeIcon, KnowledgeBaseIcon, SearchIcon, TableIcon } from './icons'
 
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>
 
-export type OzWorkspaceNavId = 'field-app' | 'tables' | 'files' | 'knowledge-base'
+export type OzWorkspaceNavId = 'field-app' | 'tables' | 'knowledge-base'
 
 /** Prototype: deep-link a Field App mobile voice workflow; remove when product nav changes. */
 export type FieldMobileNavId =
@@ -73,7 +73,6 @@ export interface OzWorkspaceNavItem {
 export const workspaceNavItems: readonly OzWorkspaceNavItem[] = [
   { id: 'field-app', label: 'Field App', icon: FieldAppIcon },
   { id: 'tables', label: 'Tables', icon: TableIcon },
-  { id: 'files', label: 'Files', icon: FileStackIcon },
   { id: 'knowledge-base', label: 'Knowledge Base', icon: KnowledgeBaseIcon },
 ] as const
 
