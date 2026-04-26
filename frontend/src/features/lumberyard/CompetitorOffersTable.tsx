@@ -20,7 +20,7 @@ function Th({ children, className }: { children: ReactNode; className?: string }
     <th
       scope="col"
       className={joinClasses(
-        'border border-zinc-200/90 bg-zinc-50/95 px-2 py-2.5 text-left text-sm font-bold leading-tight text-zinc-900',
+        'border border-zinc-200/90 bg-zinc-50/95 px-3 py-2.5 text-left text-sm font-bold leading-tight text-zinc-900',
         className,
       )}
     >
@@ -110,9 +110,9 @@ export function CompetitorOffersTable({
                     }
                   }}
                 >
-                  <td className="border border-zinc-200/80 px-2 py-2 text-sm font-semibold text-zinc-900">
+                  <td className="border border-zinc-200/80 px-3 py-2.5 text-sm font-semibold text-zinc-900">
                     <div className="flex min-w-0 items-center gap-1.5">
-                      <span className="min-w-0 truncate" title={row.competitor}>
+                      <span className="min-w-0 truncate px-0.5" title={row.competitor}>
                         {row.competitor}
                       </span>
                       <button
@@ -129,12 +129,12 @@ export function CompetitorOffersTable({
                       </button>
                     </div>
                   </td>
-                  <td className="max-w-0 min-w-0 border border-zinc-200/80 px-2.5 py-2 text-sm text-zinc-800">
-                    <div className="truncate" title={row.product}>
+                  <td className="max-w-0 min-w-0 border border-zinc-200/80 px-3 py-2.5 text-sm text-zinc-800">
+                    <div className="truncate px-0.5" title={row.product}>
                       {row.product}
                     </div>
                   </td>
-                  <td className="whitespace-nowrap border border-zinc-200/80 px-2.5 py-2 text-sm tabular-nums text-zinc-800">
+                  <td className="whitespace-nowrap border border-zinc-200/80 px-3 py-2.5 text-sm tabular-nums text-zinc-800">
                     {row.price}
                   </td>
                 </tr>

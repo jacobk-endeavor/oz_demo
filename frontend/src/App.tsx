@@ -74,7 +74,6 @@ import {
 } from './features/dashboardGenerator/profitGraphIntent'
 import {
   joinClasses,
-  OzAssistantPanel,
   OzWorkflowShell,
   PlaceholderSubtabPage,
   WORKFLOW_PAGE_META,
@@ -268,10 +267,6 @@ export default function App() {
       }
       return next
     })
-  }, [])
-
-  const handleTableRefresh = useCallback(() => {
-    setTableView((v) => ({ ...v, phaseToken: v.phaseToken + 1 }))
   }, [])
 
   const recordChatExportNotice = useCallback((label: string) => {
@@ -761,16 +756,19 @@ export default function App() {
   const lumberyardPhaseKey = `${lumberyardCalls.length}-${lumberyardCalls[0]?.id ?? 'none'}`
   const competitorPhaseKey = `${competitorOfferRows.length}-${competitorOffersMeta.productQueries.join(',')}`
 
-  const leadTableEl = (
+  const renderLeadTable = (enableRowChatContext: boolean) => (
     <LeadGenDistributorsTable
       rows={displayRows}
       view={tableView}
       onSort={handleTableSort}
-      onRefresh={handleTableRefresh}
       onClose={page === 'oz' && leadGenContextOpen ? onContextPanelClose : undefined}
       phaseKey={tablePhaseKey}
-      selectedRowIds={tableChatAttachments.filter((a) => a.scope === 'lead').map((a) => a.rowId)}
-      onRowToggleContext={toggleLeadRowContext}
+      selectedRowIds={
+        enableRowChatContext
+          ? tableChatAttachments.filter((a) => a.scope === 'lead').map((a) => a.rowId)
+          : []
+      }
+      onRowToggleContext={enableRowChatContext ? toggleLeadRowContext : undefined}
     />
   )
 
@@ -862,7 +860,7 @@ export default function App() {
                   )}
                 </>
               ) : (
-                <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{leadTableEl}</div>
+                <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{renderLeadTable(true)}</div>
               )}
             </div>
           )
@@ -899,22 +897,9 @@ export default function App() {
                     )}
                   </div>
                 ) : (
-                  <div className="h-full min-h-0 w-full">{leadTableEl}</div>
+                  <div className="h-full min-h-0 w-full">{renderLeadTable(false)}</div>
                 )}
               </div>
-              <OzAssistantPanel
-                key={page}
-                layout="dock"
-                contextSummary={meta.subtitle ?? ''}
-                messages={OZ_ASSISTANT_NO_SEED}
-                onUserMessage={onUserMessage}
-                pendingAssistantPlaceholder={pendingLumberyardKnowledgeUi}
-                composerContextAttachments={tableChatAttachments}
-                onRemoveComposerContextAttachment={(key) =>
-                  setTableChatAttachments((p) => p.filter((a) => a.key !== key))
-                }
-                onAfterUserMessage={() => setTableChatAttachments([])}
-              />
             </div>
           )
       : !isCommandCenterFirstPage(page)

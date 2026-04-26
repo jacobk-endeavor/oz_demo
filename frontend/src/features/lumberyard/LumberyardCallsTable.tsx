@@ -103,7 +103,7 @@ function Th({ children, className }: { children: ReactNode; className?: string }
     <th
       scope="col"
       className={joinClasses(
-        'border border-zinc-200/90 bg-zinc-50/95 px-2 py-2.5 text-left align-bottom text-sm font-bold leading-tight text-zinc-900',
+        'border border-zinc-200/90 bg-zinc-50/95 px-3 py-2.5 text-left align-bottom text-sm font-bold leading-tight text-zinc-900',
         className,
       )}
     >
@@ -164,11 +164,11 @@ export function LumberyardCallsTable({
             <tr>
               <th
                 scope="col"
-                className="w-12 min-w-[3rem] border border-zinc-200/90 bg-zinc-50/95 py-2.5 pr-2.5 pl-2.5 text-right text-sm font-bold tabular-nums text-zinc-900"
+                className="w-12 min-w-[3rem] border border-zinc-200/90 bg-zinc-50/95 py-2.5 pr-3 pl-3 text-right text-sm font-bold tabular-nums text-zinc-900"
               >
                 #
               </th>
-              <Th className="min-w-[9rem] pl-0">Customer</Th>
+              <Th className="min-w-[12rem] pl-0">Customer</Th>
               <Th className="min-w-[7.5rem] pl-0">Source</Th>
               <Th className="min-w-[8.5rem] pl-0">Location</Th>
               <Th className="min-w-[240px] pl-0">Products requested</Th>
@@ -194,44 +194,44 @@ export function LumberyardCallsTable({
                   onClick={() => onRowToggleContext?.(row, index + 1)}
                 >
                   <td
-                    className="border border-zinc-200/80 bg-inherit px-2.5 py-2 pr-2.5 pl-2 text-right text-xs tabular-nums leading-[1.45] text-zinc-500"
+                    className="border border-zinc-200/80 bg-inherit px-3 py-2 pr-3 pl-3 text-right text-xs tabular-nums leading-[1.45] text-zinc-500"
                   >
                     {index + 1}
                   </td>
                   <td
-                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-2.5 py-2.5 pl-0 first:pl-2 last:pr-2"
+                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-3 py-2.5 pl-0 first:pl-3 last:pr-3"
                   >
                     <div
-                      className="truncate text-[13px] font-semibold leading-[1.45] text-zinc-900"
+                      className="truncate px-0.5 text-[13px] font-semibold leading-[1.45] text-zinc-900"
                       title={customer}
                     >
                       {customer}
                     </div>
                   </td>
                   <td
-                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-2.5 py-2.5 pl-0 first:pl-2 last:pr-2"
+                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-3 py-2.5 pl-0 first:pl-3 last:pr-3"
                   >
-                    <div className="inline-flex min-w-0">
+                    <div className="flex min-w-0 justify-center">
                       <SourcePillButton row={row} onOpen={setOpenCall} />
                     </div>
                   </td>
                   <td
-                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-2.5 py-2.5 pl-0 first:pl-2 last:pr-2"
+                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-3 py-2.5 pl-0 first:pl-3 last:pr-3"
                   >
                     <div
-                      className="truncate text-[13px] leading-[1.45] text-zinc-700"
+                      className="truncate px-0.5 text-[13px] leading-[1.45] text-zinc-700"
                       title={row.location}
                     >
                       {row.location || '—'}
                     </div>
                   </td>
                   <td
-                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-2.5 py-2.5 pl-0 align-top first:pl-2 last:pr-2"
+                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-3 py-2.5 pl-0 align-top first:pl-3 last:pr-3"
                   >
                     <ProductTags tags={productTags} fallbackLine={row.title} />
                   </td>
                   <td
-                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-2.5 py-2.5 pl-0 text-[13px] leading-[1.45] first:pl-2 last:pr-2"
+                    className="max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-3 py-2.5 pl-0 text-[13px] leading-[1.45] first:pl-3 last:pr-3"
                   >
                     <div
                       className="whitespace-nowrap text-zinc-800 tabular-nums"

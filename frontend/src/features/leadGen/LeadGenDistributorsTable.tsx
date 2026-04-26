@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ArrowPathIcon, CloseIcon } from '../../shared/ui/icons'
+import { CloseIcon } from '../../shared/ui/icons'
 import { joinClasses } from '../../shared/ui'
 import { formatCompactUsd } from './leadSpendProfiles'
 import type { DistributorRow } from './milwaukeeDistributorsMock'
@@ -31,7 +31,7 @@ function Th({
     <th
       scope="col"
       className={joinClasses(
-        'border border-zinc-200/90 bg-zinc-50/95 px-2 py-2.5 text-left align-bottom text-sm font-bold leading-tight text-zinc-900',
+        'border border-zinc-200/90 bg-zinc-50/95 px-3 py-2.5 text-left align-bottom text-sm font-bold leading-tight text-zinc-900',
         className,
       )}
     >
@@ -40,11 +40,11 @@ function Th({
         title={tip}
         onClick={() => onSort(col)}
         className={joinClasses(
-          '-mx-0.5 flex w-full min-w-0 items-center justify-between gap-1 rounded px-1 py-0.5 text-left text-inherit transition-colors hover:bg-zinc-200/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-sky-500/40',
+          '-mx-0.5 flex w-full min-w-0 items-center justify-between gap-1.5 rounded px-1.5 py-0.5 text-left text-inherit transition-colors hover:bg-zinc-200/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-sky-500/40',
           isP && 'text-zinc-900',
         )}
       >
-        <span className="min-w-0 truncate">{children}</span>
+        <span className="min-w-0 truncate pr-0.5">{children}</span>
         {isP && (
           <span className="shrink-0 text-sm font-bold text-sky-600" aria-hidden>
             {view.sortPrimaryDir === 'asc' ? '↑' : '↓'}
@@ -74,8 +74,8 @@ function Td({
   noInnerTruncate?: boolean
 }) {
   const base = indexColumn
-    ? 'border border-zinc-200/80 bg-inherit px-2.5 py-2 text-[12px] leading-[1.45] whitespace-nowrap first:pl-2 last:pr-2'
-    : 'max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-2.5 py-2.5 text-[13px] leading-[1.45] first:pl-2 last:pr-2'
+    ? 'border border-zinc-200/80 bg-inherit px-3 py-2.5 text-[12px] leading-[1.45] whitespace-nowrap first:pl-3 last:pr-3'
+    : 'max-w-0 min-w-0 border border-zinc-200/80 bg-inherit px-3 py-3 text-[13px] leading-[1.45] first:pl-3 last:pr-3'
   return (
     <td
       className={joinClasses(
@@ -90,7 +90,8 @@ function Td({
       ) : noInnerTruncate ? (
         <div
           className={joinClasses(
-            multiline && 'line-clamp-4 max-h-28 min-h-0 whitespace-normal break-words text-left text-zinc-700',
+            multiline &&
+              'line-clamp-4 min-h-0 whitespace-normal break-words text-left leading-relaxed text-zinc-700',
           )}
           title={fullTitle}
         >
@@ -98,7 +99,7 @@ function Td({
         </div>
       ) : (
         <div
-          className="truncate"
+          className="min-w-0 truncate py-px leading-snug"
           title={typeof children === 'string' ? (fullTitle ?? children) : fullTitle}
         >
           {children}
@@ -112,7 +113,6 @@ export function LeadGenDistributorsTable({
   rows,
   view,
   onSort,
-  onRefresh,
   onClose,
   phaseKey,
   selectedRowIds = [],
@@ -121,7 +121,6 @@ export function LeadGenDistributorsTable({
   rows: DistributorRow[]
   view: LeadTableViewState
   onSort: (col: SortColumn) => void
-  onRefresh: () => void
   /** Pinned in the top chrome row (e.g. close merged table header on Home). */
   onClose?: () => void
   /** Changes when a “regenerate / phase” is triggered. */
@@ -130,30 +129,22 @@ export function LeadGenDistributorsTable({
   selectedRowIds?: string[]
   onRowToggleContext?: (row: DistributorRow, displayIndex: number) => void
 }) {
+  const rowChatEnabled = onRowToggleContext != null
   return (
     <div
       className="group/table relative flex h-full min-h-0 w-full min-w-0 flex-col bg-white text-zinc-900 antialiased shadow-none selection:bg-sky-100/70"
       data-testid="lead-gen-distributors-table"
     >
       <div className="relative min-h-0 flex-1 overflow-x-auto overflow-y-auto [scrollbar-gutter:stable]">
-        <div
-          className={joinClasses(
-            'absolute right-2 top-2 z-20 flex items-center gap-1.5',
-            'pointer-events-auto opacity-0 transition-opacity duration-150',
-            'group-hover/table:opacity-100',
-            'focus-within:opacity-100',
-          )}
-        >
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200/90 bg-white/95 text-zinc-600 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-zinc-300/90 hover:bg-white hover:text-zinc-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-500/50"
-            title="Refresh grid & replay row animation"
-            aria-label="Refresh"
+        {onClose && (
+          <div
+            className={joinClasses(
+              'absolute right-2 top-2 z-20 flex items-center gap-1.5',
+              'pointer-events-auto opacity-0 transition-opacity duration-150',
+              'group-hover/table:opacity-100',
+              'focus-within:opacity-100',
+            )}
           >
-            <ArrowPathIcon className="h-4 w-4" />
-          </button>
-          {onClose && (
             <button
               type="button"
               onClick={onClose}
@@ -163,64 +154,70 @@ export function LeadGenDistributorsTable({
             >
               <CloseIcon className="h-4 w-4" />
             </button>
-          )}
-        </div>
+          </div>
+        )}
         <table
-          className="w-full min-w-[1580px] border-collapse text-left [border-spacing:0]"
+          className="w-full min-w-[1692px] border-collapse text-left [border-spacing:0]"
           key={String(phaseKey)}
         >
           <thead className="sticky top-0 z-[2] border-b border-zinc-200/90 bg-zinc-50/95 shadow-[0_1px_0_0_rgba(228,228,231,0.9)]">
             <tr>
               <th
                 scope="col"
-                className="w-12 min-w-[3rem] border border-zinc-200/90 bg-zinc-50/95 py-2.5 pr-2.5 pl-2.5 text-right text-sm font-bold tabular-nums text-zinc-900"
+                className="w-12 min-w-[3rem] border border-zinc-200/90 bg-zinc-50/95 py-2.5 pr-3 pl-3 text-right text-sm font-bold tabular-nums text-zinc-900"
               >
                 #
               </th>
-              <Th col="name" className="min-w-[140px] pl-0" view={view} onSort={onSort}>
+              <Th col="name" className="min-w-[200px]" view={view} onSort={onSort}>
                 Name
               </Th>
-              <Th col="source" className="min-w-[120px] pl-0" view={view} onSort={onSort}>
+              <Th col="source" className="min-w-[136px]" view={view} onSort={onSort}>
                 Source
               </Th>
-              <Th col="description" className="min-w-[220px] pl-0" view={view} onSort={onSort}>
+              <Th col="description" className="min-w-[248px]" view={view} onSort={onSort}>
                 Description
               </Th>
               <th
                 scope="col"
-                className="border border-zinc-200/90 bg-zinc-50/95 px-2 py-2.5 text-left align-bottom text-sm font-bold leading-tight text-zinc-900 min-w-[200px] pl-0"
+                className="border border-zinc-200/90 bg-zinc-50/95 px-3 py-2.5 text-left align-bottom text-sm font-bold leading-tight text-zinc-900 min-w-[200px]"
               >
-                <span className="min-w-0" title="Synthetic line-level pull (exterior / dealer demo)">
+                <span
+                  className="block min-w-0 pr-0.5 leading-tight"
+                  title="Synthetic line-level pull (exterior / dealer demo)"
+                >
                   Products requested
                 </span>
               </th>
-              <Th col="industry" className="min-w-[120px] pl-0" view={view} onSort={onSort}>
+              <Th col="industry" className="min-w-[132px]" view={view} onSort={onSort}>
                 Primary industry
               </Th>
-              <Th col="size" className="min-w-[110px] pl-0" view={view} onSort={onSort}>
+              <Th col="size" className="min-w-[110px]" view={view} onSort={onSort}>
                 Size
               </Th>
-              <Th col="type" className="min-w-[100px] pl-0" view={view} onSort={onSort}>
+              <Th col="type" className="min-w-[100px]" view={view} onSort={onSort}>
                 Type
               </Th>
               <th
                 scope="col"
-                className="border border-zinc-200/90 bg-zinc-50/95 px-2 py-2.5 text-left align-bottom text-sm font-bold leading-tight text-zinc-900 min-w-[108px] pl-0"
+                className="border border-zinc-200/90 bg-zinc-50/95 px-3 py-2.5 text-left align-bottom text-sm font-bold leading-tight text-zinc-900 min-w-[108px]"
               >
-                <span className="min-w-0" title="Synthetic trailing-12m estimate (first five accounts)">
+                <span
+                  className="block min-w-0 pr-0.5 leading-tight"
+                  title="Synthetic trailing-12m estimate (first five accounts)"
+                >
                   LTM spend (est.)
                 </span>
               </th>
-              <Th col="location" className="min-w-[120px] pl-0" view={view} onSort={onSort}>
+              <Th col="location" className="min-w-[120px]" view={view} onSort={onSort}>
                 Location
               </Th>
-              <Th col="country" className="min-w-[90px] pl-0" view={view} onSort={onSort}>
+              <Th col="country" className="min-w-[90px]" view={view} onSort={onSort}>
                 Country
               </Th>
-              <Th col="linkedin" className="min-w-[140px] pl-0" view={view} onSort={onSort}>
+              <Th col="linkedin" className="min-w-[140px]" view={view} onSort={onSort}>
                 LinkedIn URL
               </Th>
-              <Th col="engagement" className="min-w-[100px] pr-2 pl-0" view={view} onSort={onSort}>
+              <Th col="engagement" className="min-w-[100px]" view={view} onSort={onSort}>
                 We know them?
               </Th>
             </tr>
@@ -235,7 +232,7 @@ export function LeadGenDistributorsTable({
                   'lead-table-row-anim',
                   'group/row',
                   index % 2 === 0 ? 'bg-white' : 'bg-zinc-50/55',
-                  'cursor-pointer transition-colors duration-100 hover:bg-sky-50/35',
+                  rowChatEnabled && 'cursor-pointer transition-colors duration-100 hover:bg-sky-50/35',
                   selected && 'ring-2 ring-inset ring-sky-400/70 bg-sky-50/40',
                 )}
                 style={{
@@ -247,14 +244,13 @@ export function LeadGenDistributorsTable({
                 <Td muted indexColumn className="w-12 min-w-[3rem] pl-2 pr-2 text-right text-xs">
                   {index + 1}
                 </Td>
-                <Td className="pl-0 font-semibold text-zinc-900">{row.name}</Td>
-                <Td className="w-[1%] pl-0">
-                  <div className="min-w-0 max-w-[200px]">
+                <Td className="font-semibold text-zinc-900">{row.name}</Td>
+                <Td className="w-[1%]">
+                  <div className="flex w-full min-w-0 items-center justify-center">
                     <LeadSourcePill id={row.sourceId} />
                   </div>
                 </Td>
                 <Td
-                  className="pl-0"
                   multiline
                   noInnerTruncate
                   fullTitle={row.description}
@@ -262,22 +258,21 @@ export function LeadGenDistributorsTable({
                   {row.description}
                 </Td>
                 <Td
-                  className="pl-0"
                   multiline
                   noInnerTruncate
                   fullTitle={row.productsRequested}
                 >
                   {row.productsRequested != null && row.productsRequested !== '' ? (
-                    <span className="text-zinc-800">{row.productsRequested}</span>
+                    <span className="text-zinc-800 leading-relaxed">{row.productsRequested}</span>
                   ) : (
                     <span className="text-zinc-400">—</span>
                   )}
                 </Td>
-                <Td className="pl-0 text-zinc-800">{row.primaryIndustry}</Td>
-                <Td className="pl-0 text-zinc-600">{row.size}</Td>
-                <Td className="pl-0 text-zinc-800">{row.type}</Td>
+                <Td>{row.primaryIndustry}</Td>
+                <Td className="text-zinc-600">{row.size}</Td>
+                <Td>{row.type}</Td>
                 <Td
-                  className="pl-0 align-top text-[12px]"
+                  className="align-top text-[12px]"
                   noInnerTruncate
                   fullTitle={row.spendProfile?.summaryLine}
                 >
@@ -296,9 +291,9 @@ export function LeadGenDistributorsTable({
                     <span className="text-zinc-400">—</span>
                   )}
                 </Td>
-                <Td className="pl-0 text-zinc-600">{row.location}</Td>
-                <Td className="pl-0 text-zinc-600">{row.country}</Td>
-                <Td className="pl-0" noInnerTruncate>
+                <Td className="text-zinc-600">{row.location}</Td>
+                <Td className="text-zinc-600">{row.country}</Td>
+                <Td noInnerTruncate>
                   <a
                     href={row.linkedInUrl}
                     target="_blank"
@@ -310,7 +305,7 @@ export function LeadGenDistributorsTable({
                     {row.linkedInUrl.replace(/^https?:\/\/(www\.)?/, '')}
                   </a>
                 </Td>
-                <Td className="pl-0 pr-2">
+                <Td>
                   <span
                     className={joinClasses(
                       'inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-medium',
@@ -329,7 +324,9 @@ export function LeadGenDistributorsTable({
         </table>
       </div>
       <div className="shrink-0 border-t border-zinc-200/90 bg-zinc-50/60 px-3 py-2.5 text-xs text-zinc-500">
-        <p className="mb-0.5 leading-relaxed">Click a row to add it to the chat context.</p>
+        {rowChatEnabled && (
+          <p className="mb-0.5 leading-relaxed">Click a row to add it to the chat context.</p>
+        )}
         <p className="tabular-nums">Showing {rows.length} of {MILWAUKEE_LEAD_RESULT_TOTAL} results</p>
       </div>
     </div>
