@@ -1,36 +1,107 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { PanelLeftIcon, PanelRightIcon } from './icons'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react'
+import { ChevronRightIcon, CloseIcon, PanelLeftIcon, SparkleIcon } from './icons'
+import { ENDEAVOR_LOGO_SRC } from './brand'
 import { OzAssistantPanel, type OzAssistantPanelProps } from './OzAssistantPanel'
 import {
-  navGroups,
-  type IconComponent,
-  type OzNavGroup,
+  isWorkflowPage,
+  topNavItems,
+  workflowAccentClass,
+  workflowNavItems,
+  workspaceNavItems,
 } from './OzWorkflowShell.contract'
 import { joinClasses } from './visualSystem'
 
 export interface OzWorkflowShellProps {
   activeNavItem: string
   onNavItemChange?: (item: string) => void
-  eyebrow?: ReactNode
+  /** Right-hand context / workflow surface title. */
   title: ReactNode
   subtitle?: ReactNode
+  eyebrow?: ReactNode
   headerActions?: ReactNode
   children: ReactNode
+  /**
+   * Center column is always the chat when `assistantProps` is set. Pass messages,
+   * context, etc. here (sim.ai “Mothership”-style).
+   */
   assistant?: ReactNode
   assistantProps?: OzAssistantPanelProps
-  /** When true the main canvas takes the full content area without the
-      framing card. The inner page is then responsible for its own layout. */
+  /**
+   * Label above the center chat (e.g. Mothership). Omitted when the chat column
+   * is hidden.
+   */
+  commandCenterLabel?: ReactNode
   fullBleed?: boolean
-  /** Suppress the right Oz panel for surfaces that explicitly do not want it.
-      Most pages should leave this as the default so Oz is always present. */
+  /** When set, the center chat column is omitted entirely. */
   hideAssistant?: boolean
+  /**
+   * `centered` — one column, chat is horizontally centered (home). `rail` — fixed-width or flex chat column.
+   * Ignored when `hideAssistant` / no assistant.
+   */
+  commandCenterMode?: 'rail' | 'centered'
+  /** `false` hides the small label bar (sparkle + title) above the chat column. */
+  showCommandBar?: boolean
+  /**
+   * When the chat is a fixed-width rail with the context panel open (e.g. table on the
+   * right) and `showCommandBar` is false, a compact title bar is shown above the thread
+   * so the column does not look empty. Pass `null` to omit. Default label: "Conversation".
+   */
+  splitChatHeader?: ReactNode | null
+  /**
+   * Right “context” column (title + `children`). When false, only the nav + chat
+   * show and the chat column grows. Default: closed.
+   */
+  contextPanelOpen?: boolean
+  onContextPanelClose?: () => void
   className?: string
+  /**
+   * Prototype: Field App mobile voice workflows in the left nav. Omit or pass [] when
+   * this section should not appear.
+   */
+  fieldMobileNavItems?: ReadonlyArray<{ id: string; label: string }>
+  /**
+   * Hides the context column title block (eyebrow, title, subtitle). Use for surfaces
+   * that are self-explanatory (e.g. a full-width generated table). Close / `headerActions`
+   * still render in a minimal top bar when provided.
+   */
+  hideContextHeader?: boolean
+  /** Full-width context body (e.g. lead grid edge-to-edge). */
+  contextWide?: boolean
+  /** Fixed top-right status (e.g. in-app toasts). Rendered above the main layout. */
+  topRightNotification?: ReactNode
 }
 
 const SIDEBAR_KEY = 'oz-demo-sidebar-collapsed'
-const ASSISTANT_KEY = 'oz-demo-assistant-collapsed'
+const WORKFLOWS_OPEN_KEY = 'oz-demo-workflows-expanded'
+const CHAT_RAIL_WIDTH_KEY = 'oz-demo-chat-rail-px'
+const CHAT_RAIL_DEFAULT_PX = 420
+const CHAT_RAIL_MIN_PX = 280
+const CONTEXT_PANEL_MIN_PX = 240
 
-function useStoredFlag(storageKey: string, fallback: boolean): [boolean, (value: boolean) => void] {
+function readInitialChatRailWidth(): number {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return CHAT_RAIL_DEFAULT_PX
+    const raw = window.localStorage.getItem(CHAT_RAIL_WIDTH_KEY)
+    if (raw === null) return CHAT_RAIL_DEFAULT_PX
+    const n = Number.parseInt(raw, 10)
+    if (!Number.isFinite(n)) return CHAT_RAIL_DEFAULT_PX
+    return Math.max(CHAT_RAIL_MIN_PX, n)
+  } catch {
+    return CHAT_RAIL_DEFAULT_PX
+  }
+}
+
+function useStoredFlag(
+  storageKey: string,
+  fallback: boolean,
+): [boolean, (value: boolean) => void] {
   const [value, setValue] = useState(fallback)
   useEffect(() => {
     try {
@@ -38,28 +109,38 @@ function useStoredFlag(storageKey: string, fallback: boolean): [boolean, (value:
       const stored = window.localStorage.getItem(storageKey)
       if (stored !== null) setValue(stored === '1')
     } catch {
-      // Storage may be unavailable in tests or sandbox; ignore gracefully.
+      // ignore
     }
   }, [storageKey])
 
-  function update(next: boolean) {
-    setValue(next)
-    try {
-      if (typeof window === 'undefined' || !window.localStorage) return
-      window.localStorage.setItem(storageKey, next ? '1' : '0')
-    } catch {
-      // Persisting is best-effort; the in-memory state still updates.
-    }
-  }
+  const update = useCallback(
+    (next: boolean) => {
+      setValue(next)
+      try {
+        if (typeof window === 'undefined' || !window.localStorage) return
+        window.localStorage.setItem(storageKey, next ? '1' : '0')
+      } catch {
+        // ignore
+      }
+    },
+    [storageKey],
+  )
 
   return [value, update]
 }
 
-function isFlatTopItem(group: OzNavGroup): boolean {
-  return group.label === undefined && group.items.length === 1
+function SectionLabel({ collapsed, children }: { collapsed: boolean; children: string }) {
+  if (collapsed) {
+    return <div className="h-2 shrink-0" aria-hidden="true" />
+  }
+  return (
+    <p className="mb-1.5 mt-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 first:mt-0">
+      {children}
+    </p>
+  )
 }
 
-function FlatNavItem({
+function SidebarIconButton({
   collapsed,
   active,
   label,
@@ -69,7 +150,7 @@ function FlatNavItem({
   collapsed: boolean
   active: boolean
   label: string
-  icon: IconComponent
+  icon: typeof topNavItems[number]['icon']
   onClick: () => void
 }) {
   return (
@@ -79,11 +160,11 @@ function FlatNavItem({
       aria-current={active ? 'page' : undefined}
       title={collapsed ? label : undefined}
       className={joinClasses(
-        'group relative flex w-full items-center gap-2.5 rounded-lg text-sm transition-colors',
-        collapsed ? 'justify-center px-2 py-2' : 'px-3 py-2',
+        'group flex w-full items-center gap-2.5 rounded-lg text-sm transition-colors',
+        collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-2',
         active
           ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200'
-          : 'text-zinc-700 hover:bg-zinc-200/60',
+          : 'text-zinc-600 hover:bg-zinc-200/50 hover:text-zinc-900',
       )}
     >
       <Icon
@@ -97,85 +178,67 @@ function FlatNavItem({
   )
 }
 
-function GroupSection({
-  group,
+function WorkflowNavButton({
   collapsed,
-  activeNavItem,
-  onNavItemChange,
+  active,
+  label,
+  accentClass,
+  onClick,
 }: {
-  group: OzNavGroup
   collapsed: boolean
-  activeNavItem: string
-  onNavItemChange?: (id: string) => void
+  active: boolean
+  label: string
+  accentClass: string
+  onClick: () => void
 }) {
-  const isActiveGroup = group.items.some((item) => item.id === activeNavItem)
-  const Icon = group.icon
-
-  if (collapsed) {
-    // In collapsed mode, render each child as its own icon row so users can
-    // still navigate. Skip the group label since there is no room for it.
-    return (
-      <div className="space-y-1">
-        {group.items.map((item) => (
-          <FlatNavItem
-            key={item.id}
-            collapsed
-            active={item.id === activeNavItem}
-            label={item.label}
-            icon={item.icon}
-            onClick={() => onNavItemChange?.(item.id)}
-          />
-        ))}
-      </div>
-    )
-  }
-
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      title={collapsed ? label : undefined}
       className={joinClasses(
-        'rounded-xl px-1.5 py-1 transition-colors',
-        isActiveGroup ? 'bg-zinc-200/60' : 'bg-transparent',
+        'group flex w-full items-center gap-2.5 rounded-lg text-left text-sm transition-colors',
+        collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-1.5',
+        active
+          ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200'
+          : 'text-zinc-600 hover:bg-zinc-200/50 hover:text-zinc-900',
       )}
     >
-      {group.label && (
-        <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-semibold text-zinc-900">
-          {Icon && <Icon className="h-4 w-4 shrink-0 text-zinc-700" aria-hidden="true" />}
-          <span className="truncate">{group.label}</span>
-        </div>
+      <span
+        className={joinClasses(
+          'h-2.5 w-2.5 shrink-0 rounded-[2px] shadow-sm',
+          accentClass,
+          !collapsed && 'mt-0.5 self-start',
+        )}
+        aria-hidden="true"
+      />
+      {!collapsed && <span className="min-w-0 flex-1 truncate font-medium leading-tight">{label}</span>}
+    </button>
+  )
+}
+
+function FooterButton({
+  collapsed,
+  label,
+  onClick,
+}: {
+  collapsed: boolean
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={joinClasses(
+        'w-full rounded-lg text-left text-sm text-zinc-500 transition-colors hover:bg-zinc-200/50 hover:text-zinc-800',
+        collapsed ? 'px-0 py-2 text-center' : 'px-2.5 py-2',
       )}
-      <div className="space-y-0.5">
-        {group.items.map((item) => {
-          const active = item.id === activeNavItem
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onNavItemChange?.(item.id)}
-              aria-current={active ? 'page' : undefined}
-              className={joinClasses(
-                'group flex w-full items-center gap-2.5 rounded-lg text-sm transition-colors',
-                'px-3 py-1.5',
-                active
-                  ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200'
-                  : 'text-zinc-700 hover:bg-white/60 hover:text-zinc-900',
-              )}
-            >
-              {/* Sub-items inside a group are label-only in Ramp's pattern, but
-                  we keep a tiny inline icon so the affordance matches the rest
-                  of the workflow nav. */}
-              <item.icon
-                className={joinClasses(
-                  'h-3.5 w-3.5 shrink-0',
-                  active ? 'text-zinc-900' : 'text-zinc-400 group-hover:text-zinc-600',
-                )}
-                aria-hidden="true"
-              />
-              <span className="truncate">{item.label}</span>
-            </button>
-          )
-        })}
-      </div>
-    </div>
+      title={collapsed ? label : undefined}
+    >
+      {collapsed ? <span className="text-xs font-semibold text-zinc-500">{label[0]}</span> : label}
+    </button>
   )
 }
 
@@ -189,126 +252,493 @@ export function OzWorkflowShell({
   children,
   assistant,
   assistantProps,
+  commandCenterLabel = 'Mothership',
   fullBleed = false,
   hideAssistant = false,
+  contextPanelOpen = false,
+  onContextPanelClose,
   className,
+  fieldMobileNavItems = [],
+  hideContextHeader = false,
+  contextWide = false,
+  commandCenterMode: commandCenterModeProp = 'rail',
+  showCommandBar: showCommandBarProp,
+  splitChatHeader,
+  topRightNotification,
 }: OzWorkflowShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useStoredFlag(SIDEBAR_KEY, false)
-  const [assistantCollapsed, setAssistantCollapsed] = useStoredFlag(ASSISTANT_KEY, false)
-
+  const [workflowsOpen, setWorkflowsOpen] = useStoredFlag(WORKFLOWS_OPEN_KEY, false)
   const hasAssistant = !hideAssistant && (assistant !== undefined || assistantProps !== undefined)
-  const showAssistant = hasAssistant && !assistantCollapsed
+  const commandCenterMode = hasAssistant ? commandCenterModeProp : 'rail'
+  const showCommandBar = showCommandBarProp ?? (commandCenterMode === 'rail')
+  const showContextPanel = contextPanelOpen
+  const isCenteredHome = hasAssistant && commandCenterMode === 'centered' && !showContextPanel
+  const isRailWithSplit = hasAssistant && commandCenterMode === 'rail' && showContextPanel
+  const isRailSolo = hasAssistant && commandCenterMode === 'rail' && !showContextPanel
+  const splitRef = useRef<HTMLDivElement>(null)
+  const chatRailWidthRef = useRef(readInitialChatRailWidth())
+  const [chatRailWidthPx, setChatRailWidthPx] = useState(() => readInitialChatRailWidth())
+  const dragRef = useRef<{ pointerId: number; startX: number; startW: number } | null>(null)
+
+  const clampChatWidth = useCallback((w: number) => {
+    const row = splitRef.current
+    if (!row) return Math.max(CHAT_RAIL_MIN_PX, w)
+    const available = row.getBoundingClientRect().width
+    const maxChat = Math.max(CHAT_RAIL_MIN_PX, available - CONTEXT_PANEL_MIN_PX)
+    return Math.max(CHAT_RAIL_MIN_PX, Math.min(maxChat, w))
+  }, [])
+
+  useEffect(() => {
+    if (!isRailWithSplit) return
+    setChatRailWidthPx((w) => clampChatWidth(w))
+  }, [isRailWithSplit, clampChatWidth])
+
+  useEffect(() => {
+    if (!isRailWithSplit) return
+    const row = splitRef.current
+    if (!row || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      setChatRailWidthPx((w) => clampChatWidth(w))
+    })
+    ro.observe(row)
+    return () => ro.disconnect()
+  }, [isRailWithSplit, clampChatWidth])
+
+  const onChatSplitPointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      if (e.button !== 0) return
+      e.preventDefault()
+      const startW = chatRailWidthRef.current
+      dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startW }
+      e.currentTarget.setPointerCapture(e.pointerId)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+    },
+    [],
+  )
+
+  const onChatSplitPointerMove = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      const d = dragRef.current
+      if (!d || e.pointerId !== d.pointerId) return
+      const next = d.startW + (e.clientX - d.startX)
+      const clamped = clampChatWidth(next)
+      chatRailWidthRef.current = clamped
+      setChatRailWidthPx(clamped)
+    },
+    [clampChatWidth],
+  )
+
+  const endChatSplitDrag = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      const d = dragRef.current
+      if (d && e.pointerId === d.pointerId) {
+        try {
+          e.currentTarget.releasePointerCapture(e.pointerId)
+        } catch {
+          // ignore
+        }
+      }
+      dragRef.current = null
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(CHAT_RAIL_WIDTH_KEY, String(chatRailWidthRef.current))
+        }
+      } catch {
+        // ignore
+      }
+    },
+    [],
+  )
+
+  useEffect(() => {
+    chatRailWidthRef.current = chatRailWidthPx
+  }, [chatRailWidthPx])
+  // Open the list when the user lands on a workflow route (e.g. deep link) so the active item is visible.
+  useEffect(() => {
+    if (isWorkflowPage(activeNavItem)) {
+      setWorkflowsOpen(true)
+    }
+  }, [activeNavItem, setWorkflowsOpen])
+
+  const showWorkflowList = workflowsOpen
 
   return (
-    <div className={joinClasses('relative flex h-screen bg-zinc-50 text-zinc-900', className)}>
+    <div
+      className={joinClasses('relative flex h-screen overflow-hidden bg-zinc-100 text-zinc-900', className)}
+    >
+      {topRightNotification != null && topRightNotification !== false ? (
+        <div
+          className="pointer-events-none absolute right-3 top-3 z-50 max-w-sm min-w-0 pl-2"
+          role="status"
+        >
+          <div className="pointer-events-auto min-w-0">{topRightNotification}</div>
+        </div>
+      ) : null}
       <nav
         aria-label="Primary navigation"
         className={joinClasses(
-          'flex h-full shrink-0 flex-col border-r border-zinc-200 bg-zinc-50 transition-[width] duration-200',
-          sidebarCollapsed ? 'w-[64px]' : 'w-[244px]',
+          'flex h-full shrink-0 flex-col border-r border-zinc-200 bg-white transition-[width] duration-200',
+          sidebarCollapsed ? 'w-[56px]' : 'w-[220px]',
         )}
       >
-        <div className="flex items-center justify-between gap-2 px-3 py-3">
-          {!sidebarCollapsed && (
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Oz</p>
-              <p className="text-sm font-semibold text-zinc-900">Nebula</p>
-            </div>
+        <div
+          className={joinClasses(
+            'flex items-center gap-2 border-b border-zinc-200 px-2.5 py-2.5',
+            sidebarCollapsed ? 'justify-center' : 'justify-between',
           )}
-          <button
-            type="button"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900"
-            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <PanelLeftIcon className="h-4 w-4" />
-          </button>
+        >
+          {sidebarCollapsed ? (
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(false)}
+              className="flex w-full min-w-0 items-center justify-center rounded-md p-1 transition-colors hover:bg-zinc-200/50"
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <img
+                src={ENDEAVOR_LOGO_SRC}
+                alt=""
+                className="h-6 w-6 object-contain opacity-90"
+                draggable={false}
+              />
+            </button>
+          ) : (
+            <>
+              <div className="min-w-0 pl-0.5">
+                <img
+                  src={ENDEAVOR_LOGO_SRC}
+                  alt="Endeavor"
+                  className="h-7 w-auto max-w-[min(100%,150px)] object-contain object-left opacity-90"
+                  draggable={false}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed(true)}
+                className="shrink-0 rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-200/50 hover:text-zinc-900"
+                aria-label="Collapse sidebar"
+                title="Collapse sidebar"
+              >
+                <PanelLeftIcon className="h-4 w-4" />
+              </button>
+            </>
+          )}
         </div>
 
-        <div className="mx-2 mb-2 h-px bg-zinc-200" aria-hidden="true" />
+        <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2 pt-1.5">
+          {topNavItems.map((item) => (
+            <SidebarIconButton
+              key={item.id}
+              collapsed={sidebarCollapsed}
+              active={activeNavItem === item.id}
+              label={item.label}
+              icon={item.icon}
+              onClick={() => onNavItemChange?.(item.id)}
+            />
+          ))}
 
-        <div className="flex-1 space-y-1 overflow-y-auto px-2 py-1">
-          {navGroups.map((group) =>
-            isFlatTopItem(group) ? (
-              <FlatNavItem
-                key={group.id}
-                collapsed={sidebarCollapsed}
-                active={group.items[0].id === activeNavItem}
-                label={group.items[0].label}
-                icon={group.items[0].icon}
-                onClick={() => onNavItemChange?.(group.items[0].id)}
-              />
-            ) : (
-              <GroupSection
-                key={group.id}
-                group={group}
-                collapsed={sidebarCollapsed}
-                activeNavItem={activeNavItem}
-                onNavItemChange={onNavItemChange}
-              />
-            ),
+          <SectionLabel collapsed={sidebarCollapsed}>Workspace</SectionLabel>
+          {workspaceNavItems.map((item) => {
+            const Icon = item.icon
+            const active = activeNavItem === item.id
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onNavItemChange?.(item.id)}
+                aria-current={active ? 'page' : undefined}
+                title={sidebarCollapsed ? item.label : undefined}
+                className={joinClasses(
+                  'mb-0.5 flex w-full items-center gap-2.5 rounded-lg text-sm transition-colors',
+                  sidebarCollapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-1.5',
+                  active
+                    ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200'
+                    : 'text-zinc-600 hover:bg-zinc-200/50 hover:text-zinc-900',
+                )}
+              >
+                <Icon
+                  className={joinClasses(
+                    'h-4 w-4 shrink-0',
+                    active ? 'text-zinc-900' : 'text-zinc-500 group-hover:text-zinc-700',
+                  )}
+                />
+                {!sidebarCollapsed && (
+                  <span className="truncate font-medium leading-tight">{item.label}</span>
+                )}
+              </button>
+            )
+          })}
+
+          {fieldMobileNavItems.length > 0 && (
+            <>
+              <SectionLabel collapsed={sidebarCollapsed}>Mobile workflows</SectionLabel>
+              {fieldMobileNavItems.map((item) => {
+                const active = activeNavItem === item.id
+                return (
+                  <WorkflowNavButton
+                    key={item.id}
+                    collapsed={sidebarCollapsed}
+                    active={active}
+                    label={item.label}
+                    accentClass="bg-sky-500"
+                    onClick={() => onNavItemChange?.(item.id)}
+                  />
+                )
+              })}
+            </>
           )}
+
+          {sidebarCollapsed ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setWorkflowsOpen(!workflowsOpen)}
+                aria-expanded={showWorkflowList}
+                title={showWorkflowList ? 'Hide workflows' : 'Show workflows'}
+                className="flex w-full items-center justify-center rounded-lg py-2 text-zinc-500 transition-colors hover:bg-zinc-200/50 hover:text-zinc-900"
+              >
+                <ChevronRightIcon
+                  className={joinClasses(
+                    'h-4 w-4 transition-transform',
+                    showWorkflowList && 'rotate-90',
+                  )}
+                />
+              </button>
+              {showWorkflowList && (
+                <ul className="m-0 list-none space-y-0.5 p-0" aria-label="Workflows">
+                  {workflowNavItems.map((wf) => {
+                    const active = activeNavItem === wf.id
+                    const swatch = wf.accentClass ?? workflowAccentClass[wf.accent]
+                    return (
+                      <li key={wf.id}>
+                        <WorkflowNavButton
+                          collapsed
+                          active={active}
+                          label={wf.label}
+                          accentClass={swatch}
+                          onClick={() => onNavItemChange?.(wf.id)}
+                        />
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setWorkflowsOpen(!workflowsOpen)}
+                aria-expanded={showWorkflowList}
+                className="mb-0.5 mt-2 flex w-full items-center justify-between gap-1 rounded-lg px-1.5 py-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 first:mt-0 hover:bg-zinc-200/50"
+              >
+                <span>Workflows</span>
+                <ChevronRightIcon
+                  className={joinClasses(
+                    'h-3.5 w-3.5 shrink-0 text-zinc-500 transition-transform',
+                    showWorkflowList && 'rotate-90',
+                  )}
+                />
+              </button>
+              {showWorkflowList && (
+                <ul className="m-0 list-none space-y-0.5 p-0" aria-label="Workflows">
+                  {workflowNavItems.map((wf) => {
+                    const active = activeNavItem === wf.id
+                    const swatch = wf.accentClass ?? workflowAccentClass[wf.accent]
+                    return (
+                      <li key={wf.id}>
+                        <WorkflowNavButton
+                          collapsed={false}
+                          active={active}
+                          label={wf.label}
+                          accentClass={swatch}
+                          onClick={() => onNavItemChange?.(wf.id)}
+                        />
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="shrink-0 border-t border-zinc-200 px-1.5 py-1.5">
+          <FooterButton
+            collapsed={sidebarCollapsed}
+            label="Help"
+            onClick={() => onNavItemChange?.('help')}
+          />
+          <FooterButton
+            collapsed={sidebarCollapsed}
+            label="Settings"
+            onClick={() => onNavItemChange?.('settings')}
+          />
         </div>
       </nav>
 
-      <main className="flex min-w-0 flex-1 flex-col">
-        {fullBleed ? (
-          <div className="flex h-full min-h-0 flex-1 flex-col bg-white">{children}</div>
-        ) : (
+      <div ref={splitRef} className="relative flex min-h-0 min-w-0 flex-1">
+        {/* One <OzAssistantPanel> instance so moving between centered and split layout does not unmount the chat. */}
+        {hasAssistant && (
           <>
-            <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 bg-white px-6 py-4">
-              <div className="min-w-0">
-                {eyebrow !== undefined && (
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-600">
-                    {eyebrow}
-                  </p>
-                )}
-                <h1 className="mt-0.5 truncate text-xl font-semibold text-zinc-900">{title}</h1>
-                {subtitle !== undefined && (
-                  <p className="mt-1 max-w-3xl text-sm text-zinc-600">{subtitle}</p>
-                )}
-              </div>
-              {headerActions !== undefined && (
-                <div className="flex shrink-0 items-center gap-2 pr-12">{headerActions}</div>
+            <section
+              className={joinClasses(
+                'flex h-full min-h-0 min-w-0 flex-col',
+                isCenteredHome && 'relative z-0 flex-1 bg-zinc-50/90',
+                isRailSolo && 'flex-1 border-r border-zinc-200/90 bg-zinc-50',
+                isRailWithSplit && 'shrink-0 bg-zinc-50',
               )}
-            </header>
-            <div className="min-h-0 flex-1 overflow-auto">
-              <div className="mx-auto max-w-[1400px] px-6 py-6">{children}</div>
-            </div>
+              style={
+                isRailWithSplit
+                  ? {
+                      width: chatRailWidthPx,
+                      minWidth: CHAT_RAIL_MIN_PX,
+                      maxWidth: '100%',
+                    }
+                  : undefined
+              }
+              aria-label="Command center chat"
+            >
+              {showCommandBar && (isRailSolo || isRailWithSplit) && (
+                <div className="flex h-9 shrink-0 items-center gap-1.5 border-b border-zinc-200/90 bg-white px-3 text-[12px] font-semibold text-zinc-800">
+                  <SparkleIcon className="h-3.5 w-3.5 text-blue-500" aria-hidden="true" />
+                  <span className="min-w-0 truncate">{commandCenterLabel}</span>
+                </div>
+              )}
+              {isRailWithSplit && !showCommandBar && splitChatHeader !== null && (
+                <header
+                  className="flex h-9 shrink-0 items-center border-b border-zinc-200/90 bg-zinc-50/95 px-3"
+                  aria-label="Chat thread"
+                >
+                  <h2 className="min-w-0 truncate text-[12px] font-semibold text-zinc-800">
+                    {splitChatHeader === undefined ? 'Conversation' : splitChatHeader}
+                  </h2>
+                </header>
+              )}
+              <div
+                className={joinClasses(
+                  'min-h-0 min-w-0 flex-1',
+                  isCenteredHome &&
+                    'flex min-h-0 flex-1 items-stretch justify-center p-4 md:px-6 md:py-10',
+                )}
+              >
+                <div
+                  className={joinClasses(
+                    isCenteredHome
+                      ? 'flex h-full min-h-0 w-full min-w-0 max-w-2xl shrink-0 flex-col overflow-hidden'
+                      : 'pointer-events-auto flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+                  )}
+                >
+                  {assistant ??
+                    (assistantProps ? <OzAssistantPanel {...assistantProps} layout="center" /> : null)}
+                </div>
+              </div>
+            </section>
+            {isRailWithSplit && (
+              <button
+                type="button"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Drag to resize chat and generated content"
+                title="Drag to resize"
+                className="group relative w-2 shrink-0 cursor-col-resize border-x border-zinc-200/80 bg-zinc-100/80 touch-none select-none hover:bg-zinc-200/80"
+                onPointerDown={onChatSplitPointerDown}
+                onPointerMove={onChatSplitPointerMove}
+                onPointerUp={endChatSplitDrag}
+                onPointerCancel={endChatSplitDrag}
+              >
+                <span
+                  className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-zinc-300/90 group-hover:bg-zinc-400/90"
+                  aria-hidden="true"
+                />
+              </button>
+            )}
           </>
         )}
-      </main>
 
-      {showAssistant && (
-        <aside
-          className="flex h-full w-[360px] shrink-0 flex-col border-l border-zinc-200 bg-white"
-          aria-label="Oz assistant rail"
-        >
-          {assistant ?? (assistantProps ? <OzAssistantPanel {...assistantProps} /> : null)}
-        </aside>
-      )}
-
-      {hasAssistant && (
-        <button
-          type="button"
-          onClick={() => setAssistantCollapsed(!assistantCollapsed)}
-          aria-pressed={!assistantCollapsed}
-          aria-label={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
-          title={assistantCollapsed ? 'Show Oz chat' : 'Hide Oz chat'}
-          className={joinClasses(
-            // Align with the 44px chat header: center a 24px button vertically
-            // (top: 10px) and sit ~10px from the right edge so the icons inside
-            // the chat header sit on the same horizontal line.
-            'absolute right-2.5 top-[10px] z-50 inline-flex h-6 w-6 items-center justify-center rounded-md transition-colors',
-            assistantCollapsed
-              ? 'bg-white/90 text-zinc-500 ring-1 ring-zinc-200 hover:bg-zinc-100 hover:text-zinc-900'
-              : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900',
-          )}
-        >
-          <PanelRightIcon className="h-3.5 w-3.5" />
-        </button>
-      )}
+        {showContextPanel && (isRailWithSplit || !hasAssistant) && (
+          <main
+            className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-white"
+            aria-label="Context"
+          >
+            {fullBleed ? (
+              <div className="flex h-full min-h-0 flex-1 flex-col">{children}</div>
+            ) : (
+              <>
+                {hideContextHeader ? (
+                  !contextWide &&
+                  (onContextPanelClose !== undefined || headerActions) && (
+                    <div className="flex shrink-0 items-center justify-end gap-1 border-b border-zinc-200/90 bg-white px-3 py-2">
+                      {headerActions}
+                      {onContextPanelClose !== undefined && (
+                        <button
+                          type="button"
+                          onClick={onContextPanelClose}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+                          aria-label="Close context panel"
+                          title="Close"
+                        >
+                          <CloseIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  )
+                ) : (
+                  <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200/90 bg-white px-5 py-3.5">
+                    <div className="min-w-0">
+                      {eyebrow !== undefined && (
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-600">
+                          {eyebrow}
+                        </p>
+                      )}
+                      <h1 className="mt-0.5 truncate text-lg font-semibold text-zinc-900">{title}</h1>
+                      {subtitle !== undefined && (
+                        <p className="mt-0.5 max-w-2xl text-sm text-zinc-600">{subtitle}</p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      {headerActions}
+                      {onContextPanelClose !== undefined && (
+                        <button
+                          type="button"
+                          onClick={onContextPanelClose}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+                          aria-label="Close context panel"
+                          title="Close"
+                        >
+                          <CloseIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </header>
+                )}
+                <div
+                  className={joinClasses(
+                    'min-h-0 flex-1',
+                    contextWide
+                      ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+                      : 'overflow-auto',
+                  )}
+                >
+                  <div
+                    className={joinClasses(
+                      'mx-auto w-full',
+                      contextWide
+                        ? 'h-full min-h-0 min-w-0 flex-1 overflow-hidden p-0'
+                        : joinClasses('max-w-[1600px] px-5', hideContextHeader ? 'py-3' : 'py-5'),
+                    )}
+                  >
+                    {children}
+                  </div>
+                </div>
+              </>
+            )}
+          </main>
+        )}
+      </div>
     </div>
   )
 }

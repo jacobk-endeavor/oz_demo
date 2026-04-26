@@ -1,24 +1,42 @@
+export { ENDEAVOR_LOGO_SRC } from './brand'
 export { BackgroundTaskRail } from './BackgroundTaskRail'
 export type { BackgroundTaskItem, BackgroundTaskStatus } from './BackgroundTaskRail'
 export { Button } from './Button'
 export { Modal } from './Modal'
-export { OzAssistantPanel } from './OzAssistantPanel'
+export { OZ_DEFAULT_WELCOME, OZ_KNOWLEDGE_PLACEHOLDER, OzAssistantPanel } from './OzAssistantPanel'
 export type {
   OzActionVariant,
   OzAssistantAction,
   OzAssistantMessage,
   OzAssistantPanelProps,
+  OzChatTurnContext,
   OzContextItem,
   OzMessageRole,
-  OzSuggestedPrompt,
 } from './OzAssistantPanel'
+export { PlaceholderSubtabPage } from './PlaceholderSubtabPage'
 export { OzWorkflowShell } from './OzWorkflowShell'
 export type { OzWorkflowShellProps } from './OzWorkflowShell'
 export {
+  isWorkflowPage,
+  navGroupIdForPage,
   navGroups,
   ozWorkflowNavItems,
+  topNavItems,
+  workflowAccentClass,
+  workflowItemForPage,
+  workflowNavItems,
+  workspaceNavItems,
 } from './OzWorkflowShell.contract'
-export type { IconComponent, OzNavGroup, OzNavItem, OzWorkflowNavId } from './OzWorkflowShell.contract'
+export type {
+  FieldMobileNavId,
+  IconComponent,
+  OzNavGroup,
+  OzNavItem,
+  OzWorkspaceNavId,
+  OzWorkflowNavId,
+  OzWorkflowNavItem,
+  WorkflowAccent,
+} from './OzWorkflowShell.contract'
 export { Panel } from './Panel'
 export { PulseOrb } from './PulseOrb'
 export type { PulseOrbSize } from './PulseOrb'

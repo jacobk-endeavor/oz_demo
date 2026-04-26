@@ -124,3 +124,57 @@ body {
     animation: none;
   }
 }
+
+/* Lead table: rows fade/slide in one after another; delay set per-row via `animationDelay` on <tr> */
+@keyframes lead-row-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lead-table-row-anim {
+  animation-name: lead-row-fade;
+  animation-duration: 0.75s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+  animation-delay: 0s;
+  /* delay overridden inline: index * stagger */
+}
+
+.lead-gen-shimmer {
+  background: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(125, 211, 252, 0.35) 40%,
+    rgba(196, 181, 253, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: lead-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes lead-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lead-table-row-anim,
+  .lead-gen-shimmer {
+    animation: none !important;
+  }
+
+  .lead-table-row-anim {
+    opacity: 1;
+    transform: none;
+  }
+}

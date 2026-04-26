@@ -2,202 +2,70 @@ import '@testing-library/jest-dom/vitest'
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { OzAssistantPanel, type OzAssistantMessage } from './OzAssistantPanel'
+import { OZ_DEFAULT_WELCOME, OzAssistantPanel } from './OzAssistantPanel'
 
 afterEach(() => {
   cleanup()
 })
 
-const seedMessages: OzAssistantMessage[] = [
-  {
-    id: 'oz-seed',
-    role: 'oz',
-    content: 'Pick a workflow on the left, or ask me what to do next.',
-  },
-]
-
-function renderPanel(overrides: { showFloatingMark?: boolean } = {}) {
+function renderPanel(overrides: Record<string, unknown> = {}) {
   return render(
     <OzAssistantPanel
       contextSummary="Voice-first sales assistant. Ask for the next sales action."
-      messages={seedMessages}
+      messages={[]}
+      hideWelcome
       contextItems={[
         { label: 'page: oz', value: 'page: oz' },
         { label: 'Russin Lumber', value: 'Russin Lumber' },
-      ]}
-      suggestedPrompts={[
-        { id: 'next', label: 'What is the next sales action?' },
-        { id: 'top', label: 'Top requested products this week?' },
       ]}
       {...overrides}
     />,
   )
 }
 
-describe('OzAssistantPanel chrome', () => {
-  it('renders header tabs inline with the Oz wordmark, the clock, and the composer mode pill + paperclip', () => {
+describe('OzAssistantPanel', () => {
+  it('renders the conversation surface, composer, and no tab strip or mode chrome', () => {
     renderPanel()
-
-    // Header has the Oz wordmark, an inline tab strip, the clock and overflow.
     const panel = screen.getByRole('complementary', { name: 'Oz chat' })
-    expect(within(panel).getByText('Oz')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Chat history' })).toBeInTheDocument()
-
-    const tablist = screen.getByRole('tablist', { name: 'Chat tabs' })
-    expect(within(tablist).getAllByTestId('chat-tab')).toHaveLength(1)
-    expect(screen.getByRole('button', { name: 'New chat' })).toBeInTheDocument()
-
-    // Composer footer carries the mode pill + paperclip Add context, no keyboard hint.
-    expect(screen.getByRole('button', { name: 'Mode: Ask' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add context' })).toBeInTheDocument()
-    expect(screen.queryByText(/to send · /)).not.toBeInTheDocument()
+    expect(within(panel).getByLabelText('Oz conversation')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Ask Oz…')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Send message' })).toBeInTheDocument()
+    expect(screen.queryByRole('tablist', { name: 'Chat tabs' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Mode: Ask' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New chat' })).not.toBeInTheDocument()
   })
 
-  it('opens the mode pill menu and lets the user pick Agent', async () => {
+  it('sends a message and shows a scripted reply in the thread', async () => {
     const user = userEvent.setup()
     renderPanel()
-
-    await user.click(screen.getByRole('button', { name: 'Mode: Ask' }))
-    const menu = screen.getByRole('menu', { name: 'Chat mode' })
-    expect(within(menu).getByRole('menuitem', { name: /Ask/ })).toBeInTheDocument()
-    expect(within(menu).getByRole('menuitem', { name: /Agent/ })).toBeInTheDocument()
-    expect(within(menu).getByRole('menuitem', { name: /Edit/ })).toBeInTheDocument()
-
-    await user.click(within(menu).getByRole('menuitem', { name: /Agent/ }))
-    expect(screen.getByRole('button', { name: 'Mode: Agent' })).toBeInTheDocument()
-  })
-
-  it('opens the clock-icon history dropdown and lists sessions', async () => {
-    const user = userEvent.setup()
-    renderPanel()
-
-    await user.click(screen.getByRole('button', { name: 'Chat history' }))
-    expect(screen.getByRole('menu', { name: 'Chat history' })).toBeInTheDocument()
-  })
-
-  it('drops the chevron next to the Oz title', () => {
-    renderPanel()
-    // The Oz identity used to be a button with a chevron; it's now plain text
-    // so there is no model-selector button in the header.
-    const panel = screen.getByRole('complementary', { name: 'Oz chat' })
-    expect(within(panel).queryByRole('button', { name: /^Oz$/ })).not.toBeInTheDocument()
-    expect(within(panel).getByText('Oz')).toBeInTheDocument()
-  })
-
-  it('renders an empty conversation area with no seeded greeting text by default', () => {
-    renderPanel()
-    const conversation = screen.getByLabelText('Oz conversation')
-    expect(within(conversation).queryByText(seedMessages[0].content as string)).not.toBeInTheDocument()
-    expect(screen.queryByTestId('oz-floating-mark')).not.toBeInTheDocument()
-  })
-
-  it('renders the floating Oz mark when showFloatingMark is on and the chat is empty', async () => {
-    const user = userEvent.setup()
-    renderPanel({ showFloatingMark: true })
-
-    expect(screen.getByTestId('oz-floating-mark')).toBeInTheDocument()
-
-    // Once the user sends a message, the floating mark goes away.
-    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'Hello')
-    await user.click(screen.getByRole('button', { name: 'Send message' }))
-    expect(screen.queryByTestId('oz-floating-mark')).not.toBeInTheDocument()
-  })
-})
-
-describe('OzAssistantPanel tabs', () => {
-  it('opens a new tab from the strip and switches to it', async () => {
-    const user = userEvent.setup()
-    renderPanel()
-
-    // Send something on the first tab so it has a real title.
-    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'First chat question')
-    await user.click(screen.getByRole('button', { name: 'Send message' }))
-    await screen.findByLabelText('Conversation title')
-
-    await user.click(screen.getByRole('button', { name: 'New chat' }))
-
-    const tablist = screen.getByRole('tablist', { name: 'Chat tabs' })
-    const tabs = within(tablist).getAllByTestId('chat-tab')
-    expect(tabs).toHaveLength(2)
-    expect(tabs[0].dataset.active).toBeUndefined()
-    expect(tabs[1].dataset.active).toBe('true')
-    expect(screen.queryByLabelText('Conversation title')).not.toBeInTheDocument()
-  })
-
-  it('shows a running spinner on the originating tab while a reply is pending', async () => {
-    const user = userEvent.setup()
-    renderPanel()
-
-    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'Top requested products')
+    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'next steps for the route')
     await user.click(screen.getByRole('button', { name: 'Send message' }))
 
-    // Spinner appears immediately while the scripted reply is in flight.
-    const tablist = screen.getByRole('tablist', { name: 'Chat tabs' })
-    const tabs = within(tablist).getAllByTestId('chat-tab')
-    expect(tabs[0].dataset.running).toBe('true')
-    expect(within(tabs[0]).getByLabelText('Reply in progress')).toBeInTheDocument()
-
-    // After the reply resolves, the spinner clears.
-    await screen.findByText(/Composite decking, hidden fasteners, and exterior trim/i)
-    expect(tabs[0].dataset.running).toBeUndefined()
+    expect(await screen.findByText(/The next move depends/)).toBeInTheDocument()
   })
 
-  it('closes a non-active tab via the per-tab close button', async () => {
-    const user = userEvent.setup()
-    renderPanel()
-
-    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'First chat question')
-    await user.click(screen.getByRole('button', { name: 'Send message' }))
-    await screen.findByLabelText('Conversation title')
-
-    await user.click(screen.getByRole('button', { name: 'New chat' }))
-
-    const tablist = screen.getByRole('tablist', { name: 'Chat tabs' })
-    expect(within(tablist).getAllByTestId('chat-tab')).toHaveLength(2)
-
-    await user.click(screen.getByRole('button', { name: /Close chat: First chat question/ }))
-    expect(within(tablist).getAllByTestId('chat-tab')).toHaveLength(1)
-  })
-
-  it('closing the last open tab spawns a fresh empty chat', async () => {
-    const user = userEvent.setup()
-    renderPanel()
-
-    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'Solo chat question')
-    await user.click(screen.getByRole('button', { name: 'Send message' }))
-    await screen.findByLabelText('Conversation title')
-
-    await user.click(screen.getByRole('button', { name: /Close chat: Solo chat question/ }))
-
-    const tablist = screen.getByRole('tablist', { name: 'Chat tabs' })
-    const tabs = within(tablist).getAllByTestId('chat-tab')
-    expect(tabs).toHaveLength(1)
-    expect(tabs[0]).toHaveTextContent('New chat')
-    expect(screen.queryByLabelText('Conversation title')).not.toBeInTheDocument()
-  })
-})
-
-describe('OzAssistantPanel send + sticky title', () => {
-  it('pins the first prompt as the sticky title and shows the scripted reply', async () => {
-    const user = userEvent.setup()
-    renderPanel()
-
-    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'What is the next sales action?')
-    await user.click(screen.getByRole('button', { name: 'Send message' }))
-
-    expect(screen.getByLabelText('Conversation title')).toHaveTextContent(
-      'What is the next sales action?',
+  it('defaults to a welcome line when the thread is empty and hideWelcome is not set', () => {
+    render(
+      <OzAssistantPanel
+        contextSummary="Demo"
+        messages={[]}
+        contextItems={[]}
+      />,
     )
-
-    expect(
-      await screen.findByText(/The next sales action depends on the page in focus/i),
-    ).toBeInTheDocument()
-    expect(screen.queryByText(/Oz · Thinking/i)).not.toBeInTheDocument()
-
-    // First prompt is shown only as the sticky title, not duplicated in the conversation flow.
     const conversation = screen.getByLabelText('Oz conversation')
-    expect(
-      within(conversation).queryByText('What is the next sales action?'),
-    ).not.toBeInTheDocument()
+    expect(within(conversation).getByText(new RegExp(OZ_DEFAULT_WELCOME.slice(0, 20)))).toBeInTheDocument()
+  })
+
+  it('applies layout dock for bottom strips', () => {
+    render(
+      <OzAssistantPanel
+        contextSummary="Tables"
+        messages={[]}
+        layout="dock"
+      />,
+    )
+    const aside = screen.getByRole('complementary', { name: 'Oz chat' })
+    expect(aside).toHaveClass('border-t')
+    expect(aside.className).toMatch(/max-h-\[min/)
   })
 })
