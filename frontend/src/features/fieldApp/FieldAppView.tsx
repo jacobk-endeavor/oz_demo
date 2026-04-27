@@ -247,7 +247,8 @@ function FieldAppVoiceColumn() {
   const canStepPrev = canStepNav && (stepIndex > 0 || stepIndex === queue.length)
   const canStepNext = canStepNav && stepIndex < queue.length - 1
 
-  const [chromeHidden, setChromeHidden] = useState(false)
+  /** Hidden by default; double-click the background to show step copy, header, and nav. */
+  const [chromeHidden, setChromeHidden] = useState(true)
   const toggleChrome = useCallback(() => setChromeHidden((prev) => !prev), [])
 
   const ozPulse = useSpeechLikePulse(phase === 'oz')
@@ -274,7 +275,7 @@ function FieldAppVoiceColumn() {
       )}
       data-testid="field-app-surface"
       onDoubleClick={toggleChrome}
-      title="Double-click to hide or show the surrounding UI"
+      title="Double-click to show or hide step details and header"
     >
       <div className="pointer-events-auto flex min-h-0 flex-1 flex-col" data-testid="field-voice-column">
         <div className={joinClasses('flex min-h-0 flex-1 flex-col', safeTop)}>
@@ -283,7 +284,7 @@ function FieldAppVoiceColumn() {
             className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-4 py-3"
             data-testid="field-app-voice-home"
           >
-            {!chromeHidden && showFullMicUI ? (
+            {showFullMicUI && (!chromeHidden || !micOnboardingDone || micSetupExpanded) ? (
               <FieldMicrophoneControl
                 idPrefix="field-voice-home"
                 devices={devices}
@@ -298,7 +299,7 @@ function FieldAppVoiceColumn() {
                 compact
               />
             ) : null}
-            {!chromeHidden && ttsError ? (
+            {ttsError ? (
               <p
                 className="max-w-sm rounded-xl border border-rose-200/80 bg-rose-50/70 px-3 py-2 text-center text-xs text-rose-900"
                 role="alert"
