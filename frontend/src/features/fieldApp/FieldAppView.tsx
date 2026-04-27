@@ -263,7 +263,8 @@ function FieldAppVoiceColumn() {
 
   const ozPulse = useSpeechLikePulse(phase === 'oz')
   const showFullMicUI = !micOnboardingDone || micSetupExpanded
-  const drivePulseFromMic = phase === 'listening' || phase === 'speaking'
+  /** `awaitOrb`: script boundary — not listening for VAD, but show ambient mic reactivity on the orb. */
+  const drivePulseFromMic = phase === 'listening' || phase === 'speaking' || phase === 'awaitOrb'
   const pulseTarget = drivePulseFromMic ? 1 : phase === 'oz' ? ozPulse : 0.16
   const stepLabel = stepIndex < queue.length ? queue[stepIndex]!.label : 'Done'
   const stepNumber = Math.min(stepIndex + 1, queue.length)
