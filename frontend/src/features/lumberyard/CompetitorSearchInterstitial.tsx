@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
-import { CloseIcon, SearchIcon } from '../../shared/ui/icons'
+import { CloseIcon } from '../../shared/ui/icons'
 import { joinClasses } from '../../shared/ui'
+import { COMPETITOR_SEARCH_CHECKLIST_STEP_MS } from './competitorSearchTiming'
+
+const WEB_LOGO_SRC = '/lead-source-logos/internet.png'
 
 const STEPS = [
   'Reaching out to public retailer catalog pages',
@@ -26,13 +29,13 @@ export function CompetitorSearchInterstitial({
     }
     const id = window.setInterval(() => {
       setStepIndex((i) => (i + 1) % STEPS.length)
-    }, 1_000)
+    }, COMPETITOR_SEARCH_CHECKLIST_STEP_MS)
     return () => window.clearInterval(id)
   }, [])
 
   return (
     <div
-      className="group/table flex h-full min-h-0 w-full min-w-0 flex-col bg-white text-zinc-900 antialiased"
+      className="competitor-search-interstitial group/table flex h-full min-h-0 w-full min-w-0 flex-col bg-white text-zinc-900 antialiased"
       data-testid="competitor-search-interstitial"
     >
       <div className="shrink-0 border-b border-zinc-200/90 bg-zinc-50/95 px-3 py-2.5">
@@ -62,14 +65,16 @@ export function CompetitorSearchInterstitial({
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-6 py-8">
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="relative h-20 w-20">
-            <div className="pulse-orb absolute left-0 top-0 h-20 w-20">
-              <div className="pulse-orb__core h-8 w-8 rounded-full" />
-              <div className="pulse-orb__ring h-20 w-20" />
-            </div>
-            <div className="absolute inset-0 z-20 flex items-center justify-center text-white">
-              <SearchIcon className="h-4 w-4" />
-            </div>
+          <div className="flex h-20 w-20 items-center justify-center" aria-hidden>
+            <img
+              src={WEB_LOGO_SRC}
+              alt=""
+              width={64}
+              height={64}
+              className="h-16 w-16 object-contain"
+              loading="eager"
+              decoding="async"
+            />
           </div>
           <div>
             <p className="text-base font-semibold text-zinc-900">Searching the web</p>
@@ -96,9 +101,12 @@ export function CompetitorSearchInterstitial({
             >
               <span
                 className={joinClasses(
-                  'inline-flex h-1.5 w-1.5 shrink-0 rounded-full',
-                  i === stepIndex ? 'animate-pulse bg-sky-500' : 'bg-zinc-300',
+                  'shrink-0 rounded-full',
+                  i === stepIndex
+                    ? 'h-1.5 w-4 bg-sky-500'
+                    : 'h-1.5 w-1.5 bg-zinc-300',
                 )}
+                aria-hidden
               />
               <span>{line}</span>
             </li>
@@ -106,7 +114,7 @@ export function CompetitorSearchInterstitial({
         </ul>
 
         <p className="text-center text-xs text-zinc-400">
-          <span className="inline-flex items-center gap-0.5">
+          <span className="competitor-search-interstitial__typing-dots inline-flex items-center gap-0.5">
             <span className="cursor-chat-dot" />
             <span className="cursor-chat-dot" />
             <span className="cursor-chat-dot" />

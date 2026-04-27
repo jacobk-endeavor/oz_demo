@@ -4,9 +4,35 @@ export async function fetchLumberyardLibrary(): Promise<LumberyardLibraryRespons
   if (import.meta.env.VITEST) {
     return { ok: true, version: 1, synthetic: null, calls: [] }
   }
-  const r = await fetch('/api/oz/lumberyard-calls')
-  const data = (await r.json()) as LumberyardLibraryResponse
-  if (!r.ok) throw new Error('Failed to load customer activity')
+  let r: Response
+  try {
+    r = await fetch('/api/oz/lumberyard-calls')
+  } catch (e) {
+    const orig = e instanceof Error ? e.message : String(e)
+    const hint =
+      orig === 'Failed to fetch' || /NetworkError|load failed/i.test(orig)
+        ? ' Run `npm run dev` in frontend/ (or `npm run preview` after build) so /api/oz/* is served; static file hosting alone has no lumberyard API.'
+        : ''
+    throw new Error(`${orig}.${hint}`)
+  }
+  let parsed: unknown
+  try {
+    parsed = await r.json()
+  } catch {
+    throw new Error(
+      `Customer activity API returned non-JSON (HTTP ${r.status}). Use Vite dev/preview so /api/oz/lumberyard-calls is active.`,
+    )
+  }
+  const data = parsed as LumberyardLibraryResponse & { error?: string }
+  if (!r.ok || !data.ok) {
+    const detail =
+      typeof data.error === 'string' && data.error.trim()
+        ? data.error
+        : !r.ok
+          ? `HTTP ${r.status}`
+          : 'Failed to load customer activity'
+    throw new Error(detail)
+  }
   return data
 }
 

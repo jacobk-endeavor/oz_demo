@@ -11,6 +11,6 @@ export function makeCompetitorOfferAttachment(
     rowId: row.id,
     displayIndex,
     label: `<Row ${displayIndex}>`,
-    modelLine: `(competitor listing id: \`${row.id}\`): **${row.competitor}** — ${row.product} @ ${row.price} · ${row.productPageUrl}`,
+    modelLine: `(competitor listing id: \`${row.id}\`): **${row.competitor}** — ${row.product} @ ${row.price} ${row.priceUnit} · ${row.productPageUrl}`,
   }
 }

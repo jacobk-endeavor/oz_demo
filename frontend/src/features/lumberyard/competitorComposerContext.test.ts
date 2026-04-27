@@ -10,6 +10,7 @@ describe('makeCompetitorOfferAttachment', () => {
         competitor: 'ABC Supply',
         product: 'Thermory 1x6',
         price: '$12.40',
+        priceUnit: 'per lf',
         productPageUrl: 'https://example.com/p',
       },
       3,

@@ -204,153 +204,142 @@ function CallAudioPlayerImpl({ audioUrl, knownDurationSec }: Props) {
 
   if (!src) {
     return (
-      <p className="rounded-lg border border-dashed border-zinc-200/90 bg-zinc-50/50 px-3 py-2.5 text-xs text-zinc-500">
+      <p className="rounded-lg border border-dashed border-zinc-200/90 bg-zinc-50/50 px-2 py-1.5 text-[11px] text-zinc-500">
         No audio file for this call in the library.
       </p>
     )
   }
 
   return (
-    <div
-      className="rounded-xl border border-zinc-200/90 bg-zinc-50/40 p-3 sm:p-3.5 shadow-sm ring-1 ring-zinc-100/80"
-    >
+    <div className="rounded-lg border border-zinc-200/85 bg-zinc-50/50 p-2 shadow-sm">
       <audio ref={audioRef} src={src} preload="metadata" className="hidden" />
-      <p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-zinc-500">Recording</p>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-stretch gap-2">
         <button
           type="button"
           onClick={toggle}
           className={joinClasses(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10',
+            'flex h-7 w-7 shrink-0 self-center items-center justify-center rounded-full',
             'bg-zinc-800 text-white shadow-sm',
-            'transition hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2',
+            'transition hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-indigo-500/35 focus-visible:ring-offset-1',
             'active:scale-[0.98]',
           )}
           aria-label={playing ? 'Pause' : 'Play'}
         >
           {playing ? (
-            <PauseIcon className="h-4 w-4" />
+            <PauseIcon className="h-3.5 w-3.5" />
           ) : (
-            <PlayIcon className="h-3.5 w-3.5 -translate-x-px sm:h-4 sm:w-4" />
+            <PlayIcon className="h-3 w-3 -translate-x-px" />
           )}
         </button>
-        <div
-          className="min-w-0 flex-1 text-right text-xs tabular-nums sm:text-sm"
-          aria-live="off"
-        >
-          <span className="font-medium text-zinc-800">{formatTime(shownTime)}</span>
-          <span className="text-zinc-400"> / </span>
-          <span className="text-zinc-500">
-            {durationReady && d > 0 ? formatTime(d) : '—'}
-          </span>
-        </div>
-      </div>
-      <div
-        className="mt-2.5 flex flex-wrap items-center gap-1.5"
-        role="group"
-        aria-label="Playback speed"
-      >
-        <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">Speed</span>
-        {PLAYBACK_RATES.map((r) => (
-          <button
-            key={r}
-            type="button"
-            onClick={() => setPlaybackRate(r)}
+        <div className="min-w-0 flex-1">
+          <div
+            ref={barRef}
             className={joinClasses(
-              'min-w-[2.5rem] rounded-md px-2 py-0.5 text-center text-xs font-medium tabular-nums',
-              'transition',
-              playbackRate === r
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-zinc-100/90 text-zinc-700 ring-1 ring-zinc-200/80 hover:bg-zinc-200/70',
+              'relative w-full min-h-6 min-w-0 select-none rounded',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-1',
+              durationReady && d > 0
+                ? 'cursor-pointer'
+                : 'pointer-events-none cursor-not-allowed opacity-40',
             )}
+            style={{ touchAction: 'none' }}
+            role="slider"
+            tabIndex={durationReady && d > 0 ? 0 : -1}
+            aria-label="Position in recording"
+            aria-disabled={!durationReady || d <= 0}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={ariaPercent}
+            aria-valuetext={`${formatTime(shownTime)} of ${formatTime(d)}`}
+            onKeyDown={(e) => {
+              if (!durationReady || d <= 0) return
+              const a = audioRef.current
+              const tNow =
+                seeking && d > 0 ? seekNorm * d : (a && Number.isFinite(a.currentTime) ? a.currentTime : displayTime)
+              const stepS = 10
+              if (e.key === 'Home') {
+                e.preventDefault()
+                applySeek(0)
+              } else if (e.key === 'End') {
+                e.preventDefault()
+                applySeek(1)
+              } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                e.preventDefault()
+                applySeek((tNow - stepS) / d)
+              } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                e.preventDefault()
+                applySeek((tNow + stepS) / d)
+              } else if (e.key === 'PageDown') {
+                e.preventDefault()
+                applySeek((tNow - 30) / d)
+              } else if (e.key === 'PageUp') {
+                e.preventDefault()
+                applySeek((tNow + 30) / d)
+              }
+            }}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return
+              if (!durationReady || d <= 0) return
+              e.preventDefault()
+              lastTimeUiRef.current = 0
+              seekBarPointerActive.current = true
+              syncSeeking(true)
+              e.currentTarget.setPointerCapture(e.pointerId)
+              const p = getNormFromClientX(e.clientX)
+              setSeekNorm(p)
+              applySeek(p)
+            }}
+            onPointerMove={(e) => {
+              if (!seekBarPointerActive.current) return
+              e.preventDefault()
+              const p = getNormFromClientX(e.clientX)
+              setSeekNorm(p)
+              applySeek(p)
+            }}
+            onPointerUp={endBarSeek}
+            onPointerCancel={endBarSeek}
+            onLostPointerCapture={endBarSeek}
           >
-            {r}×
-          </button>
-        ))}
-      </div>
-      <div className="mt-2.5 w-full sm:mt-3">
-        <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">Seek</p>
-        <div
-          ref={barRef}
-          className={joinClasses(
-            'relative w-full min-h-10 min-w-0 select-none rounded-md',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1',
-            durationReady && d > 0
-              ? 'cursor-pointer'
-              : 'pointer-events-none cursor-not-allowed opacity-40',
-          )}
-          style={{ touchAction: 'none' }}
-          role="slider"
-          tabIndex={durationReady && d > 0 ? 0 : -1}
-          aria-label="Position in recording"
-          aria-disabled={!durationReady || d <= 0}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={ariaPercent}
-          aria-valuetext={`${formatTime(shownTime)} of ${formatTime(d)}`}
-          onKeyDown={(e) => {
-            if (!durationReady || d <= 0) return
-            const a = audioRef.current
-            const tNow =
-              seeking && d > 0 ? seekNorm * d : (a && Number.isFinite(a.currentTime) ? a.currentTime : displayTime)
-            const stepS = 10
-            if (e.key === 'Home') {
-              e.preventDefault()
-              applySeek(0)
-            } else if (e.key === 'End') {
-              e.preventDefault()
-              applySeek(1)
-            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-              e.preventDefault()
-              applySeek((tNow - stepS) / d)
-            } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-              e.preventDefault()
-              applySeek((tNow + stepS) / d)
-            } else if (e.key === 'PageDown') {
-              e.preventDefault()
-              applySeek((tNow - 30) / d)
-            } else if (e.key === 'PageUp') {
-              e.preventDefault()
-              applySeek((tNow + 30) / d)
-            }
-          }}
-          onPointerDown={(e) => {
-            if (e.button !== 0) return
-            if (!durationReady || d <= 0) return
-            e.preventDefault()
-            lastTimeUiRef.current = 0
-            seekBarPointerActive.current = true
-            syncSeeking(true)
-            e.currentTarget.setPointerCapture(e.pointerId)
-            const p = getNormFromClientX(e.clientX)
-            setSeekNorm(p)
-            applySeek(p)
-          }}
-          onPointerMove={(e) => {
-            if (!seekBarPointerActive.current) return
-            e.preventDefault()
-            const p = getNormFromClientX(e.clientX)
-            setSeekNorm(p)
-            applySeek(p)
-          }}
-          onPointerUp={endBarSeek}
-          onPointerCancel={endBarSeek}
-          onLostPointerCapture={endBarSeek}
-        >
-          <div
-            className="pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-zinc-200/90"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute left-0 top-1/2 h-1.5 max-w-full -translate-y-1/2 rounded-l-full bg-indigo-500/90"
-            style={{ width: `${Math.min(100, Math.max(0, sliderValue * 100))}%` }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute top-1/2 z-10 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-300/80 bg-white shadow-sm"
-            style={{ left: `${Math.min(100, Math.max(0, sliderValue * 100))}%` }}
-            aria-hidden
-          />
+            <div
+              className="pointer-events-none absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-zinc-200/90"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute left-0 top-1/2 h-1 max-w-full -translate-y-1/2 rounded-l-full bg-indigo-500/90"
+              style={{ width: `${Math.min(100, Math.max(0, sliderValue * 100))}%` }}
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute top-1/2 z-10 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-300/80 bg-white shadow-sm"
+              style={{ left: `${Math.min(100, Math.max(0, sliderValue * 100))}%` }}
+              aria-hidden
+            />
+          </div>
+          <div className="mt-0.5 flex items-center justify-between gap-1.5">
+            <p className="min-w-0 text-[11px] tabular-nums text-zinc-500" aria-live="off">
+              <span className="font-medium text-zinc-800">{formatTime(shownTime)}</span>
+              <span className="text-zinc-300"> / </span>
+              <span>{durationReady && d > 0 ? formatTime(d) : '—'}</span>
+            </p>
+            <label className="sr-only" htmlFor="call-audio-playback-rate">
+              Playback speed
+            </label>
+            <select
+              id="call-audio-playback-rate"
+              value={playbackRate}
+              onChange={(e) => setPlaybackRate(Number(e.target.value) as (typeof PLAYBACK_RATES)[number])}
+              className={joinClasses(
+                'h-5 max-w-[4.5rem] shrink-0 cursor-pointer rounded border border-zinc-200/90 bg-white py-0 pl-1 pr-0.5',
+                'text-[11px] font-medium text-zinc-700 shadow-sm',
+                'focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/50',
+              )}
+            >
+              {PLAYBACK_RATES.map((r) => (
+                <option key={r} value={r}>
+                  {r}×
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
     </div>

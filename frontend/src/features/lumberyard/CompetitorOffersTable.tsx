@@ -32,11 +32,13 @@ function Th({ children, className }: { children: ReactNode; className?: string }
 export function CompetitorOffersTable({
   rows,
   phaseKey,
+  tableTitle = 'Competitor × product board',
   selectedRowIds = [],
   onRowToggleContext,
 }: {
   rows: CompetitorOfferRow[]
   phaseKey: string
+  tableTitle?: string
   selectedRowIds?: string[]
   onRowToggleContext?: (row: CompetitorOfferRow, displayIndex: number) => void
 }) {
@@ -47,6 +49,9 @@ export function CompetitorOffersTable({
       className="group/table relative flex h-full min-h-0 w-full min-w-0 flex-col bg-white text-zinc-900 antialiased"
       data-testid="competitor-offers-table"
     >
+      <div className="shrink-0 border-b border-zinc-200/90 bg-zinc-50/80 px-3 py-2.5">
+        <h2 className="text-sm font-bold tracking-tight text-zinc-900">{tableTitle}</h2>
+      </div>
       <div className="relative min-h-0 flex-1 overflow-x-auto overflow-y-auto [scrollbar-gutter:stable]">
         <table
           className="w-full min-w-[640px] border-collapse text-left [border-spacing:0]"
@@ -61,7 +66,7 @@ export function CompetitorOffersTable({
                 </span>
               </Th>
               <Th className="min-w-[12rem]">Product</Th>
-              <Th className="w-28 min-w-[6rem]">Price</Th>
+              <Th className="w-40 min-w-[8.5rem]">Price (unit)</Th>
             </tr>
           </thead>
           <tbody>
@@ -72,13 +77,18 @@ export function CompetitorOffersTable({
                 <tr
                   key={row.id}
                   className={joinClasses(
+                    'lead-table-row-anim',
                     'cursor-pointer transition-colors',
                     index % 2 === 0 ? 'bg-white' : 'bg-zinc-50/55',
                     'hover:bg-sky-50/50',
                     selected && 'bg-sky-50/50 ring-2 ring-inset ring-sky-400/60',
                   )}
-                  title="Click for chat context. Double-click for the listing + image/web shortcuts panel. ↗ on competitor or ⌘-click the row opens the store listing."
+                  style={{ animationDelay: `${Math.min(index, 30) * 65}ms` }}
+                  title="Click product or price for chat context. Double-click for listing, images, and web shortcuts. Competitor name opens the store listing. ⌘-click or middle-click the row opens the listing."
                   onClick={(e) => {
+                    if (e.composedPath().some((n) => n instanceof HTMLAnchorElement)) {
+                      return
+                    }
                     if (e.metaKey || e.ctrlKey) {
                       e.preventDefault()
                       openUrlInNewTab(row.productPageUrl)
@@ -96,7 +106,6 @@ export function CompetitorOffersTable({
                       openUrlInNewTab(row.productPageUrl)
                     }
                   }}
-                  role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -111,42 +120,39 @@ export function CompetitorOffersTable({
                   }}
                 >
                   <td className="border border-zinc-200/80 px-3 py-2.5 text-sm font-semibold text-zinc-900">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      <span className="min-w-0 truncate px-0.5" title={row.competitor}>
-                        {row.competitor}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openUrlInNewTab(row.productPageUrl)
-                        }}
-                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sky-700 hover:bg-sky-100/80"
-                        title="Open product listing in a new tab"
-                        aria-label={`Open ${row.competitor} listing in a new tab`}
-                      >
-                        <OpenInNewTabIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <a
+                      href={row.productPageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        openUrlInNewTab(row.productPageUrl)
+                      }}
+                      onAuxClick={(e) => e.stopPropagation()}
+                      className="min-w-0 truncate px-0.5 text-sky-800 underline decoration-sky-400/45 underline-offset-2 hover:text-sky-900 hover:decoration-sky-500/70"
+                      title={`Open ${row.competitor} listing in a new tab`}
+                    >
+                      {row.competitor}
+                    </a>
                   </td>
                   <td className="max-w-0 min-w-0 border border-zinc-200/80 px-3 py-2.5 text-sm text-zinc-800">
                     <div className="truncate px-0.5" title={row.product}>
                       {row.product}
                     </div>
                   </td>
-                  <td className="whitespace-nowrap border border-zinc-200/80 px-3 py-2.5 text-sm tabular-nums text-zinc-800">
-                    {row.price}
+                  <td
+                    className="whitespace-nowrap border border-zinc-200/80 px-3 py-2.5 text-sm tabular-nums text-zinc-800"
+                    title={`${row.price} ${row.priceUnit}`}
+                  >
+                    <span className="font-medium">{row.price}</span>
+                    <span className="pl-1 text-zinc-600">{row.priceUnit}</span>
                   </td>
                 </tr>
               )
             })}
           </tbody>
         </table>
-      </div>
-      <div className="shrink-0 border-t border-zinc-200/90 bg-zinc-50/60 px-3 py-2 text-xs text-zinc-500">
-        {rows.length} {rows.length === 1 ? 'row' : 'rows'} — click a row for chat context; double-click opens the
-        full URL, images, and web shortcuts; ↗ on the competitor or ⌘-click the row opens the store listing; middle-click
-        the row also opens the listing
       </div>
 
       <Modal
