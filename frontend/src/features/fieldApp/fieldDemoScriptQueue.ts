@@ -36,11 +36,10 @@ export type FieldScriptStep = {
    */
   sideEffect?: 'send-product-specs-email' | 'seed-quotes-ready-lumber'
   /**
-   * After “Ok, recording.” wait for an **orb tap** to play the thank-you line. Add the memo
-   * on **Field Notes** with **P** (any time); that step is not tied to the voice queue.
-   * `ozSays` is empty; do not play TTS for this index.
+   * After “Ok, recording” — on rep **speech end** (same VAD as other lines), save the **canned** Sami
+   * Field Notes row and advance to the thank-you TTS. `ozSays` is empty; this index never plays audio.
    */
-  awaitFieldMemoOrb?: boolean
+  appendCannedFieldMemoOnSpeechEnd?: boolean
   /**
    * After the previous step's TTS, skip rep listening and play this step's Oz line immediately
    * (e.g. automatic "generating quote" ack after the JCR close).
@@ -56,8 +55,7 @@ export type FieldScriptStep = {
  * Demo arc:
  *   Script 1 — customer history (Kenny Hills) — 2 turns
  *   Script 2 — recommend & cross-sell           — 4 turns
- *   Script 3 — field memo (Sami)                 — "Ok, recording" → optional **P** on Field Notes for the memo
- *              → **tap orb** for Oz "saved your field note — thanks!"
+ *   Script 3 — field memo (Sami)                 — "Ok, recording" → rep speaks, VAD on **stop** → canned memo in Field Notes + Oz thanks (no P, no transcription)
  *   Script 4 — Summit Ridge lumber package      — 6 rep turns + automatic "generating quote" Oz line
  *
  * The voice-memo turn runs **before** the quote Q&A so the Field Notes table is
@@ -78,16 +76,16 @@ export function buildFieldScriptQueue(): readonly FieldScriptStep[] {
     },
     {
       scriptIndex: 3,
-      label: `Script 3 — Field memo open (e.g. “${VOICE_MEMO_OPEN_LINE}”)`,
+      label: `Script 3 — Field memo (1/3) — e.g. “${VOICE_MEMO_OPEN_LINE}”`,
       ozSays: VOICE_MEMO_RECORDING_ACK,
     },
     {
       scriptIndex: 3,
-      label: 'Script 3 — Field Notes: P = Sami memo · then tap orb to continue',
+      label: 'Script 3 — Field memo (2/3) — your next line after Ok, recording',
       ozSays: '',
-      awaitFieldMemoOrb: true,
+      appendCannedFieldMemoOnSpeechEnd: true,
     },
-    { scriptIndex: 3, label: 'Script 3 — Saved your note (Oz only)', ozSays: VOICE_MEMO_SAVED_THANKS },
+    { scriptIndex: 3, label: 'Script 3 — Field memo (3/3) — Oz thank-you', ozSays: VOICE_MEMO_SAVED_THANKS },
     { scriptIndex: 4, label: 'Script 4 — Lumber quote (1/6) customer + deal', ozSays: SCRIPT3_T1_PROJECT_BASICS },
     { scriptIndex: 4, label: 'Script 4 — Lumber quote (2/6) description + order value', ozSays: SCRIPT3_T2_DESCRIPTION_AND_ORDER },
     { scriptIndex: 4, label: 'Script 4 — Lumber quote (3/6) material buckets', ozSays: SCRIPT3_T3_COMPONENTS },

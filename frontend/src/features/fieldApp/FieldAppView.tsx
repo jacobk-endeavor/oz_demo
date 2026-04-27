@@ -19,6 +19,7 @@ import {
 import { useFieldMicrophone } from './useFieldMicrophone'
 import { buildFieldScriptQueue, nextScriptStartIndex } from './fieldDemoScriptQueue'
 import { useFieldVoiceTurnTaking } from './fieldVoiceTurnTaking'
+import { appendCannedSamiFieldMemo } from './fieldDemoVoiceMemo'
 import { sendProductSpecsEmail } from './fieldDemoProductSpecsEmail'
 import {
   seedJcrLumberQuoteIfAbsent,
@@ -43,7 +44,7 @@ export function FieldAppView({ mode, workflowId }: FieldAppViewProps) {
   return <FieldAppVoiceColumn />
 }
 
-type Phase = 'idle' | 'listening' | 'speaking' | 'oz' | 'memo-orb-continue' | 'done'
+type Phase = 'idle' | 'listening' | 'speaking' | 'oz' | 'done'
 
 /**
  * Field App home: tap the orb to start. The mic opens, the rep speaks the next
@@ -74,14 +75,29 @@ function FieldAppVoiceColumn() {
   useEffect(() => {
     phaseRef.current = phase
   }, [phase])
+  const stepIndexRef = useRef(0)
+  useEffect(() => {
+    stepIndexRef.current = stepIndex
+  }, [stepIndex])
 
   const onSpeechStart = useCallback(() => {
     setPhase((p) => (p === 'listening' ? 'speaking' : p))
   }, [])
 
   const onSpeechEnd = useCallback(() => {
+    const i = stepIndexRef.current
+    if (phaseRef.current === 'speaking' && queue[i]?.appendCannedFieldMemoOnSpeechEnd) {
+      try {
+        appendCannedSamiFieldMemo()
+      } catch {
+        /* localStorage */
+      }
+      setStepIndex(i + 1)
+      setPhase('oz')
+      return
+    }
     setPhase((p) => (p === 'speaking' ? 'oz' : p))
-  }, [])
+  }, [queue])
 
   useFieldVoiceTurnTaking(
     micStream,
@@ -97,6 +113,10 @@ function FieldAppVoiceColumn() {
     const step = queue[stepIndex]
     if (!step) {
       setPhase('done')
+      return
+    }
+    if (step.appendCannedFieldMemoOnSpeechEnd) {
+      setPhase('listening')
       return
     }
     cancelTtsRef.current = false
@@ -123,9 +143,7 @@ function FieldAppVoiceColumn() {
         }
         const next = stepIndex + 1
         setStepIndex(next)
-        if (next < queue.length && queue[next]?.awaitFieldMemoOrb) {
-          setPhase('memo-orb-continue')
-        } else if (next < queue.length && queue[next]?.skipRepListen) {
+        if (next < queue.length && queue[next]?.skipRepListen) {
           setPhase('oz')
         } else if (next < queue.length) {
           setPhase('listening')
@@ -163,24 +181,11 @@ function FieldAppVoiceColumn() {
         setMicSetupExpanded(true)
         return
       }
-      if (phase === 'memo-orb-continue') {
-        e.preventDefault()
-        setTtsError(null)
-        const thanksIdx = stepIndex + 1
-        if (thanksIdx < queue.length) {
-          setStepIndex(thanksIdx)
-          setPhase('oz')
-        } else {
-          setStepIndex(queue.length)
-          setPhase('done')
-        }
-        return
-      }
       if (phase === 'idle' || phase === 'done') {
         void startRun()
       }
     },
-    [micOnboardingDone, phase, queue.length, startRun, stepIndex],
+    [micOnboardingDone, phase, queue.length, startRun],
   )
 
   const onFieldMicAllow = useCallback(() => {
@@ -198,10 +203,7 @@ function FieldAppVoiceColumn() {
   const skipTarget = nextScriptStartIndex(queue, stepIndex)
   const canSkipScript =
     skipTarget !== null &&
-    (phase === 'listening' ||
-      phase === 'speaking' ||
-      phase === 'oz' ||
-      phase === 'memo-orb-continue')
+    (phase === 'listening' || phase === 'speaking' || phase === 'oz')
   const onSkipScript = useCallback(() => {
     if (skipTarget === null) return
     cancelTtsRef.current = true
@@ -217,14 +219,7 @@ function FieldAppVoiceColumn() {
   const ozPulse = useSpeechLikePulse(phase === 'oz')
   const showFullMicUI = !micOnboardingDone || micSetupExpanded
   const drivePulseFromMic = phase === 'listening' || phase === 'speaking'
-  const pulseTarget =
-    drivePulseFromMic
-      ? 1
-      : phase === 'oz'
-        ? ozPulse
-        : phase === 'memo-orb-continue'
-          ? 0.38
-          : 0.16
+  const pulseTarget = drivePulseFromMic ? 1 : phase === 'oz' ? ozPulse : 0.16
   const stepLabel = stepIndex < queue.length ? queue[stepIndex]!.label : 'Done'
   const stepNumber = Math.min(stepIndex + 1, queue.length)
   const statusLine = statusForPhase(phase, stepNumber, queue.length)
@@ -356,8 +351,6 @@ function statusForPhase(phase: Phase, stepNumber: number, total: number): string
       return 'Listening — keep going. Oz will pick up when you stop.'
     case 'oz':
       return 'Oz is speaking…'
-    case 'memo-orb-continue':
-      return 'On Field Notes: press P to add Sami’s memo. Then tap the orb to hear Oz’s thank-you line.'
     case 'done':
       return `All ${total} lines played. Tap the orb to run the demo again.`
   }
@@ -373,8 +366,6 @@ function orbLabelForPhase(phase: Phase): string {
       return 'Hearing you speak. Oz will reply when you stop.'
     case 'oz':
       return 'Oz is speaking. Wait for the line to finish.'
-    case 'memo-orb-continue':
-      return 'Add the memo on Field Notes with P, then tap the orb to continue the voice demo.'
     case 'done':
       return 'Demo complete. Tap to start over.'
   }

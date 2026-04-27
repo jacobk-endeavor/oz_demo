@@ -13,7 +13,6 @@ import {
   MOCK_PRIORITY_BRIEFS,
 } from './fieldNotesPriorityData'
 import { readStoredVoiceMemos, VOICE_MEMOS_CHANGED_EVENT } from './voiceMemoStore'
-import { appendCannedSamiFieldMemo } from '../fieldApp/fieldDemoVoiceMemo'
 
 const PRIORITY_BRIEFS_KEY = 'field-notes-priority-briefs-v1'
 const DISMISSED_MOCK_BRIEF_IDS_KEY = 'field-notes-mock-briefs-dismissed-v1'
@@ -276,24 +275,6 @@ export function FieldNotesPage() {
       window.removeEventListener(VOICE_MEMOS_CHANGED_EVENT, onChanged)
       window.removeEventListener('storage', onChanged)
     }
-  }, [])
-
-  /** Canned Sami field memo (sentiment snapshot) — same as the Field voice runbook; not tied to the orb. */
-  useEffect(() => {
-    if (import.meta.env.VITEST) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'p' && e.key !== 'P') return
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      e.preventDefault()
-      try {
-        appendCannedSamiFieldMemo()
-      } catch {
-        /* localStorage / quota */
-      }
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
   }, [])
 
   const rows = useMemo<VoiceMemoRow[]>(() => {

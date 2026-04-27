@@ -40,12 +40,12 @@ export const SCRIPT5_BACKGROUND_QUOTE_OPEN =
 export const VOICE_MEMO_OPEN_LINE =
   'Hey, I want to record a field memo.'
 
-/** Field meeting — Oz ack; then the rep can add the memo on Field Notes (P) and tap the orb to continue. */
+/** Field meeting — after this ack, the next rep turn uses the same VAD as everywhere else; pause saves the canned memo and plays the thank-you. */
 export const VOICE_MEMO_RECORDING_ACK = 'Ok, recording.'
 
 /**
- * What gets stored as **Rep (Sami)** on the voice memo — first person, as read in the runbook.
- * Injected on **Field Notes** (`#/field-notes`) with **P**; same text as in the “View conversation” transcript.
+ * Canned **Rep (Sami)** line stored on the Field Notes row (first person, as in the runbook).
+ * Written when the rep finishes speaking on that Script 3 turn — same text as in “View conversation.”
  */
 export const SAMI_FIELD_MEMO_CANNED_TEXT =
   "Just wrapped a walkthrough with Summit Ridge on site. They're in a good place — upbeat about the job, easy to talk to, and it feels like they trust us. I'd call the tone collaborative and the opportunity hot. No red flags on the relationship side."

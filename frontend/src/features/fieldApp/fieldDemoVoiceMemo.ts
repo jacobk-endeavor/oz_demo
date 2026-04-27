@@ -1,6 +1,6 @@
 /**
  * Field voice memo: append a row to the Field Notes “incoming voice memos” store.
- * Script 3 uses the canned Sami line (Field Notes page: **P**). This module builds the row shape.
+ * Script 3 calls `appendCannedSamiFieldMemo` after the rep pauses (VAD) on the post–“Ok, recording” turn.
  */
 import { appendVoiceMemo } from '../fieldNotes/voiceMemoStore'
 import type { VoiceMemoRow } from '../fieldNotes/fieldNotesDashboardData'
@@ -40,7 +40,7 @@ export function appendFieldMemoFromDictation(
   })
 }
 
-/** Append the demo Sami field memo (customer sentiment) — same as pressing **P** on Field Notes. */
+/** Append the demo Sami field memo (customer sentiment); used from the Field App voice queue after VAD on that turn. */
 export function appendCannedSamiFieldMemo() {
   return appendFieldMemoFromDictation(SAMI_FIELD_MEMO_CANNED_TEXT)
 }

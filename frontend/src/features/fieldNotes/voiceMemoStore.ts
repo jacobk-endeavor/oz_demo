@@ -1,5 +1,5 @@
 /**
- * Local store for **incoming voice memos** (Field App Script 3 and Field Notes **P**).
+ * Local store for **incoming voice memos** (appended from the Field App Script 3 voice turn and similar paths).
  * The Field Notes page merges this list with the static `VOICE_MEMO_DEMO` array.
  */
 import type { VoiceMemoRow } from './fieldNotesDashboardData'
