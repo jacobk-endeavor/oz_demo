@@ -52,7 +52,7 @@ export const KENNY_NOTES: readonly { who: string; text: string }[] = [
     text: 'Asked for TimberTech samples; keeps coming back to hidden-fastener look — walk the board with him on site before you quote add-ons.',
   },
   {
-    who: 'Alex · field note',
+    who: 'Sami · field note',
     text: 'Price check on Pro line vs AZEK line; willing to trade up if margin story is clear and lead time beats Big Box.',
   },
   {

@@ -10,7 +10,7 @@ export const DEMO_FIELD_SALES_REPS: readonly FieldSalesRep[] = [
   { id: 'rep-marcus', name: 'Marcus Chen' },
   { id: 'rep-priya', name: 'Priya Nair' },
   { id: 'rep-jordan', name: 'Jordan Ellis' },
-  { id: 'rep-alex', name: 'Alex Ruiz' },
+  { id: 'rep-sami', name: 'Sami' },
 ] as const
 
 export type PriorityBriefCard = {
@@ -36,7 +36,7 @@ export const MOCK_PRIORITY_BRIEFS: readonly PriorityBriefCard[] = [
       'rep-marcus': '2026-04-25T09:20:00-04:00',
       'rep-priya': '2026-04-25T09:18:00-04:00',
       'rep-jordan': '2026-04-25T09:32:00-04:00',
-      'rep-alex': '2026-04-25T09:25:00-04:00',
+      'rep-sami': '2026-04-25T09:25:00-04:00',
     },
   },
   {

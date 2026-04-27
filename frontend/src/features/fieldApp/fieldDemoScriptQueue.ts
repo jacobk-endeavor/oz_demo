@@ -8,11 +8,13 @@ import {
   SCRIPT3_T4_LABOR,
   SCRIPT3_T5_ADDITIONAL_AND_PAYMENT,
   SCRIPT3_T6_CLOSE,
-  SCRIPT5_BACKGROUND_QUOTE_OPEN,
+  SCRIPT_QUOTE_GENERATING,
   TTS_RECOMMEND,
   TTS_UPSELL,
   TTS_USE_CASES,
+  VOICE_MEMO_OPEN_LINE,
   VOICE_MEMO_RECORDING_ACK,
+  VOICE_MEMO_SAVED_THANKS,
 } from './fieldDemoVoiceCopy'
 
 export type FieldScriptStep = {
@@ -28,10 +30,26 @@ export type FieldScriptStep = {
   scriptIndex: number
   /**
    * Optional side-effect tag run after this step's TTS finishes. The Field App
-   * voice column dispatches the matching effect — e.g. "capture-field-memo"
-   * appends the demo voice memo to the field-notes store.
+   * voice column dispatches the matching effect — e.g.
+   * "send-product-specs-email" posts the canned spec email through the dev
+   * server's SMTP proxy.
    */
-  sideEffect?: 'capture-field-memo'
+  sideEffect?: 'send-product-specs-email' | 'seed-quotes-ready-lumber'
+  /**
+   * After the previous step's Oz line, record live audio → OpenAI transcription → Field Notes.
+   * No `ozSays` playback before listening; rep dictates freely (long pause or orb tap ends capture).
+   */
+  memoDictation?: boolean
+  /**
+   * After the previous step's TTS, skip rep listening and play this step's Oz line immediately
+   * (e.g. automatic "generating quote" ack after the JCR close).
+   */
+  skipRepListen?: boolean
+  /**
+   * After Script 3 memo dictation finishes successfully, advance to this step with Oz TTS (no rep line).
+   * If dictation/save fails, the runner skips this step and jumps to the following one.
+   */
+  memoCompleteAck?: boolean
 }
 
 /**
@@ -42,10 +60,9 @@ export type FieldScriptStep = {
  * Demo arc:
  *   Script 1 — customer history (Kenny Hills) — 2 turns
  *   Script 2 — recommend & cross-sell           — 4 turns
- *   Script 3 — field-meeting voice memo         — 1 turn (rep dictates,
- *              Oz acks "Cool, recording", memo lands in Field Notes)
- *   Script 4 — Sammy Carter quote (one-by-one)  — 6 turns into the Job Cost Recap
- *   Script 5 — background quote handoff         — 1 turn
+ *   Script 3 — field-meeting voice memo         — memo open, STT dictation → Field Notes,
+ *              then Oz "saved your field note — thanks!" when save succeeds
+ *   Script 4 — Summit Ridge lumber package      — 6 rep turns + automatic "generating quote" Oz line
  *
  * The voice-memo turn intentionally runs **before** the quote Q&A so the rep's
  * dictated context is in Field Notes by the time they walk into the quote work.
@@ -57,20 +74,42 @@ export function buildFieldScriptQueue(): readonly FieldScriptStep[] {
     { scriptIndex: 2, label: 'Script 2 — Recommend & cross-sell (1/4)', ozSays: TTS_RECOMMEND },
     { scriptIndex: 2, label: 'Script 2 — Recommend & cross-sell (2/4)', ozSays: TTS_USE_CASES },
     { scriptIndex: 2, label: 'Script 2 — Recommend & cross-sell (3/4)', ozSays: TTS_UPSELL },
-    { scriptIndex: 2, label: 'Script 2 — Recommend & cross-sell (4/4)', ozSays: SCRIPT2_EMAIL_SENDING_REPLY },
+    {
+      scriptIndex: 2,
+      label: 'Script 2 — Recommend & cross-sell (4/4)',
+      ozSays: SCRIPT2_EMAIL_SENDING_REPLY,
+      sideEffect: 'send-product-specs-email',
+    },
     {
       scriptIndex: 3,
-      label: 'Script 3 — Field-meeting voice memo',
+      label: `Script 3 — Field memo open (e.g. “${VOICE_MEMO_OPEN_LINE}”)`,
       ozSays: VOICE_MEMO_RECORDING_ACK,
-      sideEffect: 'capture-field-memo',
     },
-    { scriptIndex: 4, label: 'Script 4 — Sammy Carter quote (1/6) project basics', ozSays: SCRIPT3_T1_PROJECT_BASICS },
-    { scriptIndex: 4, label: 'Script 4 — Sammy Carter quote (2/6) description + order value', ozSays: SCRIPT3_T2_DESCRIPTION_AND_ORDER },
-    { scriptIndex: 4, label: 'Script 4 — Sammy Carter quote (3/6) component costs', ozSays: SCRIPT3_T3_COMPONENTS },
-    { scriptIndex: 4, label: 'Script 4 — Sammy Carter quote (4/6) labor', ozSays: SCRIPT3_T4_LABOR },
-    { scriptIndex: 4, label: 'Script 4 — Sammy Carter quote (5/6) additional + payment', ozSays: SCRIPT3_T5_ADDITIONAL_AND_PAYMENT },
-    { scriptIndex: 4, label: 'Script 4 — Sammy Carter quote (6/6) close', ozSays: SCRIPT3_T6_CLOSE },
-    { scriptIndex: 5, label: 'Script 5 — Background quote', ozSays: SCRIPT5_BACKGROUND_QUOTE_OPEN },
+    {
+      scriptIndex: 3,
+      label: 'Script 3 — Dictate memo (pause ~3s or tap orb when done)',
+      ozSays: '',
+      memoDictation: true,
+    },
+    {
+      scriptIndex: 3,
+      label: 'Script 3 — Saved your note (Oz only)',
+      ozSays: VOICE_MEMO_SAVED_THANKS,
+      memoCompleteAck: true,
+    },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (1/6) customer + deal', ozSays: SCRIPT3_T1_PROJECT_BASICS },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (2/6) description + order value', ozSays: SCRIPT3_T2_DESCRIPTION_AND_ORDER },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (3/6) material buckets', ozSays: SCRIPT3_T3_COMPONENTS },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (4/6) takeoff + yard labor', ozSays: SCRIPT3_T4_LABOR },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (5/6) additional + payment', ozSays: SCRIPT3_T5_ADDITIONAL_AND_PAYMENT },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (6/6) close', ozSays: SCRIPT3_T6_CLOSE },
+    {
+      scriptIndex: 4,
+      label: 'Script 4 — Generating quote (Oz only)',
+      ozSays: SCRIPT_QUOTE_GENERATING,
+      skipRepListen: true,
+      sideEffect: 'seed-quotes-ready-lumber',
+    },
   ]
 }
 

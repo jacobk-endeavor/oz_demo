@@ -1,4 +1,4 @@
-/** localStorage log for the Field notes workflow (tabular visit rows from Field App). */
+/** localStorage log for the Field Notes workflow (tabular visit rows from Field App). */
 const STORAGE_KEY = 'oz-demo-field-notes-visit-log' as const
 
 export type FieldNotesVisitLogRow = {

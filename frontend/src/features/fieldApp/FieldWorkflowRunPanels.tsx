@@ -370,7 +370,7 @@ export function RunProspectNotes({
         both or one. Oz asks the five visit topics; when you have <strong>customer, line items, and ship-to</strong>,
         you can go straight to quote and Oz will not push the optional lines unless you are still adding them. The
         <strong> Job Cost Recap sheet</strong> below pre-fills from your answers — edit any cell, then{' '}
-        <strong>Log to Field notes</strong> or <strong>Open Quote Automation</strong>.
+        <strong>Log to Field Notes</strong> or <strong>Open Quote Automation</strong>.
       </p>
       {quoteCoreReady ? (
         <div
@@ -379,7 +379,7 @@ export function RunProspectNotes({
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">Ready for quote generation</p>
           <p className="mt-0.5 text-sm text-emerald-950/95">
-            Customer, line items, and ship-to are in place. Use <strong>Log visit to Field notes</strong> to open the
+            Customer, line items, and ship-to are in place. Use <strong>Log visit to Field Notes</strong> to open the
             quote handoff, or keep dictating for competitors and call insights if you want a fuller visit note.
           </p>
         </div>
@@ -485,7 +485,7 @@ export function RunProspectNotes({
 /**
  * Editable Excel-like quote sheet, pre-filled from the prospect Q&A answers.
  * Replaces the prior PDF download flow — same template (Job Cost Recap),
- * same handoff to Field notes, but the rep edits cells directly instead of
+ * same handoff to Field Notes, but the rep edits cells directly instead of
  * generating a static PDF.
  */
 function ProspectQuoteSheetCard({
@@ -524,7 +524,7 @@ function ProspectQuoteSheetCard({
           onClick={onLogVisit}
           className="rounded-xl border border-fuchsia-600/40 bg-fuchsia-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-fuchsia-700"
         >
-          Log visit to Field notes
+          Log visit to Field Notes
         </button>
       </div>
     </div>
@@ -533,7 +533,7 @@ function ProspectQuoteSheetCard({
 
 export function RunBackgroundQuote() {
   const [invoiceMsg, setInvoiceMsg] = useState<string | null>(null)
-  // The voice-demo example is Sammy Carter / Q25-1102 / automation cell upgrade —
+  // The voice-demo example is Summit Ridge Framing / Q25-4420-LUM / lumber package —
   // populate every cell so the demo reads as a finished, formula-balanced
   // Excel quote from the JSON template.
   const overrides = useMemo(() => ({ ...JCR_JSON_EXAMPLE_DEFAULTS }), [])
@@ -542,7 +542,7 @@ export function RunBackgroundQuote() {
       <div className="rounded-2xl border border-violet-200/80 bg-violet-50/50 p-3">
         <p className="text-xs font-semibold uppercase text-violet-800">Web app agent (background)</p>
         <p className="mt-0.5 text-sm text-violet-950/90">
-          Voice-triggered quote drafted into the <strong>Job Cost Recap</strong> sheet below (Q26-0002-04 template).
+          Voice-triggered quote drafted into the <strong>Job Cost Recap</strong> sheet below (Q26-0601-LB template).
           Every cell is editable, formulas update live as you change hours, rates, or component costs. When the
           numbers look right, hit <strong>Create invoice from sheet</strong>.
         </p>
@@ -552,12 +552,12 @@ export function RunBackgroundQuote() {
         data-testid="field-bg-quote-status"
       >
         <p className="text-sm font-medium text-emerald-900">
-          Quote sheet ready — pre-filled from the <strong>Q25-1102 (Sammy Carter · automation cell upgrade)</strong> example.
+          Quote sheet ready — pre-filled from the <strong>Q25-4420-LUM (Summit Ridge Framing · lumber package)</strong> example.
         </p>
       </div>
       <JobCostEstimateRecapSheet
         initialOverrides={overrides}
-        caption="Quote sheet — Sammy Carter · automation cell upgrade (Q25-1102, demo)"
+        caption="Quote sheet — Summit Ridge Framing · lumber package (Q25-4420-LUM, demo)"
         onCreateInvoice={({ computed }) => {
           const total = computed.total_cost ?? 0
           const profit = computed.profit ?? 0

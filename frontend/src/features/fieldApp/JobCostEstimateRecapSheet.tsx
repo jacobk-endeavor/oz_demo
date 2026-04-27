@@ -94,6 +94,8 @@ interface SheetProps {
   onValuesChange?: (values: Record<string, string | number>) => void
   /** Optional caption above the sheet (e.g. "Quote sheet for Kenny Hills"). */
   caption?: string
+  /** Merged onto the root `<section>` (e.g. `min-h-0 flex-1` when embedded in a flex column). */
+  className?: string
 }
 
 export function JobCostEstimateRecapSheet({
@@ -101,6 +103,7 @@ export function JobCostEstimateRecapSheet({
   onCreateInvoice,
   onValuesChange,
   caption,
+  className,
 }: SheetProps) {
   const [values, setValues] = useState<Record<string, string | number>>(() =>
     buildInitialJcrValues(initialOverrides),
@@ -108,6 +111,10 @@ export function JobCostEstimateRecapSheet({
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null)
   const cellMap = useMemo(buildCellMap, [])
   const computed = useMemo(() => evaluateJcr(values), [values])
+  const sheetHeaderSubtitle = useMemo(() => {
+    const p = values.project_number
+    return typeof p === 'string' && p.trim() !== '' ? `${p.trim()} · Job Cost Recap` : 'Job Cost Recap'
+  }, [values.project_number])
   const onValuesChangeRef = useRef(onValuesChange)
   onValuesChangeRef.current = onValuesChange
 
@@ -168,13 +175,16 @@ export function JobCostEstimateRecapSheet({
 
   return (
     <section
-      className="overflow-hidden rounded-2xl border border-zinc-300/80 bg-white shadow-sm"
+      className={joinClasses(
+        'flex min-h-0 flex-col overflow-hidden rounded-2xl border border-zinc-300/80 bg-white shadow-sm',
+        className,
+      )}
       data-testid="jcr-sheet"
     >
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-gradient-to-r from-emerald-50 to-white px-3 py-2.5">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-gradient-to-r from-emerald-50 to-white px-3 py-2.5">
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800">
-            Q26-0002-04 · Job Cost Recap
+            {sheetHeaderSubtitle}
           </p>
           <p className="text-sm font-semibold text-zinc-900">
             {caption ?? 'Job Cost Estimate Recap (editable demo)'}
@@ -191,7 +201,7 @@ export function JobCostEstimateRecapSheet({
       </header>
 
       {/* Formula bar */}
-      <div className="flex items-stretch gap-0 border-b border-zinc-200 bg-zinc-50/80 text-xs">
+      <div className="flex shrink-0 items-stretch gap-0 border-b border-zinc-200 bg-zinc-50/80 text-xs">
         <span
           className="flex w-14 shrink-0 items-center justify-center border-r border-zinc-300 bg-white font-mono font-semibold text-zinc-700"
           data-testid="jcr-name-box"
@@ -207,7 +217,7 @@ export function JobCostEstimateRecapSheet({
       </div>
 
       {/* Grid */}
-      <div className="overflow-x-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <table
           className="w-full min-w-[44rem] border-collapse text-left font-sans text-[12.5px]"
           role="grid"

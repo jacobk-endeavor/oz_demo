@@ -351,7 +351,7 @@ export function FieldNotesPage() {
       className="mx-auto flex h-full min-h-0 min-w-0 max-w-6xl flex-col gap-6 p-4 md:p-6"
       data-testid="field-notes-page"
     >
-      <h1 className="sr-only">Field notes</h1>
+      <h1 className="sr-only">Field Notes</h1>
 
       <section
         className="w-full min-w-0 shrink-0 rounded-xl border border-amber-200/90 bg-gradient-to-b from-amber-50/90 via-white to-zinc-50/80 p-3 shadow-sm ring-1 ring-amber-100/60 md:p-4"

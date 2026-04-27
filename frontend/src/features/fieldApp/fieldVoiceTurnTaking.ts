@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 export type FieldVoiceTurnTakingOptions = {
-  /** Linear RMS above this counts as user speech (~0.04 = quiet voice in a normal room). */
+  /** Linear RMS above this counts as user speech (lower = softer voice triggers “speaking”). */
   speechThreshold?: number
   /** Linear RMS below this for `silenceMs` after speech triggers `onSpeechEnd`. */
   silenceThreshold?: number
@@ -12,9 +12,9 @@ export type FieldVoiceTurnTakingOptions = {
 }
 
 const DEFAULTS: Required<FieldVoiceTurnTakingOptions> = {
-  speechThreshold: 0.04,
-  silenceThreshold: 0.025,
-  minSpeechMs: 250,
+  speechThreshold: 0.015,
+  silenceThreshold: 0.01,
+  minSpeechMs: 180,
   silenceMs: 1000,
 }
 

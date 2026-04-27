@@ -1,6 +1,6 @@
 /**
  * Local store for **incoming voice memos** captured by the Field App's voice flow
- * (the "Cool, recording" turn). The Field Notes page merges this list with the
+ * (Field App Script 3 — live STT). The Field Notes page merges this list with the
  * static `VOICE_MEMO_DEMO` array so memos dictated during a demo run appear in the
  * "Incoming voice memos" table the same way as the canned ones.
  */

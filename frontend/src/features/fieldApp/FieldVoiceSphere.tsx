@@ -352,7 +352,7 @@ export function FieldVoiceSphere({
         r = Math.min(255, Math.round(r * dormantRgbMul))
         g = Math.min(255, Math.round(g * dormantRgbMul))
         b = Math.min(255, Math.round(b * dormantRgbMul))
-        if (pulseEnergy > 0.04) {
+        if (pulseEnergy > 0.015) {
           const boost = pulseEnergy * 0.25 * p.brightness
           r = Math.min(255, Math.round(r * (1 + boost * 0.3)))
           g = Math.min(255, Math.round(g * (1 + boost * 0.12)))
@@ -372,7 +372,7 @@ export function FieldVoiceSphere({
         }
       }
 
-      if (pulseEnergy > 0.04) {
+      if (pulseEnergy > 0.015) {
         const g1 = ctx.createRadialGradient(
           cx,
           cy + radius * 0.4,

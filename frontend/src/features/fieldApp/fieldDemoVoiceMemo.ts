@@ -1,40 +1,37 @@
 /**
- * Demo content for the **field-meeting voice memo** turn in the orb script
- * queue. When the rep finishes "dictating" (silence advances the turn), the
- * Field App appends this memo to the incoming-voice-memos store so it shows
- * up in the Field Notes page.
- *
- * Keep this content aligned to the Sammy Carter / automation-cell-upgrade
- * demo — the memo sets up Script 4's quote Q&A so the narrative flows:
- * walkthrough → memo → quote build.
+ * Field voice memo: append a row to the Field Notes “incoming voice memos” store.
+ * Script 3 uses live transcription; this module builds the row shape.
  */
 import { appendVoiceMemo } from '../fieldNotes/voiceMemoStore'
 import type { VoiceMemoRow } from '../fieldNotes/fieldNotesDashboardData'
+import { VOICE_MEMO_RECORDING_ACK, VOICE_MEMO_SAVED_SYSTEM_LINE } from './fieldDemoVoiceCopy'
 
-/** Stable id so repeated demo runs replace (don't duplicate) the memo. */
-const DEMO_MEMO_ID = 'vm-demo-sammy-carter-walkthrough' as const
-
-const DEMO_MEMO_DICTATION =
-  'Just left Sammy Carter’s fab shop. Walked the floor with Sammy and his maintenance lead Mike. Sammy wants to upgrade the second packaging line — manual case packing is the bottleneck right now, they’re losing about an hour a day on changeover between the 12-pack and 24-pack runs. He’s looking at a robotic pick cell with vision verification and integrated PLC controls, install target before Q3. Cap-ex is tight so he’s open to leasing if it gets the cell installed faster, but they’d prefer to own. Action items: pull the Q25-1102 cell-build spec as the starting point, get the floor envelope from Mike next week, and walk back with the cost recap on the Job Cost template — target around two-eighty-five thousand all-in, holding forty-five-percent margin. Felt good — Sammy is bought in on the approach. Quote first, lease conversation second.'
+export type AppendFieldMemoOptions = {
+  id?: string
+  customer?: string
+  salesman?: string
+}
 
 /**
- * Append the Sammy Carter walkthrough memo to the field-notes voice-memo store.
- * Called from the orb script queue when the "Cool, recording" turn completes,
- * so the rep can navigate to Field Notes and see the memo land in the
- * "Incoming voice memos" table. Returns the stored row.
+ * Persist a memo from Whisper (or other STT) text. `notesPreview` is derived from the transcript.
  */
-export function captureSammyCarterFieldMemo(): VoiceMemoRow {
+export function appendFieldMemoFromDictation(
+  transcript: string,
+  options?: AppendFieldMemoOptions,
+): VoiceMemoRow {
+  const tidied = transcript.trim()
+  const preview =
+    tidied.length > 90 ? `${tidied.slice(0, 87)}…` : tidied || '(empty transcript)'
   return appendVoiceMemo({
-    id: DEMO_MEMO_ID,
-    customer: 'Sammy Carter',
-    salesman: 'Alex',
+    id: options?.id,
+    customer: options?.customer ?? 'Field visit',
+    salesman: options?.salesman ?? 'Sami',
     atIso: new Date().toISOString(),
-    notesPreview:
-      'Pre-quote walkthrough — automation cell upgrade, Q3 install target, ~$285k all-in.',
+    notesPreview: preview,
     conversation: [
-      { speaker: 'System', text: 'Cool, recording.' },
-      { speaker: 'Rep', text: DEMO_MEMO_DICTATION },
-      { speaker: 'System', text: 'Memo saved to Field notes.' },
+      { speaker: 'System', text: VOICE_MEMO_RECORDING_ACK },
+      { speaker: 'Rep', text: tidied || '…' },
+      { speaker: 'System', text: VOICE_MEMO_SAVED_SYSTEM_LINE },
     ],
   })
 }

@@ -75,7 +75,7 @@ export const VOICE_MEMO_DEMO: VoiceMemoRow[] = [
   {
     id: 'vm-5',
     customer: 'Maple Street Millwork',
-    salesman: 'Alex Ruiz',
+    salesman: 'Sami',
     atIso: '2026-04-23T15:00:00-04:00',
     notesPreview: 'Custom mullion lead time…',
     conversation: conv([
@@ -111,7 +111,7 @@ export const VOICE_MEMO_DEMO: VoiceMemoRow[] = [
   {
     id: 'vm-8',
     customer: 'Riverside Rental & Sales',
-    salesman: 'Alex Ruiz',
+    salesman: 'Sami',
     atIso: '2026-04-22T08:50:00-04:00',
     notesPreview: 'Tooling package renewal…',
     conversation: conv([

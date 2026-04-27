@@ -1,10 +1,10 @@
 /**
  * Job Cost Estimate Recap — Excel-like demo quote schema.
  *
- * Mirrors the "Job Cost Recap" sheet of Q26-0002-04 (automation cell upgrade) used
- * for on-site field entry. The Field App voice flow renders this as an
- * editable, formula-live grid in place of the old PDF/spinner so the rep can
- * walk through each section like an Excel sheet and hand off to invoicing.
+ * Mirrors the "Job Cost Recap" sheet of Q26-0601-LB (lumber framing package) used
+ * for on-site field entry. Section titles and line items follow Field voice Script 4
+ * (material buckets; design vs assembly labor at $68 / $61; indirect, travel, shipping,
+ * commission, payment). The grid is editable with live formulas like Excel.
  *
  * Column letters used: A B C D E F G  (0-6).
  * Row numbers in this module are 1-indexed to match Excel — i.e. row 3 = "row 3".
@@ -54,81 +54,73 @@ export interface JcrSection {
 export type JcrFieldRef = { kind: 'input'; field: JcrInputField } | { kind: 'computed'; field: JcrComputedField }
 
 /**
- * Voice-demo example: Sammy Carter / automation cell upgrade (ref Q25-1102). The
- * sheet loads fully populated so the demo "renders an actual quote from the
- * JSON template" with formula-balanced totals. Sammy Carter is the buyer —
- * a person (small-fab-shop owner), not a company — so the script can run as
- * a one-on-one voice walkthrough.
+ * Voice-demo example: Summit Ridge Framing / lumber package (ref Q25-4420-LUM).
+ * Row labels follow Field voice Script 4: material buckets, then design / assembly
+ * labor at the rates Oz states ($68 design, $61 assembly), then additional costs
+ * and payment (SCRIPT3_T5).
  *
- * Sanity check (matches what the live formulas should compute):
- *   mech design  120h × $68 = 8,160 ; elec design  80h × $68 = 5,440  → design  13,600
- *   mech asm     240h × $61 =14,640 ; elec asm    160h × $61 = 9,760  → asm     24,400
- *   eng/asm hrs  600 ; eng/asm cost 38,000 ; material 100,500
+ * Sanity check:
+ *   material 38,500 + 62,000 + 0 = 100,500
+ *   design 200h × 68 = 13,600 ; assembly 400h × 61 = 24,400 → labor 38,000 ; hrs 600
  *   prepaid 1.5% of 285,000 = 4,275
- *   total cost   100,500 + 38,000 + 6,500 + 4,200 + 4,275 + 2,800 = 156,275
- *   profit       285,000 − 156,275 = 128,725  → margin ~45.2%
+ *   total cost 100,500 + 38,000 + 6,500 + 4,200 + 4,275 + 2,800 = 156,275
+ *   profit 285,000 − 156,275 = 128,725 → margin ~45.2%
  */
 export const JCR_JSON_EXAMPLE_DEFAULTS = {
   date: '2026-04-26',
-  project_number: 'Q26-0002-04',
-  ref_quote_numbers: 'Q25-1102',
-  customer_name: 'Sammy Carter',
+  project_number: 'Q26-0601-LB',
+  ref_quote_numbers: 'Q25-4420-LUM',
+  customer_name: 'Summit Ridge Framing',
   project_manager: 'James',
-  // Empty by default → auto-generated at sheet load by `buildInitialJcrValues`.
-  customer_po_number: '',
+  customer_po_number: 'PO-SR-MARSHALL-0426',
   job_description:
-    'Automation cell upgrade for Sammy Carter’s fab shop — robotic pick cell with conveyor integration, programmable PLC controls, safety guarding, vision pick verification, and on-site commissioning. Includes FAT, training package, and 90-day post-install support.',
+    'Marshall Court multi-family wood-frame package for Summit Ridge Framing — SPF dimensional (2×6 / 2×10), LVL and I-joist floor system, 7/16 OSB wall and roof sheathing, anchor-bolt and hardware bundle. Flatbed delivery in three drops tied to crane picks; moisture coverage per quote.',
   order_value: 285_000,
   customer_supplied_equipment_value: 0,
-  electrical_components: 38_500,
-  commercial_mechanical_components: 62_000,
-  manufactured_mechanical_components: 0,
-  mechanical_design_hrs: 120,
-  mechanical_design_rate: 68,
-  electrical_design_hrs: 80,
-  electrical_design_rate: 68,
-  mechanical_asm_hrs: 240,
-  mechanical_asm_rate: 61,
-  electrical_asm_hrs: 160,
-  electrical_asm_rate: 61,
+  /** Voice T3 — dimensional lumber and studs */
+  material_dimensional_studs: 38_500,
+  /** Voice T3 — engineered lumber */
+  material_engineered_lumber: 62_000,
+  /** Voice T3 — treated or specialty stock */
+  material_treated_specialty: 0,
+  /** Voice T4 — takeoff, layout & lift plan (combined hours; rate $68 in voice) */
+  design_labor_hours: 200,
+  design_labor_rate: 68,
+  /** Voice T4 — crew staging & delivery alignment (rate $61 in voice) */
+  assembly_labor_hours: 400,
+  assembly_labor_rate: 61,
   indirect_labor_cost: 6_500,
   travel_expenses: 4_200,
   shipping_cost: 2_800,
   sales_commission_agent_name: '',
   sales_commission_amount: 0,
-  first_progress_payment_trigger: '50% on PO acceptance',
+  first_progress_payment_trigger: '50% on lumber PO acceptance',
   first_progress_payment_amount: 142_500,
-  final_payment_trigger: 'Net-30 after FAT acceptance',
+  final_payment_trigger: 'Net-30 after final delivery',
   final_payment_amount: 142_500,
 } as const
 
 /**
- * Kenny Hills demo defaults: based on the Field voice walkthrough — capped
- * composite line, Apex hidden fasteners, color-matched fascia, deck drainage —
- * with sensible mock pricing so the sheet adds up to a believable margin.
+ * Kenny Hills demo defaults — same schema (three material buckets + two labor rows).
  */
 export const KENNY_HILLS_JCR_DEFAULTS = {
   date: '2026-04-26',
   project_number: 'P26-0428-KH',
   ref_quote_numbers: 'Q26-0428-KH',
   customer_name: 'Kenny Hills Contracting',
-  project_manager: 'Alex',
+  project_manager: 'Sami',
   customer_po_number: 'PO-KH-2026-0428',
   job_description:
     'Capped composite deck package: lead deck line + Apex hidden fasteners (added day-after on prior order — closing same-trip this time) + color-matched fascia / riser bundle on long runs. Coastal pool surround, ¼″ drainage gap, ICC-ESR backed clip system.',
   order_value: 58_500,
   customer_supplied_equipment_value: 0,
-  electrical_components: 0,
-  commercial_mechanical_components: 32_400,
-  manufactured_mechanical_components: 4_200,
-  mechanical_design_hrs: 6,
-  mechanical_design_rate: 68,
-  electrical_design_hrs: 0,
-  electrical_design_rate: 68,
-  mechanical_asm_hrs: 24,
-  mechanical_asm_rate: 61,
-  electrical_asm_hrs: 0,
-  electrical_asm_rate: 61,
+  material_dimensional_studs: 0,
+  material_engineered_lumber: 32_400,
+  material_treated_specialty: 4_200,
+  design_labor_hours: 6,
+  design_labor_rate: 68,
+  assembly_labor_hours: 24,
+  assembly_labor_rate: 61,
   indirect_labor_cost: 1_200,
   travel_expenses: 850,
   shipping_cost: 620,
@@ -152,17 +144,17 @@ export const JCR_SECTIONS: readonly JcrSection[] = [
       { id: 'customer_name', label: 'Customer Name', type: 'text', row: 6, col: 1, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.customer_name },
       { id: 'project_manager', label: 'Project Manager', type: 'text', row: 7, col: 1, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.project_manager },
       { id: 'customer_po_number', label: 'Customer P.O. Number', type: 'text', row: 8, col: 1, defaultValue: KENNY_HILLS_JCR_DEFAULTS.customer_po_number },
-      { id: 'job_description', label: 'Job Description', type: 'textarea', row: 9, col: 1, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.job_description },
+      { id: 'job_description', label: 'Job Description (voice: one-line description + cover total)', type: 'textarea', row: 9, col: 1, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.job_description },
     ],
   },
   {
     id: 'order_value',
-    title: 'Order & Customer Equipment Value',
+    title: 'Order & customer equipment value',
     titleRow: 10,
     fields: [
       {
         id: 'order_value',
-        label: 'Order Value (amount to be invoiced to customer)',
+        label: 'Order value (amount to be invoiced)',
         type: 'currency',
         row: 11,
         col: 6,
@@ -185,75 +177,71 @@ export const JCR_SECTIONS: readonly JcrSection[] = [
     ],
   },
   {
-    id: 'component_cost',
-    title: 'Component Cost',
-    titleRow: 15,
+    id: 'material_buckets',
+    title: 'Material buckets (voice: dimensional & studs — engineered — treated / specialty)',
+    titleRow: 14,
     fields: [
       {
-        id: 'electrical_components',
-        label: 'Electrical Components',
+        id: 'material_dimensional_studs',
+        label: 'Dimensional lumber & studs',
         type: 'currency',
         row: 16,
         col: 5,
         labelCol: 1,
         labelSpan: true,
         required: true,
-        defaultValue: KENNY_HILLS_JCR_DEFAULTS.electrical_components,
+        defaultValue: KENNY_HILLS_JCR_DEFAULTS.material_dimensional_studs,
       },
       {
-        id: 'commercial_mechanical_components',
-        label: 'Commercial Mechanical Components',
+        id: 'material_engineered_lumber',
+        label: 'Engineered lumber',
         type: 'currency',
         row: 17,
         col: 5,
         labelCol: 1,
         labelSpan: true,
         required: true,
-        defaultValue: KENNY_HILLS_JCR_DEFAULTS.commercial_mechanical_components,
+        defaultValue: KENNY_HILLS_JCR_DEFAULTS.material_engineered_lumber,
       },
       {
-        id: 'manufactured_mechanical_components',
-        label: 'Manufactured Mechanical Components',
+        id: 'material_treated_specialty',
+        label: 'Treated / specialty stock',
         type: 'currency',
         row: 18,
         col: 5,
         labelCol: 1,
         labelSpan: true,
         required: true,
-        defaultValue: KENNY_HILLS_JCR_DEFAULTS.manufactured_mechanical_components,
+        defaultValue: KENNY_HILLS_JCR_DEFAULTS.material_treated_specialty,
       },
     ],
   },
   {
-    id: 'labor_cost_design',
-    title: 'Design Labor Cost',
+    id: 'design_labor',
+    title: 'Design labor — takeoff, layout & lift plan (voice: $68/hr)',
     titleRow: 20,
     fields: [
-      { id: 'mechanical_design_hrs', label: 'Mechanical Design — Hours', type: 'number', row: 22, col: 1, labelCol: 0, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.mechanical_design_hrs },
-      { id: 'mechanical_design_rate', label: 'Rate ($/hr)', type: 'currency', row: 22, col: 2, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.mechanical_design_rate },
-      { id: 'electrical_design_hrs', label: 'Electrical Design — Hours', type: 'number', row: 23, col: 1, labelCol: 0, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.electrical_design_hrs },
-      { id: 'electrical_design_rate', label: 'Rate ($/hr)', type: 'currency', row: 23, col: 2, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.electrical_design_rate },
+      { id: 'design_labor_hours', label: 'Hours', type: 'number', row: 22, col: 1, labelCol: 0, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.design_labor_hours },
+      { id: 'design_labor_rate', label: 'Rate ($/hr)', type: 'currency', row: 22, col: 2, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.design_labor_rate },
     ],
   },
   {
-    id: 'labor_cost_assembly',
-    title: 'Assembly Labor Cost',
-    titleRow: 25,
+    id: 'assembly_labor',
+    title: 'Assembly / yard labor — crew staging & delivery alignment (voice: $61/hr)',
+    titleRow: 23,
     fields: [
-      { id: 'mechanical_asm_hrs', label: 'Mechanical Assembly — Hours', type: 'number', row: 27, col: 1, labelCol: 0, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.mechanical_asm_hrs },
-      { id: 'mechanical_asm_rate', label: 'Rate ($/hr)', type: 'currency', row: 27, col: 2, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.mechanical_asm_rate },
-      { id: 'electrical_asm_hrs', label: 'Electrical Assembly — Hours', type: 'number', row: 28, col: 1, labelCol: 0, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.electrical_asm_hrs },
-      { id: 'electrical_asm_rate', label: 'Rate ($/hr)', type: 'currency', row: 28, col: 2, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.electrical_asm_rate },
+      { id: 'assembly_labor_hours', label: 'Hours', type: 'number', row: 25, col: 1, labelCol: 0, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.assembly_labor_hours },
+      { id: 'assembly_labor_rate', label: 'Rate ($/hr)', type: 'currency', row: 25, col: 2, required: true, defaultValue: KENNY_HILLS_JCR_DEFAULTS.assembly_labor_rate },
     ],
   },
   {
     id: 'additional_costs',
-    title: 'Additional Costs',
-    titleRow: 29,
+    title: 'Additional costs (voice: indirect, travel, shipping, commission, payment)',
+    titleRow: 28,
     fields: [
       {
         id: 'indirect_labor_cost',
-        label: 'Indirect Labor Cost (outside resources)',
+        label: 'Indirect labor (outside resources)',
         type: 'currency',
         row: 30,
         col: 5,
@@ -263,7 +251,7 @@ export const JCR_SECTIONS: readonly JcrSection[] = [
       },
       {
         id: 'travel_expenses',
-        label: 'Travel Expenses',
+        label: 'Travel expenses',
         type: 'currency',
         row: 32,
         col: 5,
@@ -273,7 +261,7 @@ export const JCR_SECTIONS: readonly JcrSection[] = [
       },
       {
         id: 'shipping_cost',
-        label: 'Shipping Cost (to the customer)',
+        label: 'Shipping (to the customer)',
         type: 'currency',
         row: 36,
         col: 5,
@@ -285,13 +273,13 @@ export const JCR_SECTIONS: readonly JcrSection[] = [
   },
   {
     id: 'sales_commission',
-    title: 'Sales Commission',
+    title: 'Sales commission',
     titleRow: 37,
     fields: [
-      { id: 'sales_commission_agent_name', label: 'Outside Agent Name', type: 'text', row: 38, col: 2, defaultValue: KENNY_HILLS_JCR_DEFAULTS.sales_commission_agent_name },
+      { id: 'sales_commission_agent_name', label: 'Outside agent name', type: 'text', row: 38, col: 2, defaultValue: KENNY_HILLS_JCR_DEFAULTS.sales_commission_agent_name },
       {
         id: 'sales_commission_amount',
-        label: 'Sales Commission Amount',
+        label: 'Sales commission amount',
         type: 'currency',
         row: 38,
         col: 5,
@@ -303,117 +291,85 @@ export const JCR_SECTIONS: readonly JcrSection[] = [
   },
   {
     id: 'payment_schedule',
-    title: 'Payment Schedule',
-    titleRow: 41,
+    title: 'Payment schedule',
+    titleRow: 39,
     fields: [
       {
         id: 'first_progress_payment_trigger',
-        label: '1st Progress Payment — Trigger',
+        label: '1st progress payment — trigger',
         type: 'text',
-        row: 39,
+        row: 40,
         col: 1,
         defaultValue: KENNY_HILLS_JCR_DEFAULTS.first_progress_payment_trigger,
       },
-      { id: 'first_progress_payment_amount', label: 'Amount', type: 'currency', row: 39, col: 4, defaultValue: KENNY_HILLS_JCR_DEFAULTS.first_progress_payment_amount },
-      { id: 'final_payment_trigger', label: 'Final Payment — Trigger', type: 'text', row: 40, col: 1, defaultValue: KENNY_HILLS_JCR_DEFAULTS.final_payment_trigger },
-      { id: 'final_payment_amount', label: 'Amount', type: 'currency', row: 40, col: 4, defaultValue: KENNY_HILLS_JCR_DEFAULTS.final_payment_amount },
+      { id: 'first_progress_payment_amount', label: 'Amount', type: 'currency', row: 40, col: 4, defaultValue: KENNY_HILLS_JCR_DEFAULTS.first_progress_payment_amount },
+      { id: 'final_payment_trigger', label: 'Final payment — trigger', type: 'text', row: 41, col: 1, defaultValue: KENNY_HILLS_JCR_DEFAULTS.final_payment_trigger },
+      { id: 'final_payment_amount', label: 'Amount', type: 'currency', row: 41, col: 4, defaultValue: KENNY_HILLS_JCR_DEFAULTS.final_payment_amount },
     ],
+  },
+  {
+    id: 'totals',
+    title: 'Totals',
+    titleRow: 42,
+    fields: [],
   },
 ] as const
 
 export const JCR_COMPUTED: readonly JcrComputedField[] = [
   {
-    id: 'mechanical_design_total',
-    label: 'Mech Design Total',
-    formula: (v) => v.mechanical_design_hrs * v.mechanical_design_rate,
+    id: 'design_labor_line_total',
+    label: 'Design labor $',
+    formula: (v) => v.design_labor_hours * v.design_labor_rate,
     row: 22,
     col: 3,
     format: 'currency',
     formulaSrc: '=B22*C22',
   },
   {
-    id: 'electrical_design_total',
-    label: 'Elec Design Total',
-    formula: (v) => v.electrical_design_hrs * v.electrical_design_rate,
-    row: 23,
+    id: 'assembly_labor_line_total',
+    label: 'Assembly labor $',
+    formula: (v) => v.assembly_labor_hours * v.assembly_labor_rate,
+    row: 25,
     col: 3,
     format: 'currency',
-    formulaSrc: '=B23*C23',
-  },
-  {
-    id: 'design_labor_subtotal',
-    label: 'Design Labor Subtotal',
-    formula: (v) => v.mechanical_design_total + v.electrical_design_total,
-    row: 21,
-    col: 5,
-    labelCol: 4,
-    format: 'currency',
-    formulaSrc: '=SUM(D22:D23)',
-  },
-  {
-    id: 'mechanical_asm_total',
-    label: 'Mech Asm Total',
-    formula: (v) => v.mechanical_asm_hrs * v.mechanical_asm_rate,
-    row: 27,
-    col: 3,
-    format: 'currency',
-    formulaSrc: '=B27*C27',
-  },
-  {
-    id: 'electrical_asm_total',
-    label: 'Elec Asm Total',
-    formula: (v) => v.electrical_asm_hrs * v.electrical_asm_rate,
-    row: 28,
-    col: 3,
-    format: 'currency',
-    formulaSrc: '=B28*C28',
-  },
-  {
-    id: 'assembly_labor_subtotal',
-    label: 'Assembly Labor Subtotal',
-    formula: (v) => v.mechanical_asm_total + v.electrical_asm_total,
-    row: 26,
-    col: 5,
-    labelCol: 4,
-    format: 'currency',
-    formulaSrc: '=SUM(D27:D28)',
-  },
-  {
-    id: 'total_eng_asm_hrs',
-    label: 'Total Eng/Asm Hrs',
-    formula: (v) => v.mechanical_design_hrs + v.electrical_design_hrs + v.mechanical_asm_hrs + v.electrical_asm_hrs,
-    row: 4,
-    col: 6,
-    labelCol: 4,
-    labelSpan: true,
-    format: 'number',
-    formulaSrc: '=SUM(B22:B23,B27:B28)',
-  },
-  {
-    id: 'total_eng_asm_cost',
-    label: 'Total Eng/Asm Cost',
-    formula: (v) => v.design_labor_subtotal + v.assembly_labor_subtotal,
-    row: 5,
-    col: 6,
-    labelCol: 4,
-    labelSpan: true,
-    format: 'currency',
-    formulaSrc: '=F20+F25',
+    formulaSrc: '=B25*C25',
   },
   {
     id: 'total_material_cost',
-    label: 'Total Material Cost',
-    formula: (v) => v.electrical_components + v.commercial_mechanical_components + v.manufactured_mechanical_components,
-    row: 6,
+    label: 'Total material cost',
+    formula: (v) => v.material_dimensional_studs + v.material_engineered_lumber + v.material_treated_specialty,
+    row: 19,
     col: 6,
-    labelCol: 4,
+    labelCol: 1,
     labelSpan: true,
     format: 'currency',
     formulaSrc: '=SUM(F16:F18)',
   },
   {
+    id: 'total_eng_asm_hrs',
+    label: 'Total labor hours (design + assembly)',
+    formula: (v) => v.design_labor_hours + v.assembly_labor_hours,
+    row: 26,
+    col: 6,
+    labelCol: 4,
+    labelSpan: true,
+    format: 'number',
+    formulaSrc: '=B22+B25',
+  },
+  {
+    id: 'total_eng_asm_cost',
+    label: 'Total labor cost',
+    formula: (v) => v.design_labor_line_total + v.assembly_labor_line_total,
+    row: 27,
+    col: 6,
+    labelCol: 4,
+    labelSpan: true,
+    format: 'currency',
+    formulaSrc: '=D22+D25',
+  },
+  {
     id: 'prepaid_supplies',
-    label: 'Prepaid Supplies (1.5% of sales)',
+    label: 'Prepaid supplies (1.5% of sales)',
     formula: (v) => v.order_value * 0.015,
     row: 34,
     col: 5,
@@ -424,7 +380,7 @@ export const JCR_COMPUTED: readonly JcrComputedField[] = [
   },
   {
     id: 'total_cost',
-    label: 'Total Cost',
+    label: 'Total cost',
     formula: (v) =>
       v.total_material_cost +
       v.total_eng_asm_cost +
@@ -433,34 +389,34 @@ export const JCR_COMPUTED: readonly JcrComputedField[] = [
       v.prepaid_supplies +
       v.shipping_cost +
       v.sales_commission_amount,
-    row: 42,
+    row: 43,
     col: 6,
     labelCol: 4,
     labelSpan: true,
     format: 'currency',
-    formulaSrc: '=G6+G5+F30+F32+F34+F36+F38',
+    formulaSrc: '=F19+G27+F30+F32+F34+F36+F38',
   },
   {
     id: 'profit',
     label: 'Profit',
     formula: (v) => v.order_value - v.total_cost,
-    row: 44,
-    col: 6,
-    labelCol: 4,
-    labelSpan: true,
-    format: 'currency',
-    formulaSrc: '=G11-G42',
-  },
-  {
-    id: 'profit_margin',
-    label: 'Profit Margin',
-    formula: (v) => (v.order_value === 0 ? 0 : v.profit / v.order_value),
     row: 45,
     col: 6,
     labelCol: 4,
     labelSpan: true,
+    format: 'currency',
+    formulaSrc: '=G11-G43',
+  },
+  {
+    id: 'profit_margin',
+    label: 'Profit margin',
+    formula: (v) => (v.order_value === 0 ? 0 : v.profit / v.order_value),
+    row: 46,
+    col: 6,
+    labelCol: 4,
+    labelSpan: true,
     format: 'percentage',
-    formulaSrc: '=G44/G11',
+    formulaSrc: '=G45/G11',
   },
 ] as const
 
