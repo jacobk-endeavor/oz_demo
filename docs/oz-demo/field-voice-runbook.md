@@ -51,7 +51,7 @@ The counter shows **Step *n* of 14** on the Field home orb. The demo arc: Script
 
 > *"Just wrapped a walkthrough with Summit Ridge on site. They're in a good place — upbeat about the job, easy to talk to, and it feels like they trust us. I'd call the tone collaborative and the opportunity hot. No red flags on the relationship side."*
 
-**Voice demo:** After *"Ok, recording,"* the UI is the same *waiting for the next line* flow as everywhere else: *Read the next line aloud* → *Listening — keep going* while you talk → *Oz is speaking…* for the thank-you. Pausing (VAD) saves the canned row to **Field Notes** in the same moment Oz plays thanks.
+**Voice demo:** After *"Ok, recording,"* the UI is the same *waiting for the next line* flow as everywhere else: *Read the next line aloud* → *Listening — keep going* while you talk → *Oz is speaking…* for the thank-you. Pausing (VAD) saves the canned row to **Field Notes** in the same moment Oz plays thanks. On **`#/field-notes`** you can also press **P** to append the same canned row manually (e.g. while demoing the table). **P** is not active on the Field App (`#/field-app`) screen.
 
 | # | You say (read aloud) | Oz plays |
 | --- | --- | --- |
