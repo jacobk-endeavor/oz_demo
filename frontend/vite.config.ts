@@ -6,11 +6,13 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { ozLumberyardApiPlugin } from './vite.ozLumberyardApi'
+import { ozEmailApiPlugin } from './vite.ozEmailApi'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 /** Monorepo / demo: keep `.env` in the repo root (same folder as this file’s parent). */
 const ENV_DIR = path.resolve(__dirname, '..')
 const OPENAI_CHAT = 'https://api.openai.com/v1/chat/completions'
+const OPENAI_TRANSCRIPTIONS = 'https://api.openai.com/v1/audio/transcriptions'
 const ELEVEN_API = 'https://api.elevenlabs.io/v1'
 /** Eleven Labs “Rachel” — used when `ELEVENLABS_VOICE_ID` is unset (see `.env.example`). */
 const ELEVEN_DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'
@@ -106,6 +108,79 @@ function ozOpenAiDevProxy(mode: string) {
 
   return {
     name: 'oz-openai-proxy',
+    configureServer(server: { middlewares: { use: (fn: typeof handler) => void } }) {
+      server.middlewares.use(handler)
+    },
+    configurePreviewServer(server: { middlewares: { use: (fn: typeof handler) => void } }) {
+      server.middlewares.use(handler)
+    },
+  }
+}
+
+function ozOpenAiTranscribeProxy(mode: string) {
+  async function handler(req: IncomingMessage, res: ServerResponse, next: () => void) {
+    const url = req.url?.split('?')[0] ?? ''
+    if (url !== '/api/oz/transcribe') {
+      next()
+      return
+    }
+    if (req.method !== 'POST') {
+      res.statusCode = 405
+      res.end()
+      return
+    }
+    const openaiKey = resolveOpenAiKey(mode)
+    if (!openaiKey) {
+      res.statusCode = 503
+      res.setHeader('Content-Type', 'application/json')
+      res.end(
+        JSON.stringify({
+          error:
+            'Set OPENAI_API_KEY in ' +
+            ENV_DIR +
+            '/.env (or frontend/.env) for Field memo transcription.',
+        }),
+      )
+      return
+    }
+    try {
+      const raw = await readBody(req)
+      const body = JSON.parse(raw) as {
+        audioBase64?: string
+        mimeType?: string
+        model?: string
+      }
+      const b64 = body.audioBase64
+      if (!b64?.trim()) {
+        res.statusCode = 400
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify({ error: 'Missing audioBase64' }))
+        return
+      }
+      const buf = Buffer.from(b64, 'base64')
+      const mime = body.mimeType?.trim() || 'audio/webm'
+      const model = body.model?.trim() || 'whisper-1'
+      const form = new FormData()
+      form.append('file', new File([buf], 'memo.webm', { type: mime }))
+      form.append('model', model)
+      const r = await fetch(OPENAI_TRANSCRIPTIONS, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${openaiKey}` },
+        body: form,
+      })
+      const text = await r.text()
+      res.statusCode = r.status
+      res.setHeader('Content-Type', 'application/json')
+      res.end(text)
+    } catch (e) {
+      res.statusCode = 500
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ error: String(e) }))
+    }
+  }
+
+  return {
+    name: 'oz-openai-transcribe-proxy',
     configureServer(server: { middlewares: { use: (fn: typeof handler) => void } }) {
       server.middlewares.use(handler)
     },
@@ -213,7 +288,9 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
     ozLumberyardApiPlugin(mode),
     ozOpenAiDevProxy(mode),
+    ozOpenAiTranscribeProxy(mode),
     ozElevenLabsTtsProxy(mode),
+    ozEmailApiPlugin(mode),
   ],
   test: {
     environment: 'jsdom',

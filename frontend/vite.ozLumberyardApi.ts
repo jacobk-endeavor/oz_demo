@@ -7,6 +7,7 @@ import {
   buildCompetitorOfferRows,
   productQueriesFromTopCalls,
 } from './src/features/lumberyard/competitorOffersBuild'
+import { sanitizeLumberyardIntelReply } from './src/features/lumberyard/sanitizeLumberyardIntelReply'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -239,7 +240,7 @@ const INTEL_SYSTEM = `You are **Oz** in a lumberyard / building-supply **sales i
 
 Rules:
 - Answer in **clear markdown** (use **bold**, bullet lists, and **markdown tables** when comparing products or percentages).
-- Cite which **call id** (e.g. \`lumber-01-...\`) supports a claim when you use transcript evidence.
+- Cite which **call id** (e.g. \`lumber-01-...\`) **in prose** when you use transcript evidence. Do not print editor notes, self-instructions, or lines like "Remove statements…"; do not use standalone \`(call id: …)\` lines as meta commentary.
 - For competitor **website** / catalog questions: use the web snippets if provided; if missing, say you do not have live search enabled and still answer from transcripts + general knowledge, marking uncertainty.
 - Never invent private customer PII.`
 
@@ -410,7 +411,10 @@ export function ozLumberyardApiPlugin(mode: string) {
         body: JSON.stringify({
           model: 'gpt-4o',
           temperature: 0.35,
-          max_tokens: 3_200,
+          // Tightened from 3_200: typical lumberyard-intel replies fit in ~1k tokens, and a lower
+          // ceiling reduces tail-end generation latency that shows up as a long wait after the
+          // knowledge pill animation completes.
+          max_tokens: 1_400,
           messages,
         }),
       })
@@ -422,7 +426,8 @@ export function ozLumberyardApiPlugin(mode: string) {
         return
       }
       const json = JSON.parse(text) as { choices?: { message?: { content?: string } }[] }
-      const reply = json.choices?.[0]?.message?.content?.trim() ?? ''
+      const rawReply = json.choices?.[0]?.message?.content?.trim() ?? ''
+      const reply = sanitizeLumberyardIntelReply(rawReply)
       res.statusCode = 200
       res.setHeader('Content-Type', 'application/json')
       res.end(
