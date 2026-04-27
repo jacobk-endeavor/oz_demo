@@ -3,6 +3,8 @@
 # /api/oz/elevenlabs/tts must hit this same service.
 #
 # Set in the control panel (or add encrypted envs here): ELEVENLABS_API_KEY, OPENAI_API_KEY, etc.
+# Voice (POST /api/oz/elevenlabs/tts) calls ElevenLabs; use enough RAM/CPU that Node isn’t OOM
+# or starved (otherwise App Platform can return 503 “via_upstream / connection_timed_out”).
 # Docs: https://docs.digitalocean.com/products/app-platform/reference/app-spec/
 
 alerts:
@@ -27,7 +29,8 @@ services:
     run_command: npm start
     http_port: 8080
     instance_count: 1
-    instance_size_slug: basic-xxs
+    # Was basic-xxs; next tier up reduces OOM/stall risk for vite preview + TTS proxy.
+    instance_size_slug: basic-xs
     health_check:
       http_path: /
       initial_delay_seconds: 15

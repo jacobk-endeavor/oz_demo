@@ -30,6 +30,8 @@ function resolveOpenAiKey(mode: string): string | undefined {
   const fe = loadEnv(mode, __dirname, '')
   const root = loadEnv(mode, ENV_DIR, '')
   return (
+    process.env.OPENAI_API_KEY ||
+    process.env.VITE_OPENAI_API_KEY ||
     fe.OPENAI_API_KEY ||
     fe.VITE_OPENAI_API_KEY ||
     root.OPENAI_API_KEY ||
@@ -40,13 +42,18 @@ function resolveOpenAiKey(mode: string): string | undefined {
 function resolveElevenLabsKey(mode: string): string | undefined {
   const fe = loadEnv(mode, __dirname, '')
   const root = loadEnv(mode, ENV_DIR, '')
-  return (fe.ELEVENLABS_API_KEY || root.ELEVENLABS_API_KEY)?.trim()
+  return (
+    process.env.ELEVENLABS_API_KEY ||
+    fe.ELEVENLABS_API_KEY ||
+    root.ELEVENLABS_API_KEY
+  )?.trim()
 }
 
 function resolveElevenVoiceId(mode: string): string {
   const fe = loadEnv(mode, __dirname, '')
   const root = loadEnv(mode, ENV_DIR, '')
   return (
+    process.env.ELEVENLABS_VOICE_ID ||
     fe.ELEVENLABS_VOICE_ID ||
     root.ELEVENLABS_VOICE_ID ||
     ELEVEN_DEFAULT_VOICE_ID
@@ -56,7 +63,12 @@ function resolveElevenVoiceId(mode: string): string {
 function resolveElevenModelId(mode: string): string {
   const fe = loadEnv(mode, __dirname, '')
   const root = loadEnv(mode, ENV_DIR, '')
-  return (fe.ELEVENLABS_MODEL_ID || root.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2').trim()
+  return (
+    process.env.ELEVENLABS_MODEL_ID ||
+    fe.ELEVENLABS_MODEL_ID ||
+    root.ELEVENLABS_MODEL_ID ||
+    'eleven_multilingual_v2'
+  ).trim()
 }
 
 function ozOpenAiDevProxy(mode: string) {
@@ -226,6 +238,8 @@ function ozElevenLabsTtsProxy(mode: string) {
       }
       const voiceId = resolveElevenVoiceId(mode)
       const model_id = resolveElevenModelId(mode)
+      // Bound upstream wait so the process responds before App Platform’s proxy times out
+      // (indefinite hang surfaces as 503 HTML from the edge, not a JSON error).
       const r = await fetch(`${ELEVEN_API}/text-to-speech/${encodeURIComponent(voiceId)}`, {
         method: 'POST',
         headers: {
@@ -237,6 +251,7 @@ function ozElevenLabsTtsProxy(mode: string) {
           text: text.length > 4_000 ? text.slice(0, 4_000) : text,
           model_id,
         }),
+        signal: AbortSignal.timeout(50_000),
       })
       if (!r.ok) {
         const errText = await r.text()
@@ -250,6 +265,18 @@ function ozElevenLabsTtsProxy(mode: string) {
       res.setHeader('Content-Type', 'audio/mpeg')
       res.end(Buffer.from(buf))
     } catch (e) {
+      const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
+      if (name === 'TimeoutError' || name === 'AbortError') {
+        res.statusCode = 504
+        res.setHeader('Content-Type', 'application/json')
+        res.end(
+          JSON.stringify({
+            error:
+              'ElevenLabs did not respond in time. Check outbound network, API status, and try again.',
+          }),
+        )
+        return
+      }
       res.statusCode = 500
       res.setHeader('Content-Type', 'application/json')
       res.end(JSON.stringify({ error: String(e) }))

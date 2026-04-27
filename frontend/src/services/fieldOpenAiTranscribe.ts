@@ -1,11 +1,7 @@
 /**
  * Field memo dictation: OpenAI **audio transcriptions** (Whisper-class).
- *
- * - **Development / preview:** `POST /api/oz/transcribe` (Vite proxy; key stays on server).
- * - **Production:** direct `POST https://api.openai.com/v1/audio/transcriptions` with `VITE_OPENAI_API_KEY`.
+ * Always `POST /api/oz/transcribe` (Vite dev or `vite preview` / App Platform) so the key stays on the server.
  */
-
-const OPENAI_TRANSCRIPTIONS = 'https://api.openai.com/v1/audio/transcriptions'
 
 function defaultModel(): string {
   return import.meta.env.VITE_OPENAI_TRANSCRIPTION_MODEL?.trim() || 'whisper-1'
@@ -39,52 +35,23 @@ export async function transcribeFieldMemoAudio(blob: Blob): Promise<string> {
     throw new Error('Transcription is not available in Vitest')
   }
   const model = defaultModel()
-  if (import.meta.env.DEV) {
-    const audioBase64 = await blobToBase64(blob)
-    const res = await fetch('/api/oz/transcribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        audioBase64,
-        mimeType: blob.type || 'audio/webm',
-        model,
-      }),
-    })
-    const raw = await res.text()
-    if (!res.ok) {
-      let msg = raw
-      try {
-        const parsed = JSON.parse(raw) as { error?: string | { message?: string } }
-        if (typeof parsed.error === 'string') msg = parsed.error
-        else if (parsed.error && typeof parsed.error === 'object')
-          msg = parsed.error.message ?? raw
-      } catch {
-        /* use raw */
-      }
-      throw new Error(msg || `Transcription failed (${res.status})`)
-    }
-    return parseTranscriptionJson(raw)
-  }
-
-  const key = import.meta.env.VITE_OPENAI_API_KEY?.trim()
-  if (!key) {
-    throw new Error(
-      'Set VITE_OPENAI_API_KEY for transcription in production builds, or run the app via `npm run dev` so /api/oz/transcribe can use OPENAI_API_KEY.',
-    )
-  }
-  const form = new FormData()
-  form.append('file', blob, 'memo.webm')
-  form.append('model', model)
-  const res = await fetch(OPENAI_TRANSCRIPTIONS, {
+  const audioBase64 = await blobToBase64(blob)
+  const res = await fetch('/api/oz/transcribe', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}` },
-    body: form,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      audioBase64,
+      mimeType: blob.type || 'audio/webm',
+      model,
+    }),
   })
   const raw = await res.text()
   if (!res.ok) {
     let msg = raw
     try {
-      msg = (JSON.parse(raw) as { error?: { message?: string } }).error?.message ?? raw
+      const parsed = JSON.parse(raw) as { error?: string | { message?: string } }
+      if (typeof parsed.error === 'string') msg = parsed.error
+      else if (parsed.error && typeof parsed.error === 'object') msg = parsed.error.message ?? raw
     } catch {
       /* use raw */
     }
