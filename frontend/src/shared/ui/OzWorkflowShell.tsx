@@ -1,12 +1,14 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { ChevronRightIcon, CloseIcon, PanelLeftIcon, SparkleIcon } from './icons'
+import { ChevronRightIcon, CloseIcon, SparkleIcon } from './icons'
 import { ENDEAVOR_LOGO_SRC } from './brand'
 import { OzAssistantPanel, type OzAssistantPanelProps } from './OzAssistantPanel'
 import {
@@ -76,6 +78,11 @@ export interface OzWorkflowShellProps {
   contextWide?: boolean
   /** Fixed top-right status (e.g. in-app toasts). Rendered above the main layout. */
   topRightNotification?: ReactNode
+  /**
+   * Replaces the default title + subtitle block in the context header (eyebrow unchanged).
+   * Use for a single compact row (e.g. quote id, timestamp, back action).
+   */
+  contextHeaderDetailRow?: ReactNode
 }
 
 const SIDEBAR_KEY = 'oz-demo-sidebar-collapsed'
@@ -265,6 +272,7 @@ export function OzWorkflowShell({
   showCommandBar: showCommandBarProp,
   splitChatHeader,
   topRightNotification,
+  contextHeaderDetailRow,
 }: OzWorkflowShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useStoredFlag(SIDEBAR_KEY, false)
   const [workflowsOpen, setWorkflowsOpen] = useStoredFlag(WORKFLOWS_OPEN_KEY, false)
@@ -278,7 +286,21 @@ export function OzWorkflowShell({
   const splitRef = useRef<HTMLDivElement>(null)
   const chatRailWidthRef = useRef(readInitialChatRailWidth())
   const [chatRailWidthPx, setChatRailWidthPx] = useState(() => readInitialChatRailWidth())
+  const [chatSplitDragging, setChatSplitDragging] = useState(false)
   const dragRef = useRef<{ pointerId: number; startX: number; startW: number } | null>(null)
+
+  const chatSectionStyle: CSSProperties | undefined = useMemo(() => {
+    if (!hasAssistant) return undefined
+    if (isRailWithSplit) {
+      return {
+        width: chatRailWidthPx,
+        minWidth: CHAT_RAIL_MIN_PX,
+        maxWidth: '100%',
+        transition: chatSplitDragging ? 'none' : undefined,
+      }
+    }
+    return { width: '100%', minWidth: 0, transition: chatSplitDragging ? 'none' : undefined }
+  }, [hasAssistant, isRailWithSplit, chatRailWidthPx, chatSplitDragging])
 
   const clampChatWidth = useCallback((w: number) => {
     const row = splitRef.current
@@ -308,6 +330,7 @@ export function OzWorkflowShell({
     (e: ReactPointerEvent<HTMLButtonElement>) => {
       if (e.button !== 0) return
       e.preventDefault()
+      setChatSplitDragging(true)
       const startW = chatRailWidthRef.current
       dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startW }
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -340,6 +363,7 @@ export function OzWorkflowShell({
         }
       }
       dragRef.current = null
+      setChatSplitDragging(false)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
       try {
@@ -386,46 +410,35 @@ export function OzWorkflowShell({
       >
         <div
           className={joinClasses(
-            'flex items-center gap-2 border-b border-zinc-200 px-2.5 py-2.5',
-            sidebarCollapsed ? 'justify-center' : 'justify-between',
+            'flex items-center border-b border-zinc-200 px-2.5 py-2.5',
+            sidebarCollapsed ? 'justify-center' : 'justify-start',
           )}
         >
-          {sidebarCollapsed ? (
-            <button
-              type="button"
-              onClick={() => setSidebarCollapsed(false)}
-              className="flex w-full min-w-0 items-center justify-center rounded-md p-1 transition-colors hover:bg-zinc-200/50"
-              aria-label="Expand sidebar"
-              title="Expand sidebar"
-            >
-              <img
-                src={ENDEAVOR_LOGO_SRC}
-                alt=""
-                className="h-6 w-6 object-contain opacity-90"
-                draggable={false}
-              />
-            </button>
-          ) : (
-            <>
-              <div className="min-w-0 pl-0.5">
-                <img
-                  src={ENDEAVOR_LOGO_SRC}
-                  alt="Endeavor"
-                  className="h-7 w-auto max-w-[min(100%,150px)] object-contain object-left opacity-90"
-                  draggable={false}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setSidebarCollapsed(true)}
-                className="shrink-0 rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-200/50 hover:text-zinc-900"
-                aria-label="Collapse sidebar"
-                title="Collapse sidebar"
-              >
-                <PanelLeftIcon className="h-4 w-4" />
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className={joinClasses(
+              'flex min-w-0 items-center rounded-md transition-colors hover:bg-zinc-200/50',
+              sidebarCollapsed
+                ? 'w-full justify-center p-1'
+                : 'flex-1 justify-start p-1 pl-0.5 pr-2',
+            )}
+            aria-expanded={!sidebarCollapsed}
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <img
+              src={ENDEAVOR_LOGO_SRC}
+              alt="Endeavor"
+              className={joinClasses(
+                'object-contain opacity-90',
+                sidebarCollapsed
+                  ? 'h-6 w-6'
+                  : 'h-7 w-auto max-w-[min(100%,150px)] object-left',
+              )}
+              draggable={false}
+            />
+          </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2 pt-1.5">
@@ -587,19 +600,13 @@ export function OzWorkflowShell({
             <section
               className={joinClasses(
                 'flex h-full min-h-0 min-w-0 flex-col',
+                (isCenteredHome || isRailSolo || isRailWithSplit) &&
+                  'transition-[width] duration-700 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
                 isCenteredHome && 'relative z-0 flex-1 bg-zinc-50/90',
                 isRailSolo && 'flex-1 border-r border-zinc-200/90 bg-zinc-50',
                 isRailWithSplit && 'shrink-0 bg-zinc-50',
               )}
-              style={
-                isRailWithSplit
-                  ? {
-                      width: chatRailWidthPx,
-                      minWidth: CHAT_RAIL_MIN_PX,
-                      maxWidth: '100%',
-                    }
-                  : undefined
-              }
+              style={chatSectionStyle}
               aria-label="Command center chat"
             >
               {showCommandBar && (isRailSolo || isRailWithSplit) && (
@@ -644,7 +651,7 @@ export function OzWorkflowShell({
                 aria-orientation="vertical"
                 aria-label="Drag to resize chat and generated content"
                 title="Drag to resize"
-                className="group relative w-2 shrink-0 cursor-col-resize border-x border-zinc-200/80 bg-zinc-100/80 touch-none select-none hover:bg-zinc-200/80"
+                className="group relative w-2 shrink-0 cursor-col-resize border-x border-zinc-200/80 bg-zinc-100/80 touch-none select-none transition-colors duration-200"
                 onPointerDown={onChatSplitPointerDown}
                 onPointerMove={onChatSplitPointerMove}
                 onPointerUp={endChatSplitDrag}
@@ -661,7 +668,10 @@ export function OzWorkflowShell({
 
         {showContextPanel && (isRailWithSplit || !hasAssistant) && (
           <main
-            className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-white"
+            className={joinClasses(
+              'relative flex min-h-0 min-w-0 flex-1 flex-col bg-white',
+              isRailWithSplit && 'oz-context-surface-in',
+            )}
             aria-label="Context"
           >
             {/**
@@ -691,16 +701,27 @@ export function OzWorkflowShell({
                     </div>
                   )
                 ) : (
-                  <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200/90 bg-white px-5 py-3.5">
-                    <div className="min-w-0">
-                      {eyebrow !== undefined && (
+                  <header
+                    className={joinClasses(
+                      'flex shrink-0 justify-between gap-4 border-b border-zinc-200/90 bg-white px-5 py-3.5',
+                      contextHeaderDetailRow ? 'items-center' : 'items-start',
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      {eyebrow !== undefined && !contextHeaderDetailRow && (
                         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-600">
                           {eyebrow}
                         </p>
                       )}
-                      <h1 className="mt-1 truncate text-xl font-semibold tracking-tight text-zinc-900">{title}</h1>
-                      {subtitle !== undefined && (
-                        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-600">{subtitle}</p>
+                      {contextHeaderDetailRow ? (
+                        <div className="min-w-0">{contextHeaderDetailRow}</div>
+                      ) : (
+                        <>
+                          <h1 className="mt-1 truncate text-xl font-semibold tracking-tight text-zinc-900">{title}</h1>
+                          {subtitle !== undefined && (
+                            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-600">{subtitle}</p>
+                          )}
+                        </>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">

@@ -1,5 +1,5 @@
 import type { ComponentType, SVGProps } from 'react'
-import { FieldAppIcon, HomeIcon, KnowledgeBaseIcon, SearchIcon, TableIcon } from './icons'
+import { FieldAppIcon, HomeIcon, KnowledgeBaseIcon, SearchIcon } from './icons'
 
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>
 
@@ -58,10 +58,10 @@ export interface OzWorkflowNavItem {
  */
 export const workflowNavItems: readonly OzWorkflowNavItem[] = [
   { id: 'nebula', label: 'Overview', accent: 'zinc' },
-  { id: 'field-notes', label: 'Field notes', accent: 'emerald' },
+  { id: 'field-notes', label: 'Field Notes', accent: 'emerald' },
   { id: 'quotes-ready', label: 'Voice Quote Automation', accent: 'rose' },
-  { id: 'dashboards', label: 'Dashboards', accent: 'sky' },
-  { id: 'background-agents', label: 'Background agents', accent: 'violet' },
+  { id: 'dashboards', label: 'Dashboard Studio', accent: 'sky' },
+  { id: 'background-agents', label: 'Background Agents', accent: 'violet' },
 ] as const
 
 export interface OzWorkspaceNavItem {
@@ -72,7 +72,6 @@ export interface OzWorkspaceNavItem {
 
 export const workspaceNavItems: readonly OzWorkspaceNavItem[] = [
   { id: 'field-app', label: 'Field App', icon: FieldAppIcon },
-  { id: 'tables', label: 'Tables', icon: TableIcon },
   { id: 'knowledge-base', label: 'Knowledge Base', icon: KnowledgeBaseIcon },
 ] as const
 

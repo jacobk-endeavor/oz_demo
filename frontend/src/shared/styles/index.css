@@ -92,6 +92,19 @@ body {
   animation-delay: 0.36s;
 }
 
+/* Competitor search interstitial: slower “typing” wave (longer per dot, not a quick cycle). */
+.competitor-search-interstitial__typing-dots .cursor-chat-dot {
+  animation-duration: 2.85s;
+}
+
+.competitor-search-interstitial__typing-dots .cursor-chat-dot:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.competitor-search-interstitial__typing-dots .cursor-chat-dot:nth-child(3) {
+  animation-delay: 1s;
+}
+
 .cursor-chat-message {
   animation: cursor-chat-fade-in 120ms ease-out both;
 }
@@ -118,9 +131,47 @@ body {
   }
 }
 
+/* Assistant reply text replacing thinking dots (or first paint): a bit longer / softer than the message shell. */
+@keyframes cursor-chat-reply-bubble {
+  from {
+    opacity: 0;
+    transform: translateY(3px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cursor-chat-reply-bubble {
+  animation: cursor-chat-reply-bubble 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top center;
+}
+
+/* Command center: context column slides in when the split layout opens (e.g. activity table). */
+@keyframes oz-context-surface-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.oz-context-surface-in {
+  animation: oz-context-surface-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cursor-chat-dot,
-  .cursor-chat-message {
+  .cursor-chat-message,
+  .cursor-chat-reply-bubble {
+    animation: none;
+  }
+
+  .oz-context-surface-in {
     animation: none;
   }
 }
@@ -139,7 +190,7 @@ body {
 
 .lead-table-row-anim {
   animation-name: lead-row-fade;
-  animation-duration: 0.75s;
+  animation-duration: 0.975s;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   animation-fill-mode: both;
   animation-delay: 0s;
@@ -167,6 +218,26 @@ body {
   }
 }
 
+/* Customer demand / P&L insight blocks: slower staggered entrance (Oz context panel). */
+@keyframes oz-insight-chart-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.oz-insight-chart-enter {
+  animation-name: oz-insight-chart-enter;
+  animation-duration: 1.75s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+  animation-delay: 0s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lead-table-row-anim,
   .lead-gen-shimmer {
@@ -174,6 +245,12 @@ body {
   }
 
   .lead-table-row-anim {
+    opacity: 1;
+    transform: none;
+  }
+
+  .oz-insight-chart-enter {
+    animation: none !important;
     opacity: 1;
     transform: none;
   }

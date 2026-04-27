@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
@@ -39,6 +40,11 @@ export interface OzAssistantMessage {
   content: ReactNode
   /** When set, the assistant text is revealed incrementally, then cleared. */
   streamIn?: boolean
+  /**
+   * When true, show the full reply at once (no line-by-line reveal). Set when the parent handler
+   * returns `{ stream: false }`.
+   */
+  instantReply?: boolean
   timestamp?: string
   sources?: string[]
   /** Lumberyard activity table rows the user had in the composer for this line. */
@@ -73,8 +79,20 @@ export interface OzAssistantPanelProps {
   /**
    * Choose the loading UI after the user sends a line (before `onUserMessage` resolves).
    * Use `knowledge_base` when the reply will draw on company-specific tabular / KB data.
+   * Use `knowledge_web` for live web search (Chrome icon). Use `knowledge_crm` for CRM
+   * lookup (Outlook · Salesforce · HubSpot · Apollo icons). `knowledge_crm_likely_buyers` uses
+   * the same icons with a longer stagger (likely-buyer / stock-up flow).
+   * `knowledge_customer_demand` — Excel + Endeavor (Oz customer demand / P&L charts).
    */
-  pendingAssistantPlaceholder?: (userText: string) => 'thinking' | 'knowledge_base'
+  pendingAssistantPlaceholder?: (
+    userText: string,
+  ) =>
+    | 'thinking'
+    | 'knowledge_base'
+    | 'knowledge_web'
+    | 'knowledge_crm'
+    | 'knowledge_crm_likely_buyers'
+    | 'knowledge_customer_demand'
   /** Focused table rows (any generated table) shown as chips above the input until removed or sent. */
   composerContextAttachments?: TableRowContextAttachment[]
   onRemoveComposerContextAttachment?: (attachmentKey: string) => void
@@ -87,8 +105,8 @@ export interface OzAssistantPanelProps {
    * `center` — home column (default). `dock` — bottom strip for full-page views (e.g. lead table).
    */
   layout?: 'center' | 'dock'
-  /** Fires when a knowledge-base request begins (placeholder shown, before the reply). */
-  onKnowledgePreambleStart?: () => void
+  /** Fires when a knowledge loading pill is shown, before the reply. Argument is the pill variant. */
+  onKnowledgePreambleStart?: (kind: OzKnowledgePillKind) => void
   /** Fires when the in-chat knowledge preamble (staggered source icons) finishes, or the placeholder unmounts. */
   onKnowledgePreambleComplete?: () => void
   /**
@@ -109,13 +127,20 @@ function asString(content: ReactNode): string {
 }
 
 export const OZ_DEFAULT_WELCOME =
-  "Hey—I'm Oz. Try asking for Milwaukee distributors to open the lead grid, or tell me what you want to do next in plain language. I'll stay in the thread with you."
+  "Hey—I'm Oz. Tell me what you want to do next in plain language. I'll stay in the thread with you."
 
 function transcriptToContext(transcript: OzAssistantMessage[]): OzChatTurnContext {
   const priorExchanges: OzChatTurnContext['priorExchanges'] = []
   for (const m of transcript) {
     const t = asString(m.content)
-    if (m.role === 'oz' && (t === '__thinking__' || t === '__knowledge_base__')) continue
+    if (
+      m.role === 'oz' &&
+      (t === '__thinking__' ||
+        t === '__knowledge_base__' ||
+        t === '__knowledge_web__' ||
+        t === '__knowledge_crm__')
+    )
+      continue
     if (m.role === 'user') {
       const ra = m.rowAttachments
       const withCtx = ra?.length
@@ -192,6 +217,10 @@ function buildScriptedReply(
   return 'Alright. Tell me a bit more about the outcome you want, and I will answer in-thread—sorting, follow-ups, or the Milwaukee grid, for example.'
 }
 
+/** Reply text streams in small chunks per tick (including newlines). */
+const ASSISTANT_STREAM_CHUNK_CHARS = 2
+const ASSISTANT_STREAM_TICK_MS = 9
+
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false)
   useEffect(() => {
@@ -209,20 +238,24 @@ function StreamedText({
   text,
   onComplete,
   className,
+  reducedMotion = false,
 }: {
   text: string
   onComplete: () => void
   className?: string
+  /** When set, one-shot render with no per-line delay (e.g. system prefers reduced motion). */
+  reducedMotion?: boolean
 }) {
   const [shown, setShown] = useState('')
-  const reduced = usePrefersReducedMotion()
+  const systemReduced = usePrefersReducedMotion()
+  const reduce = reducedMotion || systemReduced
   const doneRef = useRef(false)
   const onCompleteRef = useRef(onComplete)
   onCompleteRef.current = onComplete
 
   useEffect(() => {
     doneRef.current = false
-    if (reduced) {
+    if (reduce) {
       setShown(text)
       if (!doneRef.current) {
         doneRef.current = true
@@ -231,29 +264,54 @@ function StreamedText({
       return
     }
     setShown('')
-    let i = 0
-    let id = 0
-    id = window.setInterval(() => {
-      i = Math.min(i + 3, text.length)
-      setShown(text.slice(0, i))
-      if (i >= text.length) {
-        window.clearInterval(id)
+    if (text.length === 0) {
+      if (!doneRef.current) {
+        doneRef.current = true
+        onCompleteRef.current()
+      }
+      return
+    }
+    let id: number | null = null
+    let n = 0
+    const run = () => {
+      n = Math.min(n + ASSISTANT_STREAM_CHUNK_CHARS, text.length)
+      setShown(text.slice(0, n))
+      if (n >= text.length) {
         if (!doneRef.current) {
           doneRef.current = true
           onCompleteRef.current()
         }
+        return
       }
-    }, 20)
+      id = window.setTimeout(run, ASSISTANT_STREAM_TICK_MS)
+    }
+    id = window.setTimeout(run, 0)
     return () => {
-      window.clearInterval(id)
+      if (id != null) window.clearTimeout(id)
       if (!doneRef.current) {
         doneRef.current = true
         onCompleteRef.current()
       }
     }
-  }, [text, reduced])
+  }, [text, reduce])
 
-  return <span className={className}>{shown}</span>
+  const typing = !reduce && shown.length < text.length
+
+  return (
+    <div
+      className={joinClasses('flex w-full min-w-0 items-end gap-0.5', className)}
+    >
+      <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
+        <SimpleAssistantMarkdown text={shown} streamMode />
+      </div>
+      {typing ? (
+        <span
+          className="mb-0.5 inline-block h-3.5 w-0.5 shrink-0 self-end rounded-sm bg-zinc-500/85 motion-safe:animate-pulse"
+          aria-hidden
+        />
+      ) : null}
+    </div>
+  )
 }
 
 function ChatComposerRow({
@@ -390,9 +448,117 @@ function assistantSeedSignature(msgs: OzAssistantMessage[]): string {
 }
 
 export const OZ_KNOWLEDGE_PLACEHOLDER = '__knowledge_base__' as const
+export const OZ_KNOWLEDGE_WEB_PLACEHOLDER = '__knowledge_web__' as const
+export const OZ_KNOWLEDGE_CRM_PLACEHOLDER = '__knowledge_crm__' as const
+export const OZ_KNOWLEDGE_CRM_LIKELY_BUYERS_PLACEHOLDER = '__knowledge_crm_likely_buyers__' as const
+export const OZ_KNOWLEDGE_CUSTOMER_DEMAND_PLACEHOLDER = '__knowledge_customer_demand__' as const
 
-/** Stagger between each of the 3 source icons. Table stays hidden for 2 steps after Excel (Outlook, Endeavor). */
-const KB_PREAMBLE_STAGGER_MS = 400
+/** Which in-chat “knowledge” loading pill is shown; passed to `onKnowledgePreambleStart` when a pill opens. */
+export type OzKnowledgePillKind =
+  | 'knowledge_base'
+  | 'knowledge_web'
+  | 'knowledge_crm'
+  | 'knowledge_crm_likely_buyers'
+  | 'knowledge_customer_demand'
+type KnowledgePillKind = OzKnowledgePillKind
+type PendingKind = 'thinking' | KnowledgePillKind
+
+function isKnowledgePillKind(k: PendingKind): k is KnowledgePillKind {
+  return (
+    k === 'knowledge_base' ||
+    k === 'knowledge_web' ||
+    k === 'knowledge_crm' ||
+    k === 'knowledge_crm_likely_buyers' ||
+    k === 'knowledge_customer_demand'
+  )
+}
+
+function placeholderForPendingKind(k: PendingKind): string {
+  if (k === 'knowledge_base') return OZ_KNOWLEDGE_PLACEHOLDER
+  if (k === 'knowledge_web') return OZ_KNOWLEDGE_WEB_PLACEHOLDER
+  if (k === 'knowledge_crm_likely_buyers') return OZ_KNOWLEDGE_CRM_LIKELY_BUYERS_PLACEHOLDER
+  if (k === 'knowledge_crm') return OZ_KNOWLEDGE_CRM_PLACEHOLDER
+  if (k === 'knowledge_customer_demand') return OZ_KNOWLEDGE_CUSTOMER_DEMAND_PLACEHOLDER
+  return '__thinking__'
+}
+
+interface KnowledgePillVariant {
+  label: string
+  /** Per-variant stagger so a slow remote call (e.g. lumberyard intel LLM, ~3-5s) is masked
+   *  by a longer pill animation; fast variants (CRM filter) keep a snappy default. */
+  staggerMs: number
+  icons: { src: string; widthClass?: string; maxClass?: string }[]
+  /**
+   * Extra time after the last source icon is visible, before the assistant message may stream in.
+   * (See `variantSequenceMs` and `earliestReplyAt` in the send handler.)
+   */
+  postSequencePadMs?: number
+}
+
+const KNOWLEDGE_PILL_VARIANTS: Record<KnowledgePillKind, KnowledgePillVariant> = {
+  knowledge_base: {
+    label: 'Loading Data from Knowledge Base',
+    // 3 icons × 600ms = 1.8s — closer to typical lumberyard-intel LLM round-trip so the
+    // pill is still animating when the reply arrives instead of "freezing" at full state.
+    staggerMs: 600,
+    icons: [
+      { src: '/knowledge-excel.png' },
+      { src: '/lead-source-logos/outlook.png' },
+      { src: '/endeavor-logo.png', widthClass: 'h-5 w-auto', maxClass: 'max-h-5 min-w-0 max-w-[28px]' },
+    ],
+  },
+  knowledge_web: {
+    label: 'Searching the web',
+    staggerMs: 320,
+    icons: [{ src: '/lead-source-logos/internet.png' }],
+  },
+  knowledge_crm: {
+    label: 'Searching CRM',
+    staggerMs: 320,
+    icons: [
+      { src: '/lead-source-logos/outlook.png' },
+      { src: '/lead-source-logos/salesforce.png' },
+      { src: '/lead-source-logos/hubspot.png' },
+      { src: '/lead-source-logos/apollo.png' },
+    ],
+  },
+  /** Slower than `knowledge_crm` so the right-hand lead grid can stage after a steadier “lookup” beat. */
+  knowledge_crm_likely_buyers: {
+    label: 'Scoring likely buyers',
+    staggerMs: 700,
+    icons: [
+      { src: '/lead-source-logos/outlook.png' },
+      { src: '/lead-source-logos/salesforce.png' },
+      { src: '/lead-source-logos/hubspot.png' },
+      { src: '/lead-source-logos/apollo.png' },
+    ],
+  },
+  /** Oz home: customer demand / P&L charts — Excel + Endeavor only; long stagger + hold before the reply. */
+  knowledge_customer_demand: {
+    label: 'Loading customer demand from knowledge',
+    staggerMs: 1100,
+    postSequencePadMs: 1200,
+    icons: [
+      { src: '/knowledge-excel.png' },
+      { src: '/endeavor-logo.png', widthClass: 'h-5 w-auto', maxClass: 'max-h-5 min-w-0 max-w-[28px]' },
+    ],
+  },
+}
+
+function variantStepsFor(kind: KnowledgePillKind): number {
+  return KNOWLEDGE_PILL_VARIANTS[kind].icons.length
+}
+
+function variantSequenceMs(kind: KnowledgePillKind): number {
+  const v = KNOWLEDGE_PILL_VARIANTS[kind]
+  return v.icons.length * v.staggerMs + (v.postSequencePadMs ?? 0)
+}
+
+/**
+ * Short buffer after the sequence window so the last icon is visibly “settled”
+ * (plus `postSequencePadMs` on a variant, if any, which is included in `variantSequenceMs`).
+ */
+const KNOWLEDGE_STREAM_AFTER_LAST_LOGO_MS = 180
 
 export function OzAssistantPanel({
   contextSummary,
@@ -419,7 +585,9 @@ export function OzAssistantPanel({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const prevBusyRef = useRef(false)
-  const knowledgePreambleTableTimerRef = useRef<number | null>(null)
+  const knowledgePreambleFallbackTimerRef = useRef<number | null>(null)
+  const knowledgePreambleNotifiedRef = useRef(false)
+  const knowledgePreambleT0Ref = useRef(0)
 
   const seedSignature = assistantSeedSignature(seed)
   useEffect(() => {
@@ -434,16 +602,22 @@ export function OzAssistantPanel({
 
   useEffect(() => {
     return () => {
-      if (knowledgePreambleTableTimerRef.current != null) {
-        clearTimeout(knowledgePreambleTableTimerRef.current)
-        knowledgePreambleTableTimerRef.current = null
+      if (knowledgePreambleFallbackTimerRef.current != null) {
+        clearTimeout(knowledgePreambleFallbackTimerRef.current)
+        knowledgePreambleFallbackTimerRef.current = null
       }
     }
   }, [])
 
   const isPending = pendingId !== null || streamingId !== null
 
-  const onKnowledgePreambleComplete = useCallback(() => {
+  const notifyKnowledgePreambleComplete = useCallback(() => {
+    if (knowledgePreambleNotifiedRef.current) return
+    knowledgePreambleNotifiedRef.current = true
+    if (knowledgePreambleFallbackTimerRef.current != null) {
+      clearTimeout(knowledgePreambleFallbackTimerRef.current)
+      knowledgePreambleFallbackTimerRef.current = null
+    }
     onKnowledgePreambleCompleteFromParent?.()
   }, [onKnowledgePreambleCompleteFromParent])
 
@@ -493,9 +667,9 @@ export function OzAssistantPanel({
       const value = rawInput.trim()
       if (!value || isPending) return
 
-      if (knowledgePreambleTableTimerRef.current != null) {
-        clearTimeout(knowledgePreambleTableTimerRef.current)
-        knowledgePreambleTableTimerRef.current = null
+      if (knowledgePreambleFallbackTimerRef.current != null) {
+        clearTimeout(knowledgePreambleFallbackTimerRef.current)
+        knowledgePreambleFallbackTimerRef.current = null
       }
 
       const att = composerContextAttachments
@@ -509,28 +683,23 @@ export function OzAssistantPanel({
         content: value,
         rowAttachments: att?.map((a) => ({ id: a.key, label: a.label })),
       }
-      const pendingKind = pendingAssistantPlaceholder?.(value) ?? 'thinking'
+      const pendingKind: PendingKind = pendingAssistantPlaceholder?.(value) ?? 'thinking'
       const placeholder: OzAssistantMessage = {
         id: makeId(),
         role: 'oz',
-        content: pendingKind === 'knowledge_base' ? OZ_KNOWLEDGE_PLACEHOLDER : '__thinking__',
+        content: placeholderForPendingKind(pendingKind),
+      }
+      const isKnowledgePreamble = isKnowledgePillKind(pendingKind)
+      const knowledgeSequenceMs = isKnowledgePreamble ? variantSequenceMs(pendingKind) : 0
+      if (isKnowledgePreamble) {
+        knowledgePreambleNotifiedRef.current = false
+        knowledgePreambleT0Ref.current = Date.now()
+        onKnowledgePreambleStart?.(pendingKind)
       }
       setPendingId(placeholder.id)
       setTranscript((t) => [...t, userMessage, placeholder])
       setDraft('')
       setHistoryCursor(null)
-      if (pendingKind === 'knowledge_base') {
-        onKnowledgePreambleStart?.()
-        if (reducedMotion) {
-          window.setTimeout(() => onKnowledgePreambleComplete(), 0)
-        } else {
-          const ms = 2 * KB_PREAMBLE_STAGGER_MS
-          knowledgePreambleTableTimerRef.current = window.setTimeout(() => {
-            knowledgePreambleTableTimerRef.current = null
-            onKnowledgePreambleComplete()
-          }, ms)
-        }
-      }
 
       const t0 = Date.now()
       let fromParent: { reply: string; delayMs?: number; stream?: boolean } | void
@@ -540,7 +709,6 @@ export function OzAssistantPanel({
         fromParent = {
           reply: 'I could not complete that just now. Try again in a moment.',
           delayMs: 0,
-          stream: false,
         }
       }
       const replyText =
@@ -550,33 +718,56 @@ export function OzAssistantPanel({
       const wantDelay =
         fromParent && typeof fromParent === 'object' && 'delayMs' in fromParent && fromParent.delayMs != null
           ? fromParent.delayMs
-          : 700
+          : 140
       const afterNetwork = Date.now() - t0
-      const extra = Math.max(0, wantDelay - afterNetwork)
+      const paddedDelay = Math.max(0, wantDelay - afterNetwork)
+      const extra = (() => {
+        if (!isKnowledgePreamble) return paddedDelay
+        const sequenceMs = reducedMotion ? 0 : knowledgeSequenceMs
+        const earliestReplyAt =
+          knowledgePreambleT0Ref.current + sequenceMs + KNOWLEDGE_STREAM_AFTER_LAST_LOGO_MS
+        const untilAfterLastLogo = Math.max(0, earliestReplyAt - Date.now())
+        return Math.max(paddedDelay, untilAfterLastLogo)
+      })()
       const doStream =
         fromParent && typeof fromParent === 'object' && 'stream' in fromParent && fromParent.stream === false
           ? false
           : !reducedMotion
+      const instantOptOut =
+        fromParent && typeof fromParent === 'object' && 'stream' in fromParent && fromParent.stream === false
 
       window.setTimeout(() => {
         setTranscript((t) =>
           t.map((entry) =>
             entry.id === placeholder.id
-              ? { ...entry, content: replyText, streamIn: doStream }
+              ? {
+                  ...entry,
+                  content: replyText,
+                  streamIn: doStream,
+                  ...(instantOptOut ? { instantReply: true } : {}),
+                }
               : entry,
           ),
         )
         setPendingId(null)
         if (doStream) setStreamingId(placeholder.id)
         onAfterUserMessage?.()
+        if (isKnowledgePreamble && !knowledgePreambleNotifiedRef.current) {
+          const targetMs = reducedMotion ? 0 : knowledgeSequenceMs
+          const remain = Math.max(0, targetMs - (Date.now() - knowledgePreambleT0Ref.current))
+          knowledgePreambleFallbackTimerRef.current = window.setTimeout(() => {
+            knowledgePreambleFallbackTimerRef.current = null
+            notifyKnowledgePreambleComplete()
+          }, remain)
+        }
       }, extra)
     },
     [
       composerContextAttachments,
       contextSummary,
       isPending,
+      notifyKnowledgePreambleComplete,
       onAfterUserMessage,
-      onKnowledgePreambleComplete,
       onKnowledgePreambleStart,
       onUserMessage,
       pendingAssistantPlaceholder,
@@ -707,6 +898,7 @@ export function OzAssistantPanel({
                 key={message.id}
                 message={message}
                 onStreamEnd={message.streamIn ? onStreamEnd : undefined}
+                onKnowledgePreambleSequenceComplete={notifyKnowledgePreambleComplete}
                 align={isCentered ? 'center' : 'sides'}
                 reducedMotion={reducedMotion}
               />
@@ -736,65 +928,89 @@ export function OzAssistantPanel({
 }
 
 /**
- * Stagger: Excel → Outlook → Endeavor (must stay in sync with `2 * KB_PREAMBLE_STAGGER_MS` table reveal in send()).
- * When `reducedMotion`, all three appear at once.
+ * Label first, then icons appear one per `KB_PREAMBLE_STAGGER_MS`.
+ * Variants: `knowledge_base` (Excel→Outlook→Endeavor), `knowledge_web` (Chrome),
+ * `knowledge_crm` / `knowledge_crm_likely_buyers` (Outlook→Salesforce→HubSpot→Apollo). Reveal-after timing in App
+ * uses `variantSequenceMs(kind)` after t0. When `reducedMotion`, all icons at once.
  */
-function KnowledgeBaseLoadingPill({ reducedMotion }: { reducedMotion: boolean }) {
-  const [phase, setPhase] = useState(() => (reducedMotion ? 2 : 0))
+function KnowledgeBaseLoadingPill({
+  kind,
+  reducedMotion,
+  onSequenceComplete,
+}: {
+  kind: KnowledgePillKind
+  reducedMotion: boolean
+  onSequenceComplete?: () => void
+}) {
+  const variant = KNOWLEDGE_PILL_VARIANTS[kind]
+  const totalSteps = variant.icons.length
+  const staggerMs = variant.staggerMs
+  const [phase, setPhase] = useState(() => (reducedMotion ? totalSteps : 0))
+  const sequenceFired = useRef(false)
+
+  const fireSequenceComplete = useCallback(() => {
+    if (sequenceFired.current) return
+    sequenceFired.current = true
+    onSequenceComplete?.()
+  }, [onSequenceComplete])
 
   useEffect(() => {
     if (reducedMotion) {
-      setPhase(2)
+      setPhase(totalSteps)
     }
-  }, [reducedMotion])
+  }, [reducedMotion, totalSteps])
 
   useEffect(() => {
     if (reducedMotion) return
-    if (phase >= 2) return
-    const id = window.setTimeout(() => setPhase((p) => p + 1), KB_PREAMBLE_STAGGER_MS)
+    if (phase >= totalSteps) return
+    const id = window.setTimeout(() => setPhase((p) => p + 1), staggerMs)
     return () => clearTimeout(id)
-  }, [phase, reducedMotion])
+  }, [phase, reducedMotion, totalSteps, staggerMs])
+
+  useLayoutEffect(() => {
+    if (reducedMotion) {
+      fireSequenceComplete()
+      return
+    }
+    if (phase >= totalSteps) {
+      fireSequenceComplete()
+    }
+  }, [reducedMotion, phase, totalSteps, fireSequenceComplete])
 
   return (
     <div
       className={joinClasses(
-        'flex min-h-10 max-w-[min(100%,32rem)] flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-emerald-50/95 to-white px-3 py-2.5 shadow-sm',
+        'flex max-w-[min(100%,32rem)] flex-row flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-emerald-50/95 to-white px-3 py-2.5 text-left shadow-sm',
       )}
       role="status"
       aria-live="polite"
+      aria-busy={phase < totalSteps}
     >
-      <div className="flex shrink-0 items-center gap-1.5" aria-hidden>
-        <img
-          src="/knowledge-excel.png"
-          alt=""
-          width={20}
-          height={20}
-          className="h-5 w-5 shrink-0 object-contain"
-          loading="eager"
-          decoding="async"
-        />
-        {phase >= 1 ? (
-          <img
-            src="/lead-source-logos/outlook.png"
-            alt=""
-            width={20}
-            height={20}
-            className="h-5 w-5 shrink-0 object-contain"
-            loading="eager"
-            decoding="async"
-          />
-        ) : null}
-        {phase >= 2 ? (
-          <img
-            src="/endeavor-logo.png"
-            alt=""
-            width={20}
-            height={20}
-            className="h-5 w-auto max-h-5 min-w-0 max-w-[28px] shrink-0 object-contain"
-            loading="eager"
-            decoding="async"
-          />
-        ) : null}
+      <p className="m-0 max-w-full shrink-0 text-sm font-medium leading-snug text-zinc-800">
+        {variant.label}
+      </p>
+      <div
+        className="flex min-h-6 shrink-0 flex-row flex-nowrap items-center gap-1.5"
+        aria-hidden
+      >
+        {variant.icons.map((icon, i) =>
+          phase >= i + 1 ? (
+            <img
+              key={icon.src}
+              src={icon.src}
+              alt=""
+              width={20}
+              height={20}
+              className={joinClasses(
+                icon.widthClass ?? 'h-5 w-5',
+                'shrink-0 object-contain',
+                icon.maxClass,
+              )}
+              loading="eager"
+              decoding="async"
+            />
+          ) : null,
+        )}
       </div>
     </div>
   )
@@ -803,11 +1019,14 @@ function KnowledgeBaseLoadingPill({ reducedMotion }: { reducedMotion: boolean })
 function ChatMessage({
   message,
   onStreamEnd,
+  onKnowledgePreambleSequenceComplete,
   align = 'sides',
   reducedMotion = false,
 }: {
   message: OzAssistantMessage
   onStreamEnd?: (id: string) => void
+  /** Fires when the knowledge pill label + icon sequence has finished (used to show the right-hand table). */
+  onKnowledgePreambleSequenceComplete?: () => void
   /** `center` — thread is one centered column; `sides` — user right, assistant left. */
   align?: 'sides' | 'center'
   reducedMotion?: boolean
@@ -815,17 +1034,39 @@ function ChatMessage({
   const isUser = message.role === 'user'
   const isSystem = message.role === 'system'
   const isThinking = message.role === 'oz' && message.content === '__thinking__'
-  const isKnowledgeLoading = message.role === 'oz' && message.content === OZ_KNOWLEDGE_PLACEHOLDER
+  const knowledgePillKind: KnowledgePillKind | null =
+    message.role === 'oz' && message.content === OZ_KNOWLEDGE_PLACEHOLDER
+      ? 'knowledge_base'
+      : message.role === 'oz' && message.content === OZ_KNOWLEDGE_WEB_PLACEHOLDER
+        ? 'knowledge_web'
+        : message.role === 'oz' && message.content === OZ_KNOWLEDGE_CRM_LIKELY_BUYERS_PLACEHOLDER
+          ? 'knowledge_crm_likely_buyers'
+          : message.role === 'oz' && message.content === OZ_KNOWLEDGE_CRM_PLACEHOLDER
+            ? 'knowledge_crm'
+            : message.role === 'oz' && message.content === OZ_KNOWLEDGE_CUSTOMER_DEMAND_PLACEHOLDER
+              ? 'knowledge_customer_demand'
+              : null
+  const isKnowledgeLoading = knowledgePillKind !== null
   const body = asString(message.content)
-  const showStream =
+  const useTypewriter =
     message.role === 'oz' &&
-    message.streamIn &&
     !isThinking &&
     !isKnowledgeLoading &&
+    !message.instantReply &&
+    typeof message.content === 'string' &&
     body.length > 0
 
   const roleLabel = isUser ? 'You' : isSystem ? 'System' : 'Oz'
   const centered = align === 'center'
+
+  const pillSrLabel =
+    knowledgePillKind === 'knowledge_web'
+      ? ' · Searching the web'
+      : knowledgePillKind === 'knowledge_crm_likely_buyers'
+        ? ' · Scoring likely buyers; Outlook, Salesforce, HubSpot, Apollo'
+        : knowledgePillKind === 'knowledge_crm'
+          ? ' · Searching CRM; Outlook, Salesforce, HubSpot, Apollo'
+          : ' · Searching company knowledge; Excel, Outlook, Endeavor'
 
   return (
     <article
@@ -842,16 +1083,20 @@ function ChatMessage({
           ? ` · Context: ${message.rowAttachments.map((r) => r.label).join(', ')}`
           : null}
         {isThinking && ' · Thinking'}
-        {isKnowledgeLoading && ' · Searching company knowledge; Excel, Outlook, Endeavor'}
+        {isKnowledgeLoading && pillSrLabel}
       </span>
-      {isKnowledgeLoading ? (
+      {knowledgePillKind ? (
         <div
           className={joinClasses(
             !centered && 'self-start',
             centered && 'w-full min-w-0',
           )}
         >
-          <KnowledgeBaseLoadingPill reducedMotion={reducedMotion} />
+          <KnowledgeBaseLoadingPill
+            kind={knowledgePillKind}
+            reducedMotion={reducedMotion}
+            onSequenceComplete={onKnowledgePreambleSequenceComplete}
+          />
         </div>
       ) : isThinking ? (
         <div
@@ -882,7 +1127,7 @@ function ChatMessage({
               : isSystem
                 ? 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900'
                 : 'text-zinc-800',
-            !isUser && !isSystem && 'rounded-2xl border border-zinc-200/80 bg-zinc-50/90 px-3 py-2',
+            !isUser && !isSystem && 'cursor-chat-reply-bubble rounded-2xl border border-zinc-200/80 bg-zinc-50/90 px-3 py-2',
             centered && 'text-left', // long replies stay left-aligned in the block for readability
           )}
         >
@@ -901,10 +1146,11 @@ function ChatMessage({
               ))}
             </div>
           ) : null}
-          {showStream ? (
+          {useTypewriter ? (
             <span aria-live="off" className="block">
               <StreamedText
                 text={body}
+                reducedMotion={reducedMotion}
                 onComplete={() => onStreamEnd?.(message.id)}
               />
             </span>

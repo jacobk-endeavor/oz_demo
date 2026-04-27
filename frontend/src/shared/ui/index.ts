@@ -3,7 +3,15 @@ export { BackgroundTaskRail } from './BackgroundTaskRail'
 export type { BackgroundTaskItem, BackgroundTaskStatus } from './BackgroundTaskRail'
 export { Button } from './Button'
 export { Modal } from './Modal'
-export { OZ_DEFAULT_WELCOME, OZ_KNOWLEDGE_PLACEHOLDER, OzAssistantPanel } from './OzAssistantPanel'
+export {
+  OZ_DEFAULT_WELCOME,
+  OZ_KNOWLEDGE_PLACEHOLDER,
+  OZ_KNOWLEDGE_CUSTOMER_DEMAND_PLACEHOLDER,
+  OZ_KNOWLEDGE_CRM_PLACEHOLDER,
+  OZ_KNOWLEDGE_CRM_LIKELY_BUYERS_PLACEHOLDER,
+  OZ_KNOWLEDGE_WEB_PLACEHOLDER,
+  OzAssistantPanel,
+} from './OzAssistantPanel'
 export type {
   OzActionVariant,
   OzAssistantAction,
@@ -11,6 +19,7 @@ export type {
   OzAssistantPanelProps,
   OzChatTurnContext,
   OzContextItem,
+  OzKnowledgePillKind,
   OzMessageRole,
 } from './OzAssistantPanel'
 export { PlaceholderSubtabPage } from './PlaceholderSubtabPage'

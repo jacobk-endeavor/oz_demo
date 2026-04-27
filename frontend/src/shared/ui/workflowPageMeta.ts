@@ -48,7 +48,7 @@ export const WORKFLOW_PAGE_META: Record<WorkflowPageId, WorkflowPageMeta> = {
   },
   'field-notes': {
     eyebrow: 'Workflow',
-    title: 'Field notes',
+    title: 'Field Notes',
     subtitle: 'Voice memos from the yard, team briefs, and weekly themes.',
   },
   'quotes-ready': {
@@ -58,7 +58,7 @@ export const WORKFLOW_PAGE_META: Record<WorkflowPageId, WorkflowPageMeta> = {
   },
   dashboards: {
     eyebrow: 'Workflow',
-    title: 'Dashboards',
+    title: 'Dashboard Studio',
     subtitle: 'Describe charts in plain language, then publish to a mock link.',
   },
   'quote-automation': {
@@ -73,8 +73,7 @@ export const WORKFLOW_PAGE_META: Record<WorkflowPageId, WorkflowPageMeta> = {
   },
   'background-agents': {
     eyebrow: 'Workflow',
-    title: 'Background agents',
-    subtitle: 'Automations you define in chat: each agent shows what it does and when it runs.',
+    title: 'Background Agents',
   },
   help: {
     title: 'Help',

@@ -41,10 +41,12 @@ describe('OzAssistantPanel', () => {
     await user.type(screen.getByPlaceholderText('Ask Oz…'), 'next steps for the route')
     await user.click(screen.getByRole('button', { name: 'Send message' }))
 
-    expect(await screen.findByText(/The next move depends/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/The next move depends/, undefined, { timeout: 10_000 }),
+    ).toBeInTheDocument()
   })
 
-  it('defaults to a welcome line when the thread is empty and hideWelcome is not set', () => {
+  it('defaults to a welcome line when the thread is empty and hideWelcome is not set', async () => {
     render(
       <OzAssistantPanel
         contextSummary="Demo"
@@ -53,7 +55,9 @@ describe('OzAssistantPanel', () => {
       />,
     )
     const conversation = screen.getByLabelText('Oz conversation')
-    expect(within(conversation).getByText(new RegExp(OZ_DEFAULT_WELCOME.slice(0, 20)))).toBeInTheDocument()
+    expect(
+      await within(conversation).findByText(new RegExp(OZ_DEFAULT_WELCOME.slice(0, 20))),
+    ).toBeInTheDocument()
   })
 
   it('applies layout dock for bottom strips', () => {
