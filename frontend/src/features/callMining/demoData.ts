@@ -6,6 +6,7 @@ import type {
   QueryButton,
   QueryId,
 } from './types'
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
 
 const companies = [
   'Russin Lumber',
@@ -30,7 +31,7 @@ const companies = [
   'Crown Valley Exteriors',
 ] as const
 
-const representatives = ['Sami', 'Ava', 'Mia', 'Noah', 'Lena', 'Eli', 'Jordan', 'Priya'] as const
+const representatives = [DEMO_REP_FIRST_NAME, 'Ava', 'Mia', 'Noah', 'Lena', 'Eli', 'Jordan', 'Priya'] as const
 
 const products = [
   'Composite decking bundle',

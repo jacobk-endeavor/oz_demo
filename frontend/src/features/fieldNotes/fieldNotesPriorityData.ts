@@ -3,6 +3,8 @@
  * Rep roster matches VOICE_MEMO_DEMO; mock briefs illustrate varied acknowledgment states.
  */
 
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
+
 export type FieldSalesRep = { id: string; name: string }
 
 /** Four demo field reps — same names as in voice memo rows. */
@@ -10,7 +12,7 @@ export const DEMO_FIELD_SALES_REPS: readonly FieldSalesRep[] = [
   { id: 'rep-marcus', name: 'Marcus Chen' },
   { id: 'rep-priya', name: 'Priya Nair' },
   { id: 'rep-jordan', name: 'Jordan Ellis' },
-  { id: 'rep-sami', name: 'Sami' },
+  { id: 'rep-sami', name: DEMO_REP_FIRST_NAME },
 ] as const
 
 export type PriorityBriefCard = {

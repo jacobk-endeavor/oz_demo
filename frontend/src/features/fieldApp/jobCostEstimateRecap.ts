@@ -10,6 +10,8 @@
  * Row numbers in this module are 1-indexed to match Excel — i.e. row 3 = "row 3".
  */
 
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
+
 export type JcrFieldType = 'text' | 'textarea' | 'date' | 'number' | 'currency'
 
 export interface JcrInputField {
@@ -108,7 +110,7 @@ export const KENNY_HILLS_JCR_DEFAULTS = {
   project_number: 'P26-0428-KH',
   ref_quote_numbers: 'Q26-0428-KH',
   customer_name: 'Kenny Hills Contracting',
-  project_manager: 'Sami',
+  project_manager: DEMO_REP_FIRST_NAME,
   customer_po_number: 'PO-KH-2026-0428',
   job_description:
     'Capped composite deck package: lead deck line + Apex hidden fasteners (added day-after on prior order — closing same-trip this time) + color-matched fascia / riser bundle on long runs. Coastal pool surround, ¼″ drainage gap, ICC-ESR backed clip system.',

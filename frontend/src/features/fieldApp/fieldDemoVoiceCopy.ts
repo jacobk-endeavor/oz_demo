@@ -2,13 +2,13 @@
  * Canonical Field demo lines for TTS and scripted voice.
  * Keep in sync with `scripts.md` (Scripts 1–3 teleprompter tables).
  */
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
 import { KENNY_TTS_AUDIO_BRIEF } from './fieldDemoKennyData'
 
 export { KENNY_TTS_AUDIO_BRIEF }
 
 /** Script 1 — after home route into customer history. */
-export const SCRIPT1_OPEN_REPLY =
-  'I’ve got you, Sami. I’m opening Kenny Hills now—you’ll get recent orders, value bands, and the field and service notes so you’re not walking in cold.'
+export const SCRIPT1_OPEN_REPLY = `I’ve got you, ${DEMO_REP_FIRST_NAME}. I’m opening Kenny Hills now—you’ll get recent orders, value bands, and the field and service notes so you’re not walking in cold.`
 
 /** Script 1 — follow-up after `KENNY_TTS_AUDIO_BRIEF` (any short rep line advances scripted step). */
 export const SCRIPT1_AFTER_AUDIO_SUMMARY =
@@ -44,10 +44,10 @@ export const VOICE_MEMO_OPEN_LINE =
 export const VOICE_MEMO_RECORDING_ACK = 'Ok, recording.'
 
 /**
- * Canned **Rep (Sami)** line stored on the Field Notes row (first person, as in the runbook).
+ * Canned rep line stored on the Field Notes row (first person, as in the runbook).
  * Written when the rep finishes speaking on that Script 3 turn — same text as in “View conversation.”
  */
-export const SAMI_FIELD_MEMO_CANNED_TEXT =
+export const DEMO_REP_FIELD_MEMO_CANNED_TEXT =
   "Just wrapped a walkthrough with Summit Ridge on site. They're in a good place — upbeat about the job, easy to talk to, and it feels like they trust us. I'd call the tone collaborative and the opportunity hot. No red flags on the relationship side."
 
 /** After Script 3 memo is saved — Eleven Labs (orb queue step). */
@@ -64,8 +64,7 @@ export const VOICE_MEMO_SAVED_SYSTEM_LINE = 'Memo saved to Field Notes. — gene
  * ──────────────────────────────────────────────────────────────────────────── */
 
 /** Turn 1 — rep opens; Oz confirms lumber P-O is auto-generated and asks for customer + deal. */
-export const SCRIPT3_T1_PROJECT_BASICS =
-  'Got it, Sami. The lumber P-O will auto-generate on the sheet — you can edit it if they email you a real purchase order number. First, who is the customer and what’s the deal we’re quoting?'
+export const SCRIPT3_T1_PROJECT_BASICS = `Got it, ${DEMO_REP_FIRST_NAME}. The lumber P-O will auto-generate on the sheet — you can edit it if they email you a real purchase order number. First, who is the customer and what’s the deal we’re quoting?`
 
 /** Turn 2 — Oz asks for the job description and order value. */
 export const SCRIPT3_T2_DESCRIPTION_AND_ORDER =

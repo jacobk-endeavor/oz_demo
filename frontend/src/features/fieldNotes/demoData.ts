@@ -1,8 +1,9 @@
+import { DEMO_REP_FIRST_NAME, DEMO_REP_FULL_NAME } from '../../config/demoRep'
 import type { FieldNotesDemo } from './types'
 
 export const fieldNotesDemo: FieldNotesDemo = {
   customer: 'ABC Building Supply',
-  rep: 'Sami Torres',
+  rep: DEMO_REP_FULL_NAME,
   meetingDate: 'Apr 29, 2026',
   meetingType: 'Field visit',
   productContext: 'Composite decking, railing kits, and jobsite delivery windows',
@@ -48,7 +49,7 @@ export const fieldNotesDemo: FieldNotesDemo = {
       id: 'quote',
       label: 'Draft bundle quote',
       detail: 'Composite decking, hidden fasteners, fascia, and expedited delivery option.',
-      owner: 'Sami',
+      owner: DEMO_REP_FIRST_NAME,
     },
     {
       id: 'specs',
@@ -60,7 +61,7 @@ export const fieldNotesDemo: FieldNotesDemo = {
       id: 'follow-up',
       label: 'Send follow-up prompt',
       detail: 'Ask for job deadline, railing quantity, and weekend delivery preference.',
-      owner: 'Sami',
+      owner: DEMO_REP_FIRST_NAME,
     },
   ],
   webActions: ['show_product_specs', 'draft_quote', 'create_follow_up_task'],

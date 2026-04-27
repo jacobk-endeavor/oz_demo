@@ -2,6 +2,8 @@
  * Shared demo data for the Kenny Hills field story (table + context for screen + LLM + TTS).
  */
 
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
+
 export const KENNY_HILLS_ACCOUNT = 'Kenny Hills Custom Contracting'
 export const KENNY_HILLS_BRANCH = 'Milwaukee · contractor · Pro deck focus'
 
@@ -52,14 +54,14 @@ export const KENNY_NOTES: readonly { who: string; text: string }[] = [
     text: 'Asked for TimberTech samples; keeps coming back to hidden-fastener look — walk the board with him on site before you quote add-ons.',
   },
   {
-    who: 'Sami · field note',
+    who: `${DEMO_REP_FIRST_NAME} · field note`,
     text: 'Price check on Pro line vs AZEK line; willing to trade up if margin story is clear and lead time beats Big Box.',
   },
   {
     who: 'Service',
     text: 'One delivery slip last spring; fixed same week. No open service debt; good for an upsell conversation.',
   },
-] as const
+]
 
 /**
  * Single paragraph for Eleven Labs “hear summary” (demo script; may not enumerate every row in `KENNY_SALES_ROWS`).

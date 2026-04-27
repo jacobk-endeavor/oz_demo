@@ -13,7 +13,7 @@ import {
   MOCK_PRIORITY_BRIEFS,
 } from './fieldNotesPriorityData'
 import { readStoredVoiceMemos, VOICE_MEMOS_CHANGED_EVENT } from './voiceMemoStore'
-import { appendCannedSamiFieldMemo } from '../fieldApp/fieldDemoVoiceMemo'
+import { appendCannedRepFieldMemo } from '../fieldApp/fieldDemoVoiceMemo'
 
 const PRIORITY_BRIEFS_KEY = 'field-notes-priority-briefs-v1'
 const DISMISSED_MOCK_BRIEF_IDS_KEY = 'field-notes-mock-briefs-dismissed-v1'
@@ -278,7 +278,7 @@ export function FieldNotesPage() {
     }
   }, [])
 
-  /** Demo shortcut: **P** appends the canned Sami field memo to Incoming voice memos (Field App voice flow also saves this on Script 3 VAD). */
+  /** Demo shortcut: **P** appends the canned rep field memo to Incoming voice memos (Field App voice flow also saves this on Script 3 VAD). */
   useEffect(() => {
     if (import.meta.env.VITEST) return
     const onKey = (e: KeyboardEvent) => {
@@ -288,7 +288,7 @@ export function FieldNotesPage() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       e.preventDefault()
       try {
-        appendCannedSamiFieldMemo()
+        appendCannedRepFieldMemo()
       } catch {
         /* localStorage / quota */
       }

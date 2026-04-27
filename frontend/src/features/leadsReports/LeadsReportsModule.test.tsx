@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
 import { LeadGenerationScreen, LeadsReportsModule, ReportingScreen } from './LeadsReportsModule'
 
 afterEach(() => {
@@ -55,7 +56,9 @@ describe('ReportingScreen', () => {
     expect(screen.getByText('Competitor mentions')).toBeInTheDocument()
     expect(screen.getByText('New lookalike leads')).toBeInTheDocument()
     expect(screen.getByText('Quote opportunities')).toBeInTheDocument()
-    expect(screen.getByText(/Sami should call Jordan Miles today/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(new RegExp(`${DEMO_REP_FIRST_NAME} should call Jordan Miles today`, 'i')),
+    ).toBeInTheDocument()
   })
 
   it('shows send and scheduled confirmations', async () => {

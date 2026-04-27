@@ -1,3 +1,4 @@
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
 import type {
   DashboardChartCard,
   ExcelDashboardMapping,
@@ -204,8 +205,7 @@ export const chartCards: DashboardChartCard[] = [
     type: 'ranked-list',
     insight:
       'Russin Lumber flagged unclear lead times, while Hudson Valley Supply needs cleaner reporting on backorders.',
-    salesAction:
-      'Have Sami call Russin Lumber with delivery assumptions and prepare a backorder reporting view for Hudson Valley Supply.',
+    salesAction: `Have ${DEMO_REP_FIRST_NAME} call Russin Lumber with delivery assumptions and prepare a backorder reporting view for Hudson Valley Supply.`,
     source: 'Complaint records: int_001 lead times; int_003 backorder reporting',
     freshness: 'Updated 18 minutes ago',
     data: [
@@ -249,12 +249,12 @@ export const chartCards: DashboardChartCard[] = [
     id: 'rep_activity',
     title: 'Rep Activity',
     type: 'table',
-    insight: 'Sami owns Russin Lumber in the customer file, while Ava and Mia appear on the newest interaction records.',
-    salesAction: 'Route decking follow-up to Sami, fastener upsell to Ava, and exterior trim pricing to Mia.',
+    insight: `${DEMO_REP_FIRST_NAME} owns Russin Lumber in the customer file, while Ava and Mia appear on the newest interaction records.`,
+    salesAction: `Route decking follow-up to ${DEMO_REP_FIRST_NAME}, fastener upsell to Ava, and exterior trim pricing to Mia.`,
     source: 'Rep sources: customers cust_001-cust_002 plus interactions int_001-int_003',
     freshness: 'Updated after morning call sync',
     data: [
-      { label: 'Sami', value: 1, trend: 'Russin owner' },
+      { label: DEMO_REP_FIRST_NAME, value: 1, trend: 'Russin owner' },
       { label: 'Ava', value: 1, trend: 'North Ridge note' },
       { label: 'Mia', value: 1, trend: 'Hudson email' },
     ],
@@ -293,7 +293,7 @@ export const chartCards: DashboardChartCard[] = [
 
 export const recommendedActions: SalesAction[] = [
   {
-    owner: 'Sami',
+    owner: DEMO_REP_FIRST_NAME,
     action: 'Call Russin Lumber with composite decking delivery assumptions and a bundle quote.',
     due: 'Today, 4:00 PM',
     sourceCue: 'int_001 complaint plus TimberTech mention',

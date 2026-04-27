@@ -2,6 +2,8 @@
  * Demo-only rows for the Field Notes managerial dashboard (voice memos + weekly highlights).
  */
 
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
+
 export type VoiceMemoConversationTurn = { speaker: 'Rep' | 'Customer' | 'System'; text: string }
 
 export type VoiceMemoRow = {
@@ -75,7 +77,7 @@ export const VOICE_MEMO_DEMO: VoiceMemoRow[] = [
   {
     id: 'vm-5',
     customer: 'Maple Street Millwork',
-    salesman: 'Sami',
+    salesman: DEMO_REP_FIRST_NAME,
     atIso: '2026-04-23T15:00:00-04:00',
     notesPreview: 'Custom mullion lead time…',
     conversation: conv([
@@ -111,7 +113,7 @@ export const VOICE_MEMO_DEMO: VoiceMemoRow[] = [
   {
     id: 'vm-8',
     customer: 'Riverside Rental & Sales',
-    salesman: 'Sami',
+    salesman: DEMO_REP_FIRST_NAME,
     atIso: '2026-04-22T08:50:00-04:00',
     notesPreview: 'Tooling package renewal…',
     conversation: conv([

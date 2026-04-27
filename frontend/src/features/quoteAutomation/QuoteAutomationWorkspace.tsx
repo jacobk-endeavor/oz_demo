@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
 import { Button, Panel, PulseOrb, Tag, joinClasses } from '../../shared/ui'
 import { quoteAutomationDemoData } from './demoData'
 import { LumberInvoicePreviewSheet } from './LumberInvoicePreviewSheet'
@@ -436,7 +437,7 @@ export function QuoteAutomationWorkspace({
                 role="status"
                 className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"
               >
-                Quote draft is review-ready. Sami can validate the assumptions before anything is
+                Quote draft is review-ready. {DEMO_REP_FIRST_NAME} can validate the assumptions before anything is
                 sent to the customer.
               </div>
             )}

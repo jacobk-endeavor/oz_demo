@@ -1,3 +1,4 @@
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
 import type { LeadProspect, RouteSummary, WeeklyDigestReport } from './types'
 
 export const leadPrompt = 'Find nearby customers similar to our best decking accounts.'
@@ -128,7 +129,7 @@ export const weeklyDigestReport: WeeklyDigestReport = {
     },
   ],
   recommendedRepActions: [
-    'Sami should call Jordan Miles today and book the first route stop.',
+    `${DEMO_REP_FIRST_NAME} should call Jordan Miles today and book the first route stop.`,
     'Add the four-stop route to tomorrow’s territory plan.',
     'Attach hidden fasteners to every decking quote discussed this week.',
   ],

@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
 import { QuoteAutomationWorkspace } from './QuoteAutomationWorkspace'
 
 describe('QuoteAutomationWorkspace', () => {
@@ -89,6 +90,8 @@ describe('QuoteAutomationWorkspace', () => {
     expect(screen.getByText('Review ready')).toBeTruthy()
     expect(screen.getByText('Review-ready / queued for rep')).toBeTruthy()
     expect(screen.getByRole('button', { name: /Submitted for rep review/i })).toBeTruthy()
-    expect(screen.getByRole('status')).toHaveTextContent(/Sami can validate the assumptions/i)
+    expect(screen.getByRole('status')).toHaveTextContent(
+      new RegExp(`${DEMO_REP_FIRST_NAME} can validate the assumptions`, 'i'),
+    )
   })
 })

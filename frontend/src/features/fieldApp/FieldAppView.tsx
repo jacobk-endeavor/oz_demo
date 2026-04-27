@@ -17,9 +17,13 @@ import {
   type FieldProductDemoStep,
 } from './FieldWorkflowRunPanels'
 import { useFieldMicrophone } from './useFieldMicrophone'
-import { buildFieldScriptQueue, nextScriptStartIndex } from './fieldDemoScriptQueue'
+import {
+  buildFieldScriptQueue,
+  nextScriptStartIndex,
+  phaseForSeekedStep,
+} from './fieldDemoScriptQueue'
 import { useFieldVoiceTurnTaking } from './fieldVoiceTurnTaking'
-import { appendCannedSamiFieldMemo } from './fieldDemoVoiceMemo'
+import { appendCannedRepFieldMemo } from './fieldDemoVoiceMemo'
 import { sendProductSpecsEmail } from './fieldDemoProductSpecsEmail'
 import {
   seedJcrLumberQuoteIfAbsent,
@@ -88,7 +92,7 @@ function FieldAppVoiceColumn() {
     const i = stepIndexRef.current
     if (phaseRef.current === 'speaking' && queue[i]?.appendCannedFieldMemoOnSpeechEnd) {
       try {
-        appendCannedSamiFieldMemo()
+        appendCannedRepFieldMemo()
       } catch {
         /* localStorage */
       }
@@ -213,6 +217,36 @@ function FieldAppVoiceColumn() {
     setPhase('listening')
   }, [skipTarget])
 
+  const goToStep = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= queue.length) return
+      cancelTtsRef.current = true
+      stopFieldTts()
+      setTtsError(null)
+      setStepIndex(index)
+      setPhase(phaseForSeekedStep(queue, index) === 'oz' ? 'oz' : 'listening')
+    },
+    [queue],
+  )
+
+  const onStepPrev = useCallback(() => {
+    if (phase === 'idle') return
+    if (stepIndex >= queue.length) {
+      goToStep(queue.length - 1)
+      return
+    }
+    if (stepIndex > 0) goToStep(stepIndex - 1)
+  }, [phase, stepIndex, queue.length, goToStep])
+
+  const onStepNext = useCallback(() => {
+    if (phase === 'idle') return
+    if (stepIndex < queue.length - 1) goToStep(stepIndex + 1)
+  }, [phase, stepIndex, queue.length, goToStep])
+
+  const canStepNav = phase !== 'idle'
+  const canStepPrev = canStepNav && (stepIndex > 0 || stepIndex === queue.length)
+  const canStepNext = canStepNav && stepIndex < queue.length - 1
+
   const [chromeHidden, setChromeHidden] = useState(false)
   const toggleChrome = useCallback(() => setChromeHidden((prev) => !prev), [])
 
@@ -224,6 +258,12 @@ function FieldAppVoiceColumn() {
   const stepNumber = Math.min(stepIndex + 1, queue.length)
   const statusLine = statusForPhase(phase, stepNumber, queue.length)
   const orbLabel = orbLabelForPhase(phase)
+  const currentStep = stepIndex < queue.length ? queue[stepIndex] : null
+  const showCurrentRepLine =
+    canStepNav &&
+    currentStep != null &&
+    !currentStep.skipRepListen &&
+    !/Oz thank-you/i.test(currentStep.label)
 
   return (
     <div
@@ -266,21 +306,23 @@ function FieldAppVoiceColumn() {
                 Voice failed: {ttsError}
               </p>
             ) : null}
-            <button
-              type="button"
-              onClick={onOrbClick}
-              title={micOnboardingDone ? 'Shift-click to open microphone settings' : undefined}
-              className="touch-manipulation [touch-action:manipulation] flex flex-col items-center gap-3 rounded-3xl p-2 outline-none ring-blue-500/0 transition-transform active:scale-[0.99] focus-visible:ring-2"
-              aria-label={orbLabel}
-              data-testid="field-app-orb"
-            >
-              <FieldVoiceSphere
-                pulseTarget={pulseTarget}
-                micStream={drivePulseFromMic ? micStream : null}
-                drivePulseFromMic={drivePulseFromMic}
-                label={orbLabel}
-              />
-            </button>
+            <div className="relative flex flex-col items-center">
+              <button
+                type="button"
+                onClick={onOrbClick}
+                title={micOnboardingDone ? 'Shift+click: microphone settings.' : undefined}
+                className="touch-manipulation [touch-action:manipulation] flex flex-col items-center gap-3 rounded-3xl p-2 outline-none ring-blue-500/0 transition-transform active:scale-[0.99] focus-visible:ring-2"
+                aria-label={orbLabel}
+                data-testid="field-app-orb"
+              >
+                <FieldVoiceSphere
+                  pulseTarget={pulseTarget}
+                  micStream={drivePulseFromMic ? micStream : null}
+                  drivePulseFromMic={drivePulseFromMic}
+                  label={orbLabel}
+                />
+              </button>
+            </div>
             {chromeHidden ? null : (
               <div className="flex w-full max-w-sm flex-col items-center gap-1 text-center">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
@@ -288,6 +330,28 @@ function FieldAppVoiceColumn() {
                 </p>
                 <p className="text-sm font-medium text-zinc-800">{stepLabel}</p>
                 <p className="text-xs text-zinc-600">{statusLine}</p>
+                {canStepNav && (canStepPrev || canStepNext) ? (
+                  <div className="mt-2 flex w-full max-w-sm flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      disabled={!canStepPrev}
+                      onClick={onStepPrev}
+                      className="rounded-full border border-zinc-300/80 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-zinc-800 shadow-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                      data-testid="field-app-step-prev"
+                    >
+                      ← Voice back
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!canStepNext}
+                      onClick={onStepNext}
+                      className="rounded-full border border-zinc-300/80 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-zinc-800 shadow-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                      data-testid="field-app-step-next"
+                    >
+                      Voice forward →
+                    </button>
+                  </div>
+                ) : null}
                 {canSkipScript ? (
                   <button
                     type="button"
@@ -297,6 +361,14 @@ function FieldAppVoiceColumn() {
                   >
                     Skip to next script →
                   </button>
+                ) : null}
+                {showCurrentRepLine && currentStep ? (
+                  <p
+                    className="mt-3 w-full max-w-sm text-left text-sm leading-relaxed text-zinc-900"
+                    data-testid="field-app-rep-line"
+                  >
+                    {currentStep.repLine}
+                  </p>
                 ) : null}
               </div>
             )}
@@ -345,7 +417,7 @@ function statusForPhase(phase: Phase, stepNumber: number, total: number): string
       return 'Tap the orb to start the demo.'
     case 'listening':
       return stepNumber === 1
-        ? 'Read your first line aloud. The next Oz line plays when you pause.'
+        ? 'Oz will reply when you pause.'
         : 'Read the next line aloud. The next Oz line plays when you pause.'
     case 'speaking':
       return 'Listening — keep going. Oz will pick up when you stop.'

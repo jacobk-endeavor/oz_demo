@@ -1,8 +1,9 @@
+import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
 import type { QuoteAutomationDemoData } from './types'
 
 export const quoteAutomationDemoData: QuoteAutomationDemoData = {
   customerName: 'Summit Ridge Framing',
-  repName: 'Sami',
+  repName: DEMO_REP_FIRST_NAME,
   requestedProduct: 'Marshall Court multi-family lumber package',
   constraints: [
     'Three flatbed drops tied to crane picks',
