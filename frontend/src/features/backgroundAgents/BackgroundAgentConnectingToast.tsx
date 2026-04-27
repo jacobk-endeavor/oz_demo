@@ -14,7 +14,7 @@ function connectionRowPhase(connections: readonly BackgroundAgentCompany[], inde
 }
 
 /**
- * “Creating” card — same structure as the Background agents list, with a live connection list.
+ * “Creating” card — same structure as the Background Agents list, with a live connection list.
  */
 export function BackgroundAgentConnectingToast({
   agentName,

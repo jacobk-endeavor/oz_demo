@@ -42,11 +42,6 @@ export function BackgroundAgentsPage({ agents, onNewAgent, onDeleteAgent }: Back
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900">Your Background Agents</h2>
-          <p className="mt-0.5 max-w-xl text-sm text-zinc-600">
-            Each agent runs on a schedule and delivers a defined outcome. Create one from chat with{' '}
-            <span className="font-medium text-zinc-800">Background Agent</span> plus what it should do and when it
-            should run — Oz will confirm details before saving.
-          </p>
         </div>
         <Button type="button" variant="primary" onClick={onNewAgent} className="shrink-0">
           New Background Agent
@@ -59,7 +54,7 @@ export function BackgroundAgentsPage({ agents, onNewAgent, onDeleteAgent }: Back
           schedule, or use the button above to jump there.
         </div>
       ) : (
-        <ul className="m-0 list-none space-y-3 p-0" aria-label="Background agents list">
+        <ul className="m-0 list-none space-y-3 p-0" aria-label="Background Agents list">
           {agents.map((a) => {
             const title = backgroundAgentDisplayName(a as BackgroundAgentRecord)
             const detail = a.taskDetail?.trim() || a.assignment

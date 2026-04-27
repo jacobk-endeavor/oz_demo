@@ -278,7 +278,7 @@ export function deleteBackgroundAgent(id: string): BackgroundAgentRecord[] {
   return next
 }
 
-/** Card / notification title from stored fields (same logic as the Background agents list). */
+/** Card / notification title from stored fields (same logic as the Background Agents list). */
 export function backgroundAgentDisplayName(
   rec: Pick<BackgroundAgentRecord, 'taskTitle' | 'assignment'>,
 ): string {
