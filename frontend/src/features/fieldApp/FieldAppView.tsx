@@ -77,6 +77,15 @@ function FieldAppVoiceColumn() {
   const [ttsError, setTtsError] = useState<string | null>(null)
   const [micSetupExpanded, setMicSetupExpanded] = useState(false)
   const cancelTtsRef = useRef(false)
+
+  /** Re-open the mic in idle (after onboarding) so the orb can track level before the first orb tap. */
+  useEffect(() => {
+    if (import.meta.env.VITEST) return
+    if (phase !== 'idle' || !micOnboardingDone) return
+    if (micStream) return
+    if (micStatus === 'connecting' || micStatus === 'denied') return
+    void ensureMicStream()
+  }, [phase, micOnboardingDone, micStream, micStatus, ensureMicStream])
   const phaseRef = useRef<Phase>('idle')
   useEffect(() => {
     phaseRef.current = phase
@@ -263,9 +272,17 @@ function FieldAppVoiceColumn() {
 
   const ozPulse = useSpeechLikePulse(phase === 'oz')
   const showFullMicUI = !micOnboardingDone || micSetupExpanded
-  /** `awaitOrb`: script boundary — not listening for VAD, but show ambient mic reactivity on the orb. */
-  const drivePulseFromMic = phase === 'listening' || phase === 'speaking' || phase === 'awaitOrb'
-  const pulseTarget = drivePulseFromMic ? 1 : phase === 'oz' ? ozPulse : 0.16
+  /**
+   * Mic-driven orb when a stream exists: idle (before first tap, if the mic is already live),
+   * `awaitOrb` (between scripts, VAD off), and active listening/speaking. Without a stream in
+   * idle, stay on the low resting pulse.
+   */
+  const useMicDrivenOrb =
+    (phase === 'idle' && Boolean(micStream)) ||
+    phase === 'listening' ||
+    phase === 'speaking' ||
+    phase === 'awaitOrb'
+  const pulseTarget = useMicDrivenOrb ? 1 : phase === 'oz' ? ozPulse : 0.16
   const stepLabel = stepIndex < queue.length ? queue[stepIndex]!.label : 'Done'
   const stepNumber = Math.min(stepIndex + 1, queue.length)
   const statusLine = statusForPhase(phase, stepNumber, queue.length)
@@ -286,7 +303,7 @@ function FieldAppVoiceColumn() {
       )}
       data-testid="field-app-surface"
       onDoubleClick={toggleChrome}
-      title="Double-click to show or hide step details and header"
+      title="M: mute or unmute Field voice (works on any page). Double-click: show or hide step details and header."
     >
       <div className="pointer-events-auto flex min-h-0 flex-1 flex-col" data-testid="field-voice-column">
         <div className={joinClasses('flex min-h-0 flex-1 flex-col', safeTop)}>
@@ -329,8 +346,8 @@ function FieldAppVoiceColumn() {
               >
                 <FieldVoiceSphere
                   pulseTarget={pulseTarget}
-                  micStream={drivePulseFromMic ? micStream : null}
-                  drivePulseFromMic={drivePulseFromMic}
+                  micStream={useMicDrivenOrb ? micStream : null}
+                  drivePulseFromMic={useMicDrivenOrb}
                   label={orbLabel}
                 />
               </button>

@@ -47,6 +47,7 @@ import {
   isOpenAiConfigured,
   type OzOpenAiMessage,
 } from './services/ozOpenAi'
+import { useFieldTtsMuteHotkey } from './services/fieldElevenTts'
 import { evaluateBackgroundAgentWithLlm } from './features/backgroundAgents/backgroundAgentAi'
 import { connectionsForAgentRecord } from './features/backgroundAgents/backgroundAgentConnections'
 import { BackgroundAgentConnectingToast } from './features/backgroundAgents/BackgroundAgentConnectingToast'
@@ -175,6 +176,7 @@ function delayMs(ms: number): Promise<void> {
 }
 
 export default function App() {
+  useFieldTtsMuteHotkey()
   const [page, navigate] = useHashRoute()
   const [leadGenContextOpen, setLeadGenContextOpen] = useState(false)
   const [leadDistributorRowStaggerMs, setLeadDistributorRowStaggerMs] = useState(

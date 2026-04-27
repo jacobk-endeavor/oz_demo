@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 /**
  * Field App: Eleven Labs TTS via the dev/preview server at `POST /api/oz/elevenlabs/tts`
  * (see `vite.config.ts`). No API key in the browser.
@@ -13,7 +15,29 @@ let ttsUnblock: (() => void) | null = null
 let ttsFetchAbort: AbortController | null = null
 let ttsFetchTimeout: ReturnType<typeof setTimeout> | null = null
 
+/** Field ElevenLabs TTS; toggled with **M** app-wide via `useFieldTtsMuteHotkey` in `App`. */
+let fieldTtsOutputMuted = false
+
 const ttsSessionListeners = new Set<(key: string | null) => void>()
+
+export function isFieldTtsOutputMuted(): boolean {
+  return fieldTtsOutputMuted
+}
+
+/**
+ * Mutes or unmutes Field TTS output. Applies to the current and future
+ * `playFieldElevenTts` playback (volume 0/1; updates the live `HTMLAudioElement` when set).
+ */
+export function setFieldTtsOutputMuted(muted: boolean): void {
+  fieldTtsOutputMuted = muted
+  if (lastAudio) lastAudio.volume = muted ? 0 : 1
+}
+
+/** @returns the new muted state */
+export function toggleFieldTtsOutputMute(): boolean {
+  setFieldTtsOutputMuted(!fieldTtsOutputMuted)
+  return fieldTtsOutputMuted
+}
 
 function notifyTtsSession(key: string | null) {
   for (const fn of ttsSessionListeners) fn(key)
@@ -140,6 +164,7 @@ export async function playFieldElevenTts(
   const url = URL.createObjectURL(blob)
   lastObjectUrl = url
   const audio = new Audio(url)
+  audio.volume = fieldTtsOutputMuted ? 0 : 1
   lastAudio = audio
   onPlaybackStart?.()
   return new Promise((resolve, reject) => {
@@ -163,4 +188,27 @@ export async function playFieldElevenTts(
       reject(e instanceof Error ? e : new Error(String(e)))
     })
   })
+}
+
+/**
+ * **M** / **m**: toggle Field TTS output mute on any page (capture phase; works without focusing the orb).
+ * Skipped while focus is in `input`, `textarea`, `select`, `contenteditable`, or `[data-field-ignore-hotkeys]`.
+ */
+export function useFieldTtsMuteHotkey() {
+  useEffect(() => {
+    if (import.meta.env.VITEST) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'm' && e.key !== 'M') return
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const raw = e.target
+      if (raw instanceof HTMLElement) {
+        if (raw.closest('input, textarea, select, [data-field-ignore-hotkeys]')) return
+        if (raw.isContentEditable) return
+      }
+      e.preventDefault()
+      toggleFieldTtsOutputMute()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [])
 }
