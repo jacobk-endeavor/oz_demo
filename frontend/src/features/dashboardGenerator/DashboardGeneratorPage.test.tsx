@@ -2,7 +2,14 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { afterEach, describe, expect, it } from 'vitest'
-import { DashboardGeneratorPage } from './DashboardGeneratorPage'
+import { DashboardGeneratorPage, deriveDashboardTitleFromPrompt } from './DashboardGeneratorPage'
+
+describe('deriveDashboardTitleFromPrompt', () => {
+  it('uses the first non-empty line and normalizes whitespace', () => {
+    expect(deriveDashboardTitleFromPrompt('Monthly demand by region')).toBe('Monthly demand by region')
+    expect(deriveDashboardTitleFromPrompt('\n\n  Lead sources  \nignored')).toBe('Lead sources')
+  })
+})
 
 describe('DashboardGeneratorPage', () => {
   afterEach(() => {
@@ -18,13 +25,11 @@ describe('DashboardGeneratorPage', () => {
     expect(screen.getByText('Published charts')).toBeInTheDocument()
   })
 
-  it('opens the publish flow for a single chart from the tile and shows a share URL', async () => {
+  it('opens the publish flow from the group header and shows a share URL', async () => {
     const user = userEvent.setup()
     render(<DashboardGeneratorPage />)
 
-    const publishButtons = screen.getAllByTestId('dashboard-chart-tile-publish')
-    expect(publishButtons.length).toBeGreaterThan(0)
-    await user.click(publishButtons[0]!)
+    await user.click(screen.getAllByTestId('dashboard-your-charts-group-publish')[0]!)
 
     const dialog = screen.getByRole('dialog')
     await user.click(within(dialog).getByRole('button', { name: 'Publish dashboard' }))
@@ -56,6 +61,38 @@ describe('DashboardGeneratorPage', () => {
     expect(within(panel).getByText(/Selected chart/i)).toBeInTheDocument()
   })
 
+  it('closes the preview when Close preview is clicked', async () => {
+    const user = userEvent.setup()
+    render(<DashboardGeneratorPage />)
+
+    await user.click(screen.getAllByTestId('dashboard-chart-tile')[0]!)
+    expect(screen.getByTestId('dashboard-display-panel')).toBeInTheDocument()
+
+    await user.click(screen.getByTestId('dashboard-display-close'))
+    expect(screen.queryByTestId('dashboard-display-panel')).not.toBeInTheDocument()
+  })
+
+  it('removes a chart when the tile delete control is used', async () => {
+    const user = userEvent.setup()
+    render(<DashboardGeneratorPage />)
+
+    const before = screen.getAllByTestId('dashboard-chart-tile').length
+    expect(before).toBeGreaterThan(1)
+    await user.click(screen.getAllByTestId('dashboard-chart-tile-delete')[0]!)
+
+    expect(screen.getAllByTestId('dashboard-chart-tile').length).toBe(before - 1)
+  })
+
+  it('removes a group when Delete group is clicked', async () => {
+    const user = userEvent.setup()
+    render(<DashboardGeneratorPage />)
+
+    const groupsBefore = screen.getAllByTestId('dashboard-your-charts-group').length
+    await user.click(screen.getByTestId('dashboard-your-charts-group-delete'))
+
+    expect(screen.queryAllByTestId('dashboard-your-charts-group')).toHaveLength(groupsBefore - 1)
+  })
+
   it('shows every chart in the batch when the group title preview is clicked', async () => {
     const user = userEvent.setup()
     render(<DashboardGeneratorPage />)
@@ -67,7 +104,10 @@ describe('DashboardGeneratorPage', () => {
     expect(within(panel).getByText(/Chart set/i)).toBeInTheDocument()
     expect(within(panel).getByText('Product lines requested (customers)')).toBeInTheDocument()
     expect(within(panel).getByText('Demand by lead source')).toBeInTheDocument()
-    expect(within(panel).getAllByTestId('dashboard-bar-chart-data-table').length).toBe(2)
+    expect(
+      within(panel).getByRole('list', { name: 'Product lines requested (customers)' }),
+    ).toBeInTheDocument()
+    expect(within(panel).getByRole('list', { name: 'Demand by lead source' })).toBeInTheDocument()
   })
 
   it('opens publish from the article (group) header button', async () => {
