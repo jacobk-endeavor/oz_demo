@@ -86,7 +86,7 @@ export function CompetitorOffersTable({
                   style={{ animationDelay: `${Math.min(index, 30) * 65}ms` }}
                   title="Click product or price for chat context. Double-click for listing, images, and web shortcuts. Competitor name opens the store listing. ⌘-click or middle-click the row opens the listing."
                   onClick={(e) => {
-                    if (e.composedPath().some((n) => n instanceof HTMLAnchorElement)) {
+                    if (e.nativeEvent.composedPath().some((n: EventTarget) => n instanceof HTMLAnchorElement)) {
                       return
                     }
                     if (e.metaKey || e.ctrlKey) {
