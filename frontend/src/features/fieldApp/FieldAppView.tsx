@@ -48,12 +48,14 @@ export function FieldAppView({ mode, workflowId }: FieldAppViewProps) {
   return <FieldAppVoiceColumn />
 }
 
-type Phase = 'idle' | 'listening' | 'speaking' | 'oz' | 'done'
+type Phase = 'idle' | 'awaitOrb' | 'listening' | 'speaking' | 'oz' | 'done'
 
 /**
  * Field App home: tap the orb to start. The mic opens, the rep speaks the next
  * scripted line, and when they stop talking the next Eleven Labs line plays.
- * Loops until every step in `buildFieldScriptQueue()` (Field voice runbook) has played.
+ * Between **scripts** (scriptIndex change), the mic turns off; tap the orb again
+ * to start listening for the next script. Turns within the same script still chain
+ * automatically. Loops until every step in `buildFieldScriptQueue()` has played.
  */
 function FieldAppVoiceColumn() {
   const {
@@ -150,7 +152,9 @@ function FieldAppVoiceColumn() {
         if (next < queue.length && queue[next]?.skipRepListen) {
           setPhase('oz')
         } else if (next < queue.length) {
-          setPhase('listening')
+          const isFirstLineOfNewScript =
+            next > 0 && queue[next]!.scriptIndex !== queue[next - 1]!.scriptIndex
+          setPhase(isFirstLineOfNewScript ? 'awaitOrb' : 'listening')
         } else {
           setPhase('done')
         }
@@ -185,11 +189,15 @@ function FieldAppVoiceColumn() {
         setMicSetupExpanded(true)
         return
       }
+      if (phase === 'awaitOrb') {
+        setPhase('listening')
+        return
+      }
       if (phase === 'idle' || phase === 'done') {
         void startRun()
       }
     },
-    [micOnboardingDone, phase, queue.length, startRun],
+    [micOnboardingDone, phase, startRun],
   )
 
   const onFieldMicAllow = useCallback(() => {
@@ -207,15 +215,16 @@ function FieldAppVoiceColumn() {
   const skipTarget = nextScriptStartIndex(queue, stepIndex)
   const canSkipScript =
     skipTarget !== null &&
-    (phase === 'listening' || phase === 'speaking' || phase === 'oz')
+    (phase === 'listening' || phase === 'speaking' || phase === 'oz' || phase === 'awaitOrb')
   const onSkipScript = useCallback(() => {
     if (skipTarget === null) return
     cancelTtsRef.current = true
     stopFieldTts()
     setTtsError(null)
     setStepIndex(skipTarget)
-    setPhase('listening')
-  }, [skipTarget])
+    const p = phaseForSeekedStep(queue, skipTarget)
+    setPhase(p === 'oz' ? 'oz' : p === 'awaitOrb' ? 'awaitOrb' : 'listening')
+  }, [queue, skipTarget])
 
   const goToStep = useCallback(
     (index: number) => {
@@ -224,7 +233,8 @@ function FieldAppVoiceColumn() {
       stopFieldTts()
       setTtsError(null)
       setStepIndex(index)
-      setPhase(phaseForSeekedStep(queue, index) === 'oz' ? 'oz' : 'listening')
+      const p = phaseForSeekedStep(queue, index)
+      setPhase(p === 'oz' ? 'oz' : p === 'awaitOrb' ? 'awaitOrb' : 'listening')
     },
     [queue],
   )
@@ -416,6 +426,8 @@ function statusForPhase(phase: Phase, stepNumber: number, total: number): string
   switch (phase) {
     case 'idle':
       return 'Tap the orb to start the demo.'
+    case 'awaitOrb':
+      return 'Mic is off. Tap the orb to listen for the next part.'
     case 'listening':
       return stepNumber === 1
         ? 'Oz will reply when you pause.'
@@ -433,6 +445,8 @@ function orbLabelForPhase(phase: Phase): string {
   switch (phase) {
     case 'idle':
       return 'Tap the orb to start the demo. Oz answers between your lines.'
+    case 'awaitOrb':
+      return 'Tap the orb to turn the mic on for the next part.'
     case 'listening':
       return 'Listening. Speak your next line; Oz will reply when you pause.'
     case 'speaking':

@@ -168,16 +168,17 @@ export function nextScriptStartIndex(
 }
 
 /**
- * When the user jumps to `index` in the queue, whether they should hear Oz immediately
- * (`oz`) or the mic wait state (`listening`) first.
+ * When the user jumps to `index` in the queue, which interaction mode applies first.
+ * `awaitOrb` = first line of a new script: mic is off until the rep taps the orb.
  */
 export function phaseForSeekedStep(
   queue: readonly FieldScriptStep[],
   index: number,
-): 'listening' | 'oz' {
+): 'listening' | 'oz' | 'awaitOrb' {
   const step = queue[index]
   if (!step) return 'listening'
   if (step.skipRepListen) return 'oz'
   if (index > 0 && queue[index - 1]!.appendCannedFieldMemoOnSpeechEnd) return 'oz'
+  if (index > 0 && step.scriptIndex !== queue[index - 1]!.scriptIndex) return 'awaitOrb'
   return 'listening'
 }
