@@ -30,10 +30,13 @@ npm run validate
 
 ## DigitalOcean Prep
 
-The first DigitalOcean App Platform deployment should use the `frontend/` app as the build target:
+Use **one Web Service** for this repo root (not a static site only). Vite’s `vite preview` serves `dist/` **and** the `/api/oz/*` proxies defined in `frontend/vite.config.ts` (voice, OpenAI, etc.); a static component cannot run those routes.
 
-- Build command: `npm run build`
-- Run/preview command for static preview: `npm run preview`
-- Frontend source directory: `frontend`
+- **Source directory:** `/` (repository root)
+- **Build command:** `npm run build`
+- **Run command:** `npm start` (uses `vite preview --host 0.0.0.0` and `$PORT`; set **HTTP port** to **8080** unless your app uses a different `PORT`)
+- **Health check:** path `/`
 
-Keep real API keys in `.env` locally and DigitalOcean environment variables in App Platform. Do not commit `.env`.
+An example App Spec lives in [`.do/app.yaml`](.do/app.yaml). Point **GitHub** and **region** there to match your account if you fork or move the repo.
+
+Keep real API keys in `.env` locally and set **ELEVENLABS_API_KEY** (and **OPENAI_API_KEY** if you use transcription) under the component’s environment variables in App Platform. Do not commit `.env`.

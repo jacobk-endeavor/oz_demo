@@ -1,0 +1,41 @@
+# DigitalOcean App Platform — single Web Service serves the Vite app and /api/* proxies
+# (ElevenLabs TTS, OpenAI, etc.). Do not add a separate static site that only serves dist/;
+# /api/oz/elevenlabs/tts must hit this same service.
+#
+# Set in the control panel (or add encrypted envs here): ELEVENLABS_API_KEY, OPENAI_API_KEY, etc.
+# Docs: https://docs.digitalocean.com/products/app-platform/reference/app-spec/
+
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+
+features:
+  - buildpack-stack=ubuntu-22
+
+name: oz-demo
+region: nyc
+
+services:
+  - name: web
+    environment_slug: node-js
+    github:
+      repo: jacobk-endeavor/oz_demo
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    build_command: npm run build
+    run_command: npm start
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    health_check:
+      http_path: /
+      initial_delay_seconds: 15
+      period_seconds: 10
+      timeout_seconds: 10
+      failure_threshold: 5
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+        type: GENERAL
