@@ -80,7 +80,7 @@ function normalizeLlmState(
       },
       rephase: true,
       openLeadContext: true,
-      delayMs: 1_500,
+      delayMs: 750,
     }
   }
 
@@ -164,7 +164,7 @@ function normalizeLlmState(
     state: s,
     rephase: changed,
     openLeadContext: false,
-    delayMs: 1_200,
+    delayMs: 600,
   }
 }
 

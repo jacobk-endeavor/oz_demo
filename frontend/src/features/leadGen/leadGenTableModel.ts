@@ -433,7 +433,7 @@ function tryHeuristicColumnTextFilters(
   return {
     state: s,
     reply: `Narrowing the list with ${what} — the grid is rephasing. Say **reset filter** to clear, or rephrase in Ask for a different slice.`,
-    delayMs: 1_200,
+    delayMs: 600,
   }
 }
 
@@ -565,7 +565,7 @@ export function processLeadTableChat(
   let reply: string | null = null
   let rephase = false
   let openLeadContext = false
-  let delayMs = 720
+  let delayMs = 360
 
   if (matchMilwaukeeLeadGridIntent(t)) {
     openLeadContext = true
@@ -577,7 +577,7 @@ export function processLeadTableChat(
     }
     reply =
       'Pulling the Milwaukee distributor grid — I’m phasing it in on the right. Ask to narrow, sort, or sub-sort (e.g. by source, then by industry or location).'
-    return { state: s, reply, rephase, openLeadContext, delayMs: 1200 }
+    return { state: s, reply, rephase, openLeadContext, delayMs: 600 }
   }
 
   if (/\bfind more|more leads|expand (?:the )?set|bigger (?:data )?set\b/i.test(t)) {
@@ -585,7 +585,7 @@ export function processLeadTableChat(
     s.phaseToken += 1
     rephase = true
     reply = `Expanding the sample — ${s.dataset === 'expanded' ? 'a lot' : 'more'} of leads are materializing, staggered on purpose.`
-    delayMs = 1400
+    delayMs = 700
     return { state: s, reply, rephase, openLeadContext: false, delayMs }
   }
 
@@ -605,7 +605,7 @@ export function processLeadTableChat(
       reply = shouldKeepSortOnSourceFilter(t)
         ? `Filtering to ${list} — your sort is unchanged; the grid is narrowed in the **Source** column.`
         : `Filtering to ${list} — re-hashing under ${scope}, then your sub-sorts apply.`
-      return { state: s, reply, rephase, openLeadContext: false, delayMs: 900 }
+      return { state: s, reply, rephase, openLeadContext: false, delayMs: 450 }
     }
   }
   if (/\bclear (?:the )?source|all sources|drop source filter\b/i.test(t)) {
@@ -613,7 +613,7 @@ export function processLeadTableChat(
     s.phaseToken += 1
     rephase = true
     reply = 'Cleared the source filter. Re-sorting the full set.'
-    return { state: s, reply, rephase, openLeadContext: false, delayMs: 900 }
+    return { state: s, reply, rephase, openLeadContext: false, delayMs: 450 }
   }
 
   if (
@@ -628,7 +628,7 @@ export function processLeadTableChat(
     rephase = true
     reply =
       'Keeping **people we already know** (engaged / net-new is filtered). Rows are repainting with a relationship bias.'
-    return { state: s, reply, rephase, openLeadContext: false, delayMs: 900 }
+    return { state: s, reply, rephase, openLeadContext: false, delayMs: 450 }
   }
 
   if (/\ball leads|show everyone|include net.?new|reset filter|clear engagement|drop engagement filter\b/i.test(t)) {
@@ -638,7 +638,7 @@ export function processLeadTableChat(
     s.phaseToken += 1
     rephase = true
     reply = 'Opening back up: **all** engagement types, sources, and column text filters. Watch the set breathe back in row by row.'
-    return { state: s, reply, rephase, openLeadContext: false, delayMs: 1000 }
+    return { state: s, reply, rephase, openLeadContext: false, delayMs: 500 }
   }
 
   const sortBits = parseSortColumn(t)
@@ -659,7 +659,7 @@ export function processLeadTableChat(
         s.sortSecondaryDir
       }) so buckets (e.g. under **Salesforce**) are stable, then ties break.`
       : `Sorting by **${pWord}** (${s.sortPrimaryDir}) — the table is reflowing.`
-    return { state: s, reply, rephase, openLeadContext: false, delayMs: 800 }
+    return { state: s, reply, rephase, openLeadContext: false, delayMs: 400 }
   }
 
   if (
@@ -673,7 +673,7 @@ export function processLeadTableChat(
         'Try: **“Find more leads”** to expand, **“only people we’ve met”** to filter engaged, **“sort by location”** or **“double sort: source, then name”** / **“sub-sort by industry descending”** (tie-breaks within a bucket), **“break ties by name”**, **“only from Salesforce”**, **“Source: Apollo”** (column-style filter, keeps your sort), **“Apollo and Outlook”** (OR across those systems), or use the **funnel** on the **Source** column. **Natural language in Ask** (e.g. **employees \u003e 1000**, **only in pharma**, **sort by size**) is interpreted by the same handler when an API key is on. Click other headers to sort, too.',
       rephase: false,
       openLeadContext: false,
-      delayMs: 720,
+      delayMs: 360,
     }
   }
 

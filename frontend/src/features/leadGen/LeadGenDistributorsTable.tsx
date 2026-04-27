@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useState, type ReactNode } from 'react'
 import { CloseIcon } from '../../shared/ui/icons'
 import { joinClasses } from '../../shared/ui'
 import { formatCompactUsd } from './leadSpendProfiles'
@@ -109,12 +109,44 @@ function Td({
   )
 }
 
+const DEFAULT_LEAD_ROW_STAGGER_MS = 200
+const SKELETON_ROW_COUNT = 7
+
+function SkeletonRows() {
+  return (
+    <>
+      {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
+        <tr
+          key={`sk-${index}`}
+          className={index % 2 === 0 ? 'bg-white' : 'bg-zinc-50/55'}
+        >
+          <td
+            colSpan={13}
+            className="border border-zinc-200/80 px-3 py-3"
+          >
+            <div
+              className="h-3 max-w-full rounded bg-zinc-200/80 motion-safe:animate-pulse"
+              style={{ maxWidth: `${68 + (index % 4) * 7}%` }}
+            />
+          </td>
+        </tr>
+      ))}
+    </>
+  )
+}
+
 export function LeadGenDistributorsTable({
   rows,
   view,
   onSort,
   onClose,
   phaseKey,
+  rowStaggerMs = DEFAULT_LEAD_ROW_STAGGER_MS,
+  /**
+   * Paint header + inert placeholder rows for one frame first (double rAF) so the grid shell
+   * can layout before data rows and row animations run—used when swapping from the competitor board.
+   */
+  deferredDataPaint = false,
   selectedRowIds = [],
   onRowToggleContext,
 }: {
@@ -125,11 +157,38 @@ export function LeadGenDistributorsTable({
   onClose?: () => void
   /** Changes when a “regenerate / phase” is triggered. */
   phaseKey: string | number
+  /** Delay between each row’s entrance animation (sequential reveal). */
+  rowStaggerMs?: number
+  deferredDataPaint?: boolean
   /** `rowId` = `linkedInUrl` (stable within the current grid). */
   selectedRowIds?: string[]
   onRowToggleContext?: (row: DistributorRow, displayIndex: number) => void
 }) {
   const rowChatEnabled = onRowToggleContext != null
+  const [dataBodyReady, setDataBodyReady] = useState(() => !deferredDataPaint)
+
+  useLayoutEffect(() => {
+    if (!deferredDataPaint) {
+      setDataBodyReady(true)
+      return
+    }
+    if (typeof window === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDataBodyReady(true)
+      return
+    }
+    setDataBodyReady(false)
+    let r1 = 0
+    let r2 = 0
+    r1 = requestAnimationFrame(() => {
+      r2 = requestAnimationFrame(() => {
+        setDataBodyReady(true)
+      })
+    })
+    return () => {
+      cancelAnimationFrame(r1)
+      cancelAnimationFrame(r2)
+    }
+  }, [deferredDataPaint])
   return (
     <div
       className="group/table relative flex h-full min-h-0 w-full min-w-0 flex-col bg-white text-zinc-900 antialiased shadow-none selection:bg-sky-100/70"
@@ -159,6 +218,7 @@ export function LeadGenDistributorsTable({
         <table
           className="w-full min-w-[1692px] border-collapse text-left [border-spacing:0]"
           key={String(phaseKey)}
+          aria-busy={!dataBodyReady}
         >
           <thead className="sticky top-0 z-[2] border-b border-zinc-200/90 bg-zinc-50/95 shadow-[0_1px_0_0_rgba(228,228,231,0.9)]">
             <tr>
@@ -223,7 +283,11 @@ export function LeadGenDistributorsTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => {
+            {!dataBodyReady ? (
+              <SkeletonRows />
+            ) : null}
+            {dataBodyReady
+              ? rows.map((row, index) => {
               const selected = selectedRowIds.includes(row.linkedInUrl)
               return (
               <tr
@@ -237,7 +301,7 @@ export function LeadGenDistributorsTable({
                 )}
                 style={{
                   /* Sequential reveal: each row starts after the previous (staggered, slower for readability). */
-                  animationDelay: `${index * 100}ms`,
+                  animationDelay: `${index * rowStaggerMs}ms`,
                 }}
                 onClick={() => onRowToggleContext?.(row, index + 1)}
               >
@@ -319,15 +383,17 @@ export function LeadGenDistributorsTable({
                 </Td>
               </tr>
               )
-            })}
+            })
+              : null}
           </tbody>
         </table>
       </div>
       <div className="shrink-0 border-t border-zinc-200/90 bg-zinc-50/60 px-3 py-2.5 text-xs text-zinc-500">
-        {rowChatEnabled && (
-          <p className="mb-0.5 leading-relaxed">Click a row to add it to the chat context.</p>
-        )}
-        <p className="tabular-nums">Showing {rows.length} of {MILWAUKEE_LEAD_RESULT_TOTAL} results</p>
+        <p className="tabular-nums">
+          {dataBodyReady
+            ? `Showing ${rows.length} of ${MILWAUKEE_LEAD_RESULT_TOTAL} results`
+            : 'Loading results…'}
+        </p>
       </div>
     </div>
   )
