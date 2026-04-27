@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Panel, PulseOrb, Tag, joinClasses } from '../../shared/ui'
 import { quoteAutomationDemoData } from './demoData'
+import { LumberInvoicePreviewSheet } from './LumberInvoicePreviewSheet'
 import type { QuoteAutomationDemoData, TaskStatus } from './types'
 import { JobCostEstimateRecapSheet } from '../fieldApp/JobCostEstimateRecapSheet'
 import { JCR_JSON_EXAMPLE_DEFAULTS } from '../fieldApp/jobCostEstimateRecap'
@@ -79,6 +80,9 @@ export function QuoteAutomationWorkspace({
     [activeTaskIndex, data.tasks, taskCount],
   )
 
+  /** Same lumber Job Cost seed as the template (PO and Marshall Court copy match `JCR_JSON_EXAMPLE_DEFAULTS`). */
+  const voiceWalkthroughJcrOverrides = useMemo(() => ({ ...JCR_JSON_EXAMPLE_DEFAULTS }), [])
+
   function handleReviewAction() {
     if (allTasksComplete) {
       setIsReviewSubmitted(true)
@@ -102,12 +106,12 @@ export function QuoteAutomationWorkspace({
       <Panel
         eyebrow="Voice quote automation"
         title="Editable Job Cost Recap sheets"
-        description="Excel-like quote sheets — formulas live as you edit. The first card is the schema template loaded by default; the second card is generated from the field voice walkthrough."
+        description="Excel-like Job Cost Recap sheets plus a read-only lumber invoice preview. The template matches Summit Ridge / Marshall Court; the second sheet simulates data returned from the Field voice walkthrough."
       >
         <div className="space-y-5" data-testid="voice-quote-sheets">
           <JobCostEstimateRecapSheet
             initialOverrides={{ ...JCR_JSON_EXAMPLE_DEFAULTS }}
-            caption="Template example — Sammy Carter · automation cell upgrade (Q25-1102)"
+            caption="Template example — Summit Ridge Framing · lumber package (Q25-4420-LUM)"
             onCreateInvoice={({ computed }) => {
               const total = computed.total_cost ?? 0
               const profit = computed.profit ?? 0
@@ -126,17 +130,20 @@ export function QuoteAutomationWorkspace({
             </p>
           ) : null}
 
+          <LumberInvoicePreviewSheet />
+
           {showVoiceWalkthroughQuote ? (
             <div data-testid="voice-walkthrough-quote-card" className="space-y-3">
               <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50/60 px-3 py-2 text-sm text-fuchsia-950">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-fuchsia-800">From voice walkthrough</p>
                 <p className="mt-0.5">
-                  Generated from the Field voice scripts (capped composite line, Apex hidden fasteners, color-matched
-                  fascia). Edit any cell — formulas recompute live.
+                  Pre-filled from the Field lumber quote scripts (Summit Ridge Framing, Marshall Court, Q25-4420-LUM).
+                  Sample lumber PO shown in-row. Edit any cell — formulas recompute live.
                 </p>
               </div>
               <JobCostEstimateRecapSheet
-                caption="Voice walkthrough quote — Kenny Hills Contracting"
+                initialOverrides={voiceWalkthroughJcrOverrides}
+                caption="Voice walkthrough — Summit Ridge Framing · Marshall Court lumber (demo PO filled)"
                 onCreateInvoice={({ computed }) => {
                   const total = computed.total_cost ?? 0
                   const profit = computed.profit ?? 0
@@ -158,8 +165,8 @@ export function QuoteAutomationWorkspace({
           ) : (
             <div className="rounded-2xl border border-dashed border-fuchsia-300/80 bg-fuchsia-50/30 p-4">
               <p className="text-sm text-fuchsia-950">
-                After the rep walks the voice process, a second quote sheet lands here pre-filled with the visit
-                answers (customer, line items, ship-to, call insights).
+                After the rep walks the Field voice lumber quote, a second Job Cost Recap lands here with the same
+                Marshall Court package and a sample lumber PO line.
               </p>
               <button
                 type="button"
@@ -274,8 +281,9 @@ export function QuoteAutomationWorkspace({
                   Draft is useful, not approved
                 </p>
                 <p className="mt-1 text-sm text-blue-900/85">
-                  I pulled a composite decking template, assumed standard delivery, and matched
-                  accessory recommendations from the source PDF. Confirm dimensions before sending.
+                  I pulled the multi-family lumber template (SPF, engineered, OSB, three drops), matched the voice memo
+                  to Q25-4420-LUM, and staged the dummy invoice lines to the Job Cost Recap sell. Confirm piece counts and
+                  crane dates before releasing the lumber PO.
                 </p>
               </div>
             </div>

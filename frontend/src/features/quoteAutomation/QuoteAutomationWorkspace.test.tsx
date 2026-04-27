@@ -11,7 +11,7 @@ describe('QuoteAutomationWorkspace', () => {
   it('renders the quote automation workspace with the review-gated outcome', () => {
     render(<QuoteAutomationWorkspace />)
 
-    expect(screen.getByText(/Review workspace for Russin Lumber/i)).toBeTruthy()
+    expect(screen.getByText(/Review workspace for Summit Ridge Framing/i)).toBeTruthy()
     expect(screen.getByText('80% done')).toBeTruthy()
     expect(screen.getByText(/Needs rep review, not final pricing/i)).toBeTruthy()
     expect(screen.getByText(/80% done \/ needs rep review/i)).toBeTruthy()
@@ -27,19 +27,27 @@ describe('QuoteAutomationWorkspace', () => {
       }),
     ).toBeTruthy()
     expect(screen.getByText('Field voice memo')).toBeTruthy()
-    expect(screen.getByText(/Composite decking bundle for regional contractor program/i)).toBeTruthy()
-    expect(screen.getByText(/Delivery address missing/i)).toBeTruthy()
+    expect(screen.getByText(/SPF dimensional 2×6 \/ 2×10 for walls and plates/i)).toBeTruthy()
+    expect(screen.getByText(/Three flatbed drops — align to site crane calendar/i)).toBeTruthy()
   })
 
-  it('shows quote lines, pricing assumptions, missing information, and suggestions', () => {
+  it('shows lumber quote lines, pricing assumptions, missing information, and suggestions', () => {
     render(<QuoteAutomationWorkspace />)
 
-    expect(screen.getByText('Composite decking bundle')).toBeTruthy()
-    expect(screen.getByText('$31,800 - $38,900')).toBeTruthy()
-    expect(screen.getByText(/Here is a rough estimate, not final approved pricing/i)).toBeTruthy()
-    expect(screen.getByText('Exact square footage')).toBeTruthy()
-    expect(screen.getByText('Add hidden fastener system')).toBeTruthy()
-    expect(screen.getByText('Ask about exterior trim phase')).toBeTruthy()
+    expect(screen.getByText('SPF dimensional & stud packs (walls / plates)')).toBeTruthy()
+    expect(screen.getByText('$268,000 - $292,000')).toBeTruthy()
+    expect(screen.getByText(/Rough yard estimate — not released lumber PO pricing/i)).toBeTruthy()
+    expect(screen.getByText('Final piece counts from field verify')).toBeTruthy()
+    expect(screen.getByText('Hold moisture / job-site coverage line')).toBeTruthy()
+    expect(screen.getByText('Quote alternate mill for I-joist')).toBeTruthy()
+  })
+
+  it('shows the lumber invoice preview and Job Cost template for Summit Ridge', () => {
+    render(<QuoteAutomationWorkspace />)
+
+    expect(screen.getByTestId('lumber-invoice-preview')).toBeInTheDocument()
+    expect(screen.getByText(/INV-Q25-4420-LUM/i)).toBeInTheDocument()
+    expect(screen.getByText(/Template example — Summit Ridge Framing/i)).toBeInTheDocument()
   })
 
   it('advances the task rail through review, template, pricing, and quote preparation', () => {

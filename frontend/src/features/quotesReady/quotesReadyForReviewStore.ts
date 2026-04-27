@@ -11,14 +11,51 @@ import {
 const STORAGE_KEY = 'oz-quotes-ready-for-review'
 export const QUOTES_READY_CHANGED_EVENT = 'oz-quotes-ready-changed' as const
 
+/** Set when the Field home voice run finishes the lumber handoff; same-tab session only. */
+export const VOICE_LUMBER_HANDOFF_SESSION_KEY = 'oz-voice-lumber-quote-unlocked' as const
+
 const MAX_QUOTES = 12
 
-export const JCR_CROWN_REVIEW_ID = 'QRV-DEMO-JCR-CARTER' as const
-export const JCR_CROWN_REVIEW_FILE = 'voice-quote-sammy-carter-tsp-rc-cell-build.xlsx' as const
+export function setVoiceLumberHandoffUnlocked(): void {
+  if (import.meta.env.VITEST || typeof window === 'undefined') return
+  try {
+    sessionStorage.setItem(VOICE_LUMBER_HANDOFF_SESSION_KEY, '1')
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isVoiceLumberHandoffUnlocked(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return sessionStorage.getItem(VOICE_LUMBER_HANDOFF_SESSION_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** Lumber JCR row id — added to #/quotes-ready when the Field home voice run finishes (generating-quote TTS). */
+export const JCR_LUMBER_REVIEW_ID = 'QRV-DEMO-JCR-CARTER' as const
+export const JCR_LUMBER_REVIEW_FILE = 'voice-quote-summit-ridge-lumber-package.xlsx' as const
+
+/**
+ * Drops the lumber JCR row from persistence when opening Quotes Ready if this tab never completed
+ * the voice handoff — clears stale rows left from older builds or prior sessions.
+ */
+export function pruneJcrLumberQuoteUnlessUnlocked(): void {
+  if (import.meta.env.VITEST || typeof window === 'undefined') return
+  if (isVoiceLumberHandoffUnlocked()) return
+  const list = readQuotesReadyForReview()
+  const next = list.filter((e) => e.id !== JCR_LUMBER_REVIEW_ID)
+  if (next.length === list.length) return
+  writeLocal(next)
+  dispatchChanged()
+}
+
 export const JCR_KENNY_REVIEW_ID = 'QRV-DEMO-JCR-KENNY' as const
 export const JCR_KENNY_REVIEW_FILE = 'voice-quote-kenny-hills-deck-package.xlsx' as const
 
-export type JcrSeed = 'crown' | 'kenny-hills'
+export type JcrSeed = 'lumber' | 'kenny-hills'
 
 export type QuoteReadyForReviewEntry = {
   /** Human-readable review code, e.g. QRV-20260425-A3F2 */
@@ -46,6 +83,16 @@ function normalizeJcrSavedValues(raw: unknown): Record<string, string | number> 
   return Object.keys(out).length > 0 ? out : undefined
 }
 
+/** Pre–voice-schema `jcrSavedValues` used mech/elec / component-cost ids; drop so the sheet re-seeds from defaults. */
+function isLegacyJcrSavedKeys(saved: Record<string, string | number> | undefined): boolean {
+  if (!saved) return false
+  return (
+    'electrical_components' in saved ||
+    'mechanical_design_hrs' in saved ||
+    'commercial_mechanical_components' in saved
+  )
+}
+
 function parseStored(raw: string | null): QuoteReadyForReviewEntry[] {
   if (!raw?.trim()) return []
   try {
@@ -64,9 +111,14 @@ function parseStored(raw: string | null): QuoteReadyForReviewEntry[] {
         const demoInvoiceFields =
           source === 'demo-invoice' ? normalizeDemoInvoiceFields(e.demoInvoiceFields) : undefined
         const jcrSeed: JcrSeed | undefined =
-          source === 'jcr-quote' ? (e.jcrSeed === 'kenny-hills' ? 'kenny-hills' : 'crown') : undefined
-        const jcrSavedValues =
+          source === 'jcr-quote'
+            ? e.jcrSeed === 'kenny-hills'
+              ? 'kenny-hills'
+              : 'lumber'
+            : undefined
+        let jcrSavedValues =
           source === 'jcr-quote' ? normalizeJcrSavedValues(e.jcrSavedValues) : undefined
+        if (jcrSavedValues && isLegacyJcrSavedKeys(jcrSavedValues)) jcrSavedValues = undefined
         return {
           ...e,
           source,
@@ -167,24 +219,39 @@ export function applyJcrQuoteValues(id: string, values: Record<string, string | 
 }
 
 /**
- * Seeds the voice-quote demo card (Sammy Carter · automation cell upgrade) so users can click
- * into it from #/quotes-ready and edit the Excel-like Job Cost Recap directly. Skipped
- * if the card was already present (e.g. user removed it — we do not re-add).
+ * Upserts the Summit Ridge lumber JCR row on #/quotes-ready when the Field voice run finishes
+ * (“Okay, generating the quote.”). Sets {@link setVoiceLumberHandoffUnlocked} first. Each handoff
+ * refreshes **Received** (`createdAt`) to now and moves the row to the top.
  */
-export function seedJcrCrownQuoteIfAbsent(): void {
+export function seedJcrLumberQuoteIfAbsent(): void {
   if (import.meta.env.VITEST || typeof window === 'undefined') return
+  if (!isVoiceLumberHandoffUnlocked()) return
+  const now = new Date().toISOString()
   const list = readQuotesReadyForReview()
-  if (list.some((e) => e.id === JCR_CROWN_REVIEW_ID)) return
-  const entry: QuoteReadyForReviewEntry = {
-    id: JCR_CROWN_REVIEW_ID,
-    fileName: JCR_CROWN_REVIEW_FILE,
-    createdAt: new Date().toISOString(),
-    source: 'jcr-quote',
-    pdfBase64: '',
-    customerSummary: 'Sammy Carter · automation cell upgrade (Q25-1102) — voice quote template',
-    jcrSeed: 'crown',
+  const idx = list.findIndex((e) => e.id === JCR_LUMBER_REVIEW_ID)
+  if (idx >= 0) {
+    const cur = list[idx]
+    const bumped: QuoteReadyForReviewEntry = {
+      ...cur,
+      createdAt: now,
+      source: 'jcr-quote',
+      fileName: JCR_LUMBER_REVIEW_FILE,
+      jcrSeed: 'lumber',
+    }
+    const rest = [...list.slice(0, idx), ...list.slice(idx + 1)]
+    writeLocal([bumped, ...rest].slice(0, MAX_QUOTES))
+  } else {
+    const entry: QuoteReadyForReviewEntry = {
+      id: JCR_LUMBER_REVIEW_ID,
+      fileName: JCR_LUMBER_REVIEW_FILE,
+      createdAt: now,
+      source: 'jcr-quote',
+      pdfBase64: '',
+      customerSummary: 'Summit Ridge Framing · lumber package (Q25-4420-LUM) — voice quote template',
+      jcrSeed: 'lumber',
+    }
+    writeLocal([entry, ...list].slice(0, MAX_QUOTES))
   }
-  writeLocal([entry, ...list].slice(0, MAX_QUOTES))
   dispatchChanged()
 }
 

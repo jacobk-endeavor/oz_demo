@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ChevronRightIcon, CloseIcon, PlusIcon } from '../../shared/ui/icons'
 import { joinClasses } from '../../shared/ui'
 import {
@@ -15,9 +15,9 @@ import {
   type QuoteReadyForReviewEntry,
   QUOTES_READY_CHANGED_EVENT,
   readQuotesReadyForReview,
+  pruneJcrLumberQuoteUnlessUnlocked,
   removeQuoteReady,
   seedDummyInvoiceIfAbsent,
-  seedJcrCrownQuoteIfAbsent,
 } from './quotesReadyForReviewStore'
 import { JobCostEstimateRecapSheet } from '../fieldApp/JobCostEstimateRecapSheet'
 import { JCR_JSON_EXAMPLE_DEFAULTS } from '../fieldApp/jobCostEstimateRecap'
@@ -41,17 +41,173 @@ function parseQty(s: string): number {
   return Number.isFinite(n) && n >= 0 ? n : 0
 }
 
+function formatUsd(n: number): string {
+  return n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
+}
+
 type DraftMap = Record<string, DemoInvoiceEditFields>
+
+type JcrInvoiceSnapshot = {
+  values: Record<string, string | number>
+  computed: Record<string, number>
+}
+
+function SendInvoiceFromSheetDialog({
+  open,
+  onClose,
+  quoteId,
+  fileName,
+  customerSummary,
+  snapshot,
+}: {
+  open: boolean
+  onClose: () => void
+  quoteId: string
+  fileName: string
+  customerSummary?: string
+  snapshot: JcrInvoiceSnapshot
+}) {
+  const [email, setEmail] = useState('')
+  const customer = typeof snapshot.values.customer_name === 'string' ? snapshot.values.customer_name : ''
+  const refQuote =
+    typeof snapshot.values.ref_quote_numbers === 'string' ? snapshot.values.ref_quote_numbers : ''
+  const total = snapshot.computed.total_cost ?? 0
+  const profit = snapshot.computed.profit ?? 0
+  const marginPct = (snapshot.computed.profit_margin ?? 0) * 100
+
+  useEffect(() => {
+    if (open) setEmail('')
+  }, [open])
+
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-zinc-900/40 p-4 sm:items-center"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="send-invoice-dialog-title"
+        className="max-h-[min(92vh,640px)] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        data-testid="send-invoice-from-sheet-dialog"
+      >
+        <div className="border-b border-zinc-100 px-5 py-4">
+          <h2 id="send-invoice-dialog-title" className="text-lg font-semibold text-zinc-900">
+            Send workbook to billing
+          </h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            The Job Cost Recap is packaged as the Excel attachment. Enter the recipient — other fields come from the
+            quote.
+          </p>
+        </div>
+        <div className="space-y-4 px-5 py-4">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5 text-sm text-emerald-950">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">Ready to send</p>
+            <p className="mt-0.5 font-mono text-sm font-medium text-emerald-950">{fileName}</p>
+            <p className="mt-1 text-xs text-emerald-900/90">Spreadsheet reflects the latest cells on the sheet.</p>
+          </div>
+          <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-xs font-medium text-zinc-500">Review ID</dt>
+              <dd className="mt-0.5 font-mono text-zinc-900">{quoteId}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-zinc-500">Quote ref</dt>
+              <dd className="mt-0.5 text-zinc-900">{refQuote || '—'}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium text-zinc-500">Customer</dt>
+              <dd className="mt-0.5 text-zinc-900">{customer || '—'}</dd>
+            </div>
+            {customerSummary ? (
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-medium text-zinc-500">Card summary</dt>
+                <dd className="mt-0.5 text-zinc-700">{customerSummary}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt className="text-xs font-medium text-zinc-500">Total cost</dt>
+              <dd className="mt-0.5 font-semibold tabular-nums text-zinc-900">{formatUsd(total)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-zinc-500">Profit (est.)</dt>
+              <dd className="mt-0.5 tabular-nums text-zinc-800">
+                {formatUsd(profit)}
+                <span className="ml-1 text-xs text-zinc-500">({marginPct.toFixed(1)}% margin)</span>
+              </dd>
+            </div>
+          </dl>
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-800">Send to (email)</span>
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="billing@customer.com"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
+            />
+          </label>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100 px-5 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const to = email.trim()
+              if (!to) {
+                window.alert('Enter an email address to continue (demo).')
+                return
+              }
+              window.alert(
+                `Demo: invoice package queued.\n\nTo: ${to}\nAttachment: ${fileName}\nCustomer: ${customer}\nRef: ${refQuote}\nTotal: ${formatUsd(total)}`,
+              )
+              onClose()
+            }}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /**
  * Inbox: click a card to open the review surface; edit demo lines, then open the PDF preview when you choose.
  */
-export function QuotesReadyForReviewPage() {
+export function QuotesReadyForReviewPage(
+  props: {
+    onContextHeaderDetailRowChange?: (row: ReactNode | null) => void
+  } = {},
+) {
+  const { onContextHeaderDetailRowChange } = props
   const [entries, setEntries] = useState<QuoteReadyForReviewEntry[]>(() => readQuotesReadyForReview())
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showPdf, setShowPdf] = useState(false)
   const [objectUrl, setObjectUrl] = useState<string | null>(null)
   const [demoDraft, setDemoDraft] = useState<DraftMap>({})
+  const [invoiceDialog, setInvoiceDialog] = useState<
+    | { open: false }
+    | {
+        open: true
+        quoteId: string
+        fileName: string
+        customerSummary?: string
+        snapshot: JcrInvoiceSnapshot
+      }
+  >({ open: false })
 
   const sync = useCallback(() => {
     const list = readQuotesReadyForReview()
@@ -60,8 +216,8 @@ export function QuotesReadyForReviewPage() {
   }, [])
 
   useEffect(() => {
+    pruneJcrLumberQuoteUnlessUnlocked()
     seedDummyInvoiceIfAbsent()
-    seedJcrCrownQuoteIfAbsent()
     sync()
   }, [sync])
 
@@ -101,6 +257,7 @@ export function QuotesReadyForReviewPage() {
 
   useEffect(() => {
     setShowPdf(false)
+    setInvoiceDialog({ open: false })
   }, [selectedId])
 
   useEffect(() => {
@@ -161,15 +318,45 @@ export function QuotesReadyForReviewPage() {
     })
   }
 
+  const onCloseDetail = useCallback(() => {
+    setSelectedId(null)
+    setShowPdf(false)
+    setInvoiceDialog({ open: false })
+  }, [])
+
   function onSelectCard(id: string) {
     setSelectedId(id)
     setShowPdf(false)
   }
 
-  function onCloseDetail() {
-    setSelectedId(null)
-    setShowPdf(false)
-  }
+  useEffect(() => {
+    if (!onContextHeaderDetailRowChange) return
+    if (!selectedId || !selected) {
+      onContextHeaderDetailRowChange(null)
+      return
+    }
+    onContextHeaderDetailRowChange(
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="font-mono text-sm font-bold text-sky-900">{selected.id}</span>
+          <span className="text-sm text-zinc-500">{formatWhen(selected.createdAt)}</span>
+        </div>
+        <button
+          type="button"
+          onClick={onCloseDetail}
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+        >
+          <CloseIcon className="h-3.5 w-3.5" aria-hidden />
+          Back to cards
+        </button>
+      </div>,
+    )
+  }, [selected, selectedId, onContextHeaderDetailRowChange, onCloseDetail])
+
+  useEffect(() => {
+    if (!onContextHeaderDetailRowChange) return
+    return () => onContextHeaderDetailRowChange(null)
+  }, [onContextHeaderDetailRowChange])
 
   function onApplyDemoAndPreview() {
     if (!selectedId || !selected || selected.source !== 'demo-invoice' || !draft) return
@@ -180,109 +367,118 @@ export function QuotesReadyForReviewPage() {
 
   return (
     <div
-      className="flex h-full min-h-0 min-w-0 flex-col gap-4 p-4 sm:p-5"
+      className={joinClasses(
+        'flex h-full min-h-0 min-w-0 flex-col',
+        selectedId ? 'min-h-0 p-0' : 'gap-4 p-4 sm:p-5',
+      )}
       data-testid="quotes-ready-for-review-page"
     >
-      <div className="rounded-2xl border border-sky-200/80 bg-gradient-to-r from-sky-50/90 to-white px-4 py-3 shadow-sm sm:px-5">
-        <h2 className="text-sm font-semibold text-zinc-900">Quotes ready for review</h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-          <strong>Pick a card</strong> to open details. <strong>Voice quote</strong> cards open the editable Job Cost
-          Recap sheet (formulas live). The sample invoice is line-item editable; Field PDFs are view-only here.
-        </p>
-      </div>
-
       {entries.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/60 px-4 py-6 text-sm text-zinc-600">
           No quote PDFs in queue. Use <strong>Field App</strong> → <strong>Prospect Q&amp;A + notes</strong> and download
           a PDF, or reload to seed the demo invoice.
         </p>
       ) : !selectedId ? (
-        <ul
-          className="grid list-none grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
-          data-testid="quotes-ready-list"
-        >
-          {entries.map((e) => (
-            <li key={e.id}>
-              <button
-                type="button"
-                onClick={() => onSelectCard(e.id)}
-                className={joinClasses(
-                  'group flex w-full flex-col gap-2 rounded-2xl border border-zinc-200/90 bg-white p-4 text-left shadow-sm',
-                  'transition hover:border-sky-300/80 hover:shadow-md active:scale-[0.99]',
-                )}
-                data-testid={`quotes-ready-card-${e.id}`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-sm font-bold text-sky-900">{e.id}</span>
-                      {e.source === 'demo-invoice' ? (
-                        <span className="rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-rose-800">
-                          Demo
-                        </span>
-                      ) : e.source === 'jcr-quote' ? (
-                        <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
-                          Voice quote
-                        </span>
-                      ) : (
-                        <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600">
-                          Field
-                        </span>
-                      )}
-                    </p>
-                    <p className="mt-0.5 text-xs text-zinc-500">{formatWhen(e.createdAt)}</p>
-                  </div>
-                  <span className="shrink-0 rounded-full border border-zinc-200/80 p-1.5 text-zinc-400 group-hover:border-sky-200 group-hover:text-sky-600">
+        <div className="overflow-x-auto rounded-xl border border-zinc-200/90 bg-white shadow-sm">
+          <table
+            className="w-full min-w-[44rem] border-collapse text-left text-sm"
+            data-testid="quotes-ready-list"
+          >
+            <thead>
+              <tr className="border-b border-zinc-200 bg-zinc-50/90">
+                <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Review ID
+                </th>
+                <th scope="col" className="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Type
+                </th>
+                <th scope="col" className="whitespace-nowrap px-3 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Received
+                </th>
+                <th scope="col" className="min-w-[10rem] px-3 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Summary
+                </th>
+                <th scope="col" className="min-w-[8rem] px-3 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  File
+                </th>
+                <th scope="col" className="w-12 px-2 py-3">
+                  <span className="sr-only">Open</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((e) => (
+                <tr
+                  key={e.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSelectCard(e.id)}
+                  onKeyDown={(ev) => {
+                    if (ev.key === 'Enter' || ev.key === ' ') {
+                      ev.preventDefault()
+                      onSelectCard(e.id)
+                    }
+                  }}
+                  className={joinClasses(
+                    'cursor-pointer border-b border-zinc-100 transition last:border-b-0',
+                    'hover:bg-sky-50/70 focus:bg-sky-50/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-400',
+                  )}
+                  data-testid={`quotes-ready-card-${e.id}`}
+                >
+                  <td className="px-4 py-3 font-mono text-sm font-bold text-sky-900">{e.id}</td>
+                  <td className="px-3 py-3">
+                    {e.source === 'demo-invoice' ? (
+                      <span className="inline-flex rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-rose-800">
+                        Demo
+                      </span>
+                    ) : e.source === 'jcr-quote' ? (
+                      <span className="inline-flex rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
+                        Voice quote
+                      </span>
+                    ) : (
+                      <span className="inline-flex rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600">
+                        Field
+                      </span>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-xs text-zinc-600">{formatWhen(e.createdAt)}</td>
+                  <td className="max-w-xs px-3 py-3 text-zinc-800">
+                    {e.customerSummary ? (
+                      <span className="line-clamp-2" title={e.customerSummary}>
+                        {e.customerSummary}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-400">—</span>
+                    )}
+                  </td>
+                  <td className="max-w-[14rem] truncate px-3 py-3 text-xs text-zinc-600" title={e.fileName}>
+                    {e.fileName}
+                  </td>
+                  <td className="px-2 py-3 text-zinc-400">
                     <ChevronRightIcon className="h-4 w-4" aria-hidden />
-                  </span>
-                </div>
-                {e.customerSummary ? (
-                  <p className="line-clamp-2 text-sm text-zinc-800">{e.customerSummary}</p>
-                ) : null}
-                <p className="truncate text-xs text-zinc-500">{e.fileName}</p>
-                <span className="text-xs font-semibold text-sky-700">Open review →</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <div
-          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm"
+          className={joinClasses(
+            'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white',
+            selectedId && 'rounded-none border-0 shadow-none',
+            !selectedId && 'rounded-2xl border border-zinc-200/90 shadow-sm',
+          )}
           data-testid="quotes-ready-detail"
         >
-          <div className="flex items-center justify-between gap-2 border-b border-zinc-100 bg-zinc-50/80 px-3 py-2.5 sm:px-4">
-            <div className="min-w-0">
-              <p className="font-mono text-sm font-bold text-sky-900">{selected?.id}</p>
-              <p className="text-xs text-zinc-500">{selected ? formatWhen(selected.createdAt) : ''}</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                type="button"
-                onClick={onCloseDetail}
-                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
-              >
-                <CloseIcon className="h-3.5 w-3.5" aria-hidden />
-                Back to cards
-              </button>
-            </div>
-          </div>
-
           {selected?.source === 'jcr-quote' ? (
             <div
-              className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-4"
+              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 pb-2 pt-1 sm:px-3 sm:pb-3"
               data-testid="quotes-ready-jcr-detail"
             >
-              <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-950">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
-                  Voice quote (Job Cost Recap)
-                </p>
-                <p className="mt-0.5">
-                  {selected.customerSummary ?? selected.fileName}. Edit any cell — formulas update live and your
-                  changes save back to this card automatically.
-                </p>
-              </div>
               <JobCostEstimateRecapSheet
                 key={selected.id}
+                className="min-h-0 flex-1"
                 initialOverrides={{
                   ...(selected.jcrSeed === 'kenny-hills' ? {} : JCR_JSON_EXAMPLE_DEFAULTS),
                   ...(selected.jcrSavedValues ?? {}),
@@ -290,16 +486,17 @@ export function QuotesReadyForReviewPage() {
                 caption={
                   selected.jcrSeed === 'kenny-hills'
                     ? 'Voice walkthrough quote — Kenny Hills Contracting'
-                    : 'Quote sheet — Sammy Carter · automation cell upgrade (Q25-1102)'
+                    : 'Quote sheet — Summit Ridge Framing · lumber package (Q25-4420-LUM)'
                 }
                 onValuesChange={(values) => applyJcrQuoteValues(selected.id, values)}
-                onCreateInvoice={({ computed }) => {
-                  const total = computed.total_cost ?? 0
-                  const profit = computed.profit ?? 0
-                  const margin = computed.profit_margin ?? 0
-                  window.alert(
-                    `Invoice queued (demo).\nTotal cost $${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}\nProfit $${profit.toLocaleString(undefined, { maximumFractionDigits: 2 })} (${(margin * 100).toFixed(1)}% margin)`,
-                  )
+                onCreateInvoice={(snapshot) => {
+                  setInvoiceDialog({
+                    open: true,
+                    quoteId: selected.id,
+                    fileName: selected.fileName,
+                    customerSummary: selected.customerSummary,
+                    snapshot,
+                  })
                 }}
               />
             </div>
@@ -511,7 +708,12 @@ export function QuotesReadyForReviewPage() {
       )}
 
       {selectedId && (
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100 pt-2">
+        <div
+          className={joinClasses(
+            'flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100',
+            selected?.source === 'jcr-quote' ? 'px-2 py-2 sm:px-3' : 'px-4 py-2 sm:px-5',
+          )}
+        >
           <button
             type="button"
             onClick={() => selectedId && removeQuoteReady(selectedId)}
@@ -521,6 +723,17 @@ export function QuotesReadyForReviewPage() {
           </button>
         </div>
       )}
+
+      {invoiceDialog.open ? (
+        <SendInvoiceFromSheetDialog
+          open
+          onClose={() => setInvoiceDialog({ open: false })}
+          quoteId={invoiceDialog.quoteId}
+          fileName={invoiceDialog.fileName}
+          customerSummary={invoiceDialog.customerSummary}
+          snapshot={invoiceDialog.snapshot}
+        />
+      ) : null}
     </div>
   )
 }
