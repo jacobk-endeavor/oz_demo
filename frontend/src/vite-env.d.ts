@@ -3,8 +3,6 @@
 interface ImportMetaEnv {
   readonly VITE_OPENAI_API_KEY?: string
   readonly VITE_OPENAI_MODEL?: string
-  /** Optional; default `whisper-1` (Field memo STT). */
-  readonly VITE_OPENAI_TRANSCRIPTION_MODEL?: string
   /** True when running under Vitest (see `isOpenAiConfigured`). */
   readonly VITEST?: boolean
 }

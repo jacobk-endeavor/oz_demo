@@ -1,10 +1,14 @@
 /**
  * Field voice memo: append a row to the Field Notes “incoming voice memos” store.
- * Script 3 uses live transcription; this module builds the row shape.
+ * Script 3 uses the canned Sami line (Field Notes page: **P**). This module builds the row shape.
  */
 import { appendVoiceMemo } from '../fieldNotes/voiceMemoStore'
 import type { VoiceMemoRow } from '../fieldNotes/fieldNotesDashboardData'
-import { VOICE_MEMO_RECORDING_ACK, VOICE_MEMO_SAVED_SYSTEM_LINE } from './fieldDemoVoiceCopy'
+import {
+  SAMI_FIELD_MEMO_CANNED_TEXT,
+  VOICE_MEMO_RECORDING_ACK,
+  VOICE_MEMO_SAVED_SYSTEM_LINE,
+} from './fieldDemoVoiceCopy'
 
 export type AppendFieldMemoOptions = {
   id?: string
@@ -13,7 +17,7 @@ export type AppendFieldMemoOptions = {
 }
 
 /**
- * Persist a memo from Whisper (or other STT) text. `notesPreview` is derived from the transcript.
+ * Persist memo text as a voice-memo row. `notesPreview` is derived from the transcript.
  */
 export function appendFieldMemoFromDictation(
   transcript: string,
@@ -24,7 +28,7 @@ export function appendFieldMemoFromDictation(
     tidied.length > 90 ? `${tidied.slice(0, 87)}…` : tidied || '(empty transcript)'
   return appendVoiceMemo({
     id: options?.id,
-    customer: options?.customer ?? 'Field visit',
+    customer: options?.customer ?? 'Summit Ridge',
     salesman: options?.salesman ?? 'Sami',
     atIso: new Date().toISOString(),
     notesPreview: preview,
@@ -34,4 +38,9 @@ export function appendFieldMemoFromDictation(
       { speaker: 'System', text: VOICE_MEMO_SAVED_SYSTEM_LINE },
     ],
   })
+}
+
+/** Append the demo Sami field memo (customer sentiment) — same as pressing **P** on Field Notes. */
+export function appendCannedSamiFieldMemo() {
+  return appendFieldMemoFromDictation(SAMI_FIELD_MEMO_CANNED_TEXT)
 }

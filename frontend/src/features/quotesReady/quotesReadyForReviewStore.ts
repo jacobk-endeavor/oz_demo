@@ -38,6 +38,15 @@ export function isVoiceLumberHandoffUnlocked(): boolean {
 export const JCR_LUMBER_REVIEW_ID = 'QRV-DEMO-JCR-CARTER' as const
 export const JCR_LUMBER_REVIEW_FILE = 'voice-quote-summit-ridge-lumber-package.xlsx' as const
 
+/** Summary text for the lumber JCR row in the Quotes Ready table (and similar). */
+const JCR_LUMBER_LIST_SUMMARY = 'Summit Ridge Framing · lumber package (Q25-4420-LUM)' as const
+
+function lumberListSummaryForStorage(prev: string | undefined): string {
+  if (!prev?.trim()) return JCR_LUMBER_LIST_SUMMARY
+  const stripped = prev.replace(/\s*—\s*voice quote template\s*$/i, '').trim()
+  return stripped || JCR_LUMBER_LIST_SUMMARY
+}
+
 /**
  * Drops the lumber JCR row from persistence when opening Quotes Ready if this tab never completed
  * the voice handoff — clears stale rows left from older builds or prior sessions.
@@ -218,6 +227,35 @@ export function applyJcrQuoteValues(id: string, values: Record<string, string | 
   dispatchChanged()
 }
 
+function upsertJcrLumberQuoteAt(createdAt: string): void {
+  const list = readQuotesReadyForReview()
+  const idx = list.findIndex((e) => e.id === JCR_LUMBER_REVIEW_ID)
+  if (idx >= 0) {
+    const cur = list[idx]
+    const bumped: QuoteReadyForReviewEntry = {
+      ...cur,
+      createdAt,
+      source: 'jcr-quote',
+      fileName: JCR_LUMBER_REVIEW_FILE,
+      jcrSeed: 'lumber',
+      customerSummary: lumberListSummaryForStorage(cur.customerSummary),
+    }
+    const rest = [...list.slice(0, idx), ...list.slice(idx + 1)]
+    writeLocal([bumped, ...rest].slice(0, MAX_QUOTES))
+  } else {
+    const entry: QuoteReadyForReviewEntry = {
+      id: JCR_LUMBER_REVIEW_ID,
+      fileName: JCR_LUMBER_REVIEW_FILE,
+      createdAt,
+      source: 'jcr-quote',
+      pdfBase64: '',
+      customerSummary: JCR_LUMBER_LIST_SUMMARY,
+      jcrSeed: 'lumber',
+    }
+    writeLocal([entry, ...list].slice(0, MAX_QUOTES))
+  }
+}
+
 /**
  * Upserts the Summit Ridge lumber JCR row on #/quotes-ready when the Field voice run finishes
  * (“Okay, generating the quote.”). Sets {@link setVoiceLumberHandoffUnlocked} first. Each handoff
@@ -226,32 +264,19 @@ export function applyJcrQuoteValues(id: string, values: Record<string, string | 
 export function seedJcrLumberQuoteIfAbsent(): void {
   if (import.meta.env.VITEST || typeof window === 'undefined') return
   if (!isVoiceLumberHandoffUnlocked()) return
-  const now = new Date().toISOString()
-  const list = readQuotesReadyForReview()
-  const idx = list.findIndex((e) => e.id === JCR_LUMBER_REVIEW_ID)
-  if (idx >= 0) {
-    const cur = list[idx]
-    const bumped: QuoteReadyForReviewEntry = {
-      ...cur,
-      createdAt: now,
-      source: 'jcr-quote',
-      fileName: JCR_LUMBER_REVIEW_FILE,
-      jcrSeed: 'lumber',
-    }
-    const rest = [...list.slice(0, idx), ...list.slice(idx + 1)]
-    writeLocal([bumped, ...rest].slice(0, MAX_QUOTES))
-  } else {
-    const entry: QuoteReadyForReviewEntry = {
-      id: JCR_LUMBER_REVIEW_ID,
-      fileName: JCR_LUMBER_REVIEW_FILE,
-      createdAt: now,
-      source: 'jcr-quote',
-      pdfBase64: '',
-      customerSummary: 'Summit Ridge Framing · lumber package (Q25-4420-LUM) — voice quote template',
-      jcrSeed: 'lumber',
-    }
-    writeLocal([entry, ...list].slice(0, MAX_QUOTES))
-  }
+  upsertJcrLumberQuoteAt(new Date().toISOString())
+  dispatchChanged()
+}
+
+/**
+ * Quotes Ready demo: press **P** to reveal the Field voice lumber JCR row without running the script.
+ * Received time is exactly `receivedAt` (typically keydown time). Does **not** set the voice handoff
+ * flag — a full page refresh runs {@link pruneJcrLumberQuoteUnlessUnlocked} and drops this row unless
+ * the rep completed the Field voice lumber handoff in this tab.
+ */
+export function revealVoiceLumberQuoteFromHotkey(receivedAt: string): void {
+  if (import.meta.env.VITEST || typeof window === 'undefined') return
+  upsertJcrLumberQuoteAt(receivedAt)
   dispatchChanged()
 }
 

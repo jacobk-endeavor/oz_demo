@@ -40,8 +40,15 @@ export const SCRIPT5_BACKGROUND_QUOTE_OPEN =
 export const VOICE_MEMO_OPEN_LINE =
   'Hey, I want to record a field memo.'
 
-/** Field meeting voice memo — Oz ack; then the app records and transcribes real speech into Field Notes. */
+/** Field meeting — Oz ack; then the rep can add the memo on Field Notes (P) and tap the orb to continue. */
 export const VOICE_MEMO_RECORDING_ACK = 'Ok, recording.'
+
+/**
+ * What gets stored as **Rep (Sami)** on the voice memo — first person, as read in the runbook.
+ * Injected on **Field Notes** (`#/field-notes`) with **P**; same text as in the “View conversation” transcript.
+ */
+export const SAMI_FIELD_MEMO_CANNED_TEXT =
+  "Just wrapped a walkthrough with Summit Ridge on site. They're in a good place — upbeat about the job, easy to talk to, and it feels like they trust us. I'd call the tone collaborative and the opportunity hot. No red flags on the relationship side."
 
 /** After Script 3 memo is saved — Eleven Labs (orb queue step). */
 export const VOICE_MEMO_SAVED_THANKS = 'Ok, I saved your field note — thanks!'

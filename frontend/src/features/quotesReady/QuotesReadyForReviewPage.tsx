@@ -17,6 +17,7 @@ import {
   readQuotesReadyForReview,
   pruneJcrLumberQuoteUnlessUnlocked,
   removeQuoteReady,
+  revealVoiceLumberQuoteFromHotkey,
   seedDummyInvoiceIfAbsent,
 } from './quotesReadyForReviewStore'
 import { JobCostEstimateRecapSheet } from '../fieldApp/JobCostEstimateRecapSheet'
@@ -43,6 +44,13 @@ function parseQty(s: string): number {
 
 function formatUsd(n: number): string {
   return n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
+}
+
+function isTypingInFormField(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
+  return target.isContentEditable
 }
 
 type DraftMap = Record<string, DemoInvoiceEditFields>
@@ -219,6 +227,19 @@ export function QuotesReadyForReviewPage(
     pruneJcrLumberQuoteUnlessUnlocked()
     seedDummyInvoiceIfAbsent()
     sync()
+  }, [sync])
+
+  useEffect(() => {
+    function onKeyDown(ev: KeyboardEvent) {
+      if (ev.key !== 'p' && ev.key !== 'P') return
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return
+      if (isTypingInFormField(ev.target)) return
+      ev.preventDefault()
+      revealVoiceLumberQuoteFromHotkey(new Date().toISOString())
+      sync()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [sync])
 
   useEffect(() => {

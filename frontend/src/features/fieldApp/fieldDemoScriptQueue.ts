@@ -36,20 +36,16 @@ export type FieldScriptStep = {
    */
   sideEffect?: 'send-product-specs-email' | 'seed-quotes-ready-lumber'
   /**
-   * After the previous step's Oz line, record live audio → OpenAI transcription → Field Notes.
-   * No `ozSays` playback before listening; rep dictates freely (long pause or orb tap ends capture).
+   * After “Ok, recording.” wait for an **orb tap** to play the thank-you line. Add the memo
+   * on **Field Notes** with **P** (any time); that step is not tied to the voice queue.
+   * `ozSays` is empty; do not play TTS for this index.
    */
-  memoDictation?: boolean
+  awaitFieldMemoOrb?: boolean
   /**
    * After the previous step's TTS, skip rep listening and play this step's Oz line immediately
    * (e.g. automatic "generating quote" ack after the JCR close).
    */
   skipRepListen?: boolean
-  /**
-   * After Script 3 memo dictation finishes successfully, advance to this step with Oz TTS (no rep line).
-   * If dictation/save fails, the runner skips this step and jumps to the following one.
-   */
-  memoCompleteAck?: boolean
 }
 
 /**
@@ -60,12 +56,12 @@ export type FieldScriptStep = {
  * Demo arc:
  *   Script 1 — customer history (Kenny Hills) — 2 turns
  *   Script 2 — recommend & cross-sell           — 4 turns
- *   Script 3 — field-meeting voice memo         — memo open, STT dictation → Field Notes,
- *              then Oz "saved your field note — thanks!" when save succeeds
+ *   Script 3 — field memo (Sami)                 — "Ok, recording" → optional **P** on Field Notes for the memo
+ *              → **tap orb** for Oz "saved your field note — thanks!"
  *   Script 4 — Summit Ridge lumber package      — 6 rep turns + automatic "generating quote" Oz line
  *
- * The voice-memo turn intentionally runs **before** the quote Q&A so the rep's
- * dictated context is in Field Notes by the time they walk into the quote work.
+ * The voice-memo turn runs **before** the quote Q&A so the Field Notes table is
+ * updated before the lumber walkthrough.
  */
 export function buildFieldScriptQueue(): readonly FieldScriptStep[] {
   return [
@@ -87,16 +83,11 @@ export function buildFieldScriptQueue(): readonly FieldScriptStep[] {
     },
     {
       scriptIndex: 3,
-      label: 'Script 3 — Dictate memo (pause ~3s or tap orb when done)',
+      label: 'Script 3 — Field Notes: P = Sami memo · then tap orb to continue',
       ozSays: '',
-      memoDictation: true,
+      awaitFieldMemoOrb: true,
     },
-    {
-      scriptIndex: 3,
-      label: 'Script 3 — Saved your note (Oz only)',
-      ozSays: VOICE_MEMO_SAVED_THANKS,
-      memoCompleteAck: true,
-    },
+    { scriptIndex: 3, label: 'Script 3 — Saved your note (Oz only)', ozSays: VOICE_MEMO_SAVED_THANKS },
     { scriptIndex: 4, label: 'Script 4 — Lumber quote (1/6) customer + deal', ozSays: SCRIPT3_T1_PROJECT_BASICS },
     { scriptIndex: 4, label: 'Script 4 — Lumber quote (2/6) description + order value', ozSays: SCRIPT3_T2_DESCRIPTION_AND_ORDER },
     { scriptIndex: 4, label: 'Script 4 — Lumber quote (3/6) material buckets', ozSays: SCRIPT3_T3_COMPONENTS },

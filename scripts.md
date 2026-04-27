@@ -69,7 +69,7 @@ Use this file to run the demo step by step. Tick or edit lines as you validate e
 Use this as the implementation checklist when you are ready to build **teleprompter** behavior in `FieldAppView` (or a dedicated demo flag). **No implementation is required for a manual demo today**—read the “You / Oz” table aloud and use the live app, or a recording.
 
 - [ ] **Add a “Scripted / teleprompter” mode** (e.g. env flag, query param, or internal demo toggle) for Field App home and/or per `field-mw--*` route.
-- [ ] **Do not start the media recorder** in that mode; **do not call** `transcribeFieldAudioBlob` for routing or for scripted turns.
+- [ ] **Do not start the media recorder** in that mode; **do not** run live STT for routing or for scripted turns.
 - [ ] **Show the next “You read aloud” line** on the presenter UI; **on Done/Next** (or short timer), set state as if the user had spoken that string (or skip STT entirely and advance `turnIndex`).
 - [ ] **Play Oz lines** with **fixed** strings: use the “Oz says” column in this file (or import from a shared `fieldDemoScript.ts` module aligned with the table).
 - [ ] For **turn 1** only, still **navigate to the right workflow** (same as today’s `goRun(workflowId)`) by **mapping** script id → `workflowId` (no LLM) or by reading `workflowId` from the same script table.

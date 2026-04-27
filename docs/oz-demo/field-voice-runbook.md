@@ -1,6 +1,6 @@
 # Field App voice demo — runbook
 
-Single linear demo. You tap the orb once and walk through fourteen turns. Each turn: read your line aloud, pause, Oz plays the next line, mic re-opens. Repeat until done.
+Single linear demo. You tap the orb once and walk through the scripted queue. Each turn: read your line aloud, pause, Oz plays the next line, mic re-opens. Repeat until done.
 
 A **Skip to next script →** button appears under the status line once the run starts. Tap it to stop the current Oz line, jump past the rest of the active script, and land in `listening` at the first turn of the next script. Disabled on the final script.
 
@@ -20,14 +20,15 @@ A **Skip to next script →** button appears under the status line once the run 
 | **Listening** | Orb pulses to your mic level. Status: *Read the next line aloud.* | Read your line. |
 | **Speaking** | Orb pulses heavily as you talk. Status: *Listening — keep going.* | Finish your line; stop talking. |
 | **Oz** | Orb pulses on its own, speech-like rhythm. Status: *Oz is speaking…* | Wait. The mic is paused; the orb's motion comes from a synthesized envelope, not your voice. |
+| **Memo bridge** | After *"Ok, recording."* a calm orb pulse. Status: *On Field Notes: P… then tap the orb…* | Optional: go to `#/field-notes` and press **P** to append **Sami’s** line (see Script 3 — exact text). Then return to the Field app and **tap the orb** to play Oz’s *"Ok, I saved your field note — thanks!"* **P works on Field Notes only**; it is not wired to the orb. |
 | **(loop)** | Orb returns to mic-driven pulse. | Read the next line. |
-| **Done** | Dim orb. Status: *All 14 lines played. Tap the orb to run the demo again.* | Tap to restart, or navigate away. |
+| **Done** | Dim orb. Status: *All lines played. Tap the orb to run the demo again.* | Tap to restart, or navigate away. |
 
 The advance trigger is a 1-second silence after you've actually been speaking (linear-RMS VAD with **0.015 / 0.01** speech/silence thresholds by default; tunable in [`fieldVoiceTurnTaking.ts`](../../frontend/src/features/fieldApp/fieldVoiceTurnTaking.ts)). If the room is loud and Oz won't advance, step closer to the mic; if Oz advances too eagerly (noisy room), raise `speechThreshold` slightly or increase `silenceMs` — and avoid ≥1s pauses mid-line.
 
-## The sixteen turns
+## The steps (queue)
 
-Read the **You say** column aloud. Oz answers with the **Oz says** column verbatim. The demo arc is Scripts **1–4** on the Field home orb: customer history (Kenny Hills) → recommend & cross-sell → **field-meeting voice memo (lands in Field Notes)** → **Summit Ridge lumber package quote** on the Job Cost Recap sheet. Script 3 is the voice-memo turn that runs **before** the quote build. Script 4 ends with six rep/Oz turns, then Oz plays **“Okay, generating the quote.”** automatically — no separate “background quote” voice step.
+The counter shows **Step *n* of 12** on the Field home orb. The demo arc: Scripts **1–4** — customer history (Kenny Hills) → recommend & cross-sell → **field memo (P on Field Notes, optional) + orb tap to continue** → **Summit Ridge lumber package** on the Job Cost Recap sheet. On a phone, skip adding the row or use a connected keyboard on `#/field-notes` for **P**; the voice run still advances if you only tap the orb.
 
 ### Script 1 — Customer history (Kenny Hills visit prep)
 
@@ -45,15 +46,21 @@ Read the **You say** column aloud. Oz answers with the **Oz says** column verbat
 | 5 | *"For Kenny Hills, what do accounts usually add when they buy what I am recommending, plus the fasteners?"* | *"For accounts like Kenny Hills, when buyers take your primary deck recommendation together with Apex hidden fasteners, history shows a third add: color-matched fascia or a riser bundle on long runs. Position that third line as the typical completion package."* |
 | 6 | *"Ok send me the product specs to my email."* | *"Ok, sending."* |
 
-### Script 3 — Field-meeting voice memo
+### Script 3 — Field memo (Sami’s line, written to Field Notes)
 
-Open with *"Hey, I want to record a field memo."* Oz plays *"Ok, recording."* Then dictate your memo; the app **transcribes** it (OpenAI) and saves it to **Field Notes → Incoming voice memos** at `#/field-notes`. Example memo (optional): *"Just walked Marshall Court with Summit Ridge. They're ready to lock the lumber package — SPF, LVL and I-joist mix, OSB, three flatbed drops next month. Tie the quote to Q twenty-five dash forty-four twenty LUM and keep the lumber P-O line clean for their accounting."*
+**What Sami’s memo says (Rep line in the row — this is what `P` stores):** word-for-word from `SAMI_FIELD_MEMO_CANNED_TEXT` in [`fieldDemoVoiceCopy.ts`](../../frontend/src/features/fieldApp/fieldDemoVoiceCopy.ts)):
 
-| # | You say (read aloud) | Oz plays |
-| --- | --- | --- |
-| 7 | *"Hey, I want to record a field memo."* then dictate your memo after *"Ok, recording."* | *"Ok, recording."* |
+> *"Just wrapped a walkthrough with Summit Ridge on site. They're in a good place — upbeat about the job, easy to talk to, and it feels like they trust us. I'd call the tone collaborative and the opportunity hot. No red flags on the relationship side."*
 
-After this turn, open `#/field-notes` and you'll see the memo at the top of **Incoming voice memos** (salesman **Sami**). Click *View conversation* to see the transcript.
+**Field Notes — `P` (any time this page is open):** On `#/field-notes`, press **P** to append a new **Incoming voice memos** row — **customer** Summit Ridge, **salesman** Sami — with the transcript above (plus System lines). This does not depend on the voice demo; you can press **P** multiple times for more demo rows (each is a new row).
+
+**Voice demo (orb):** Open with *"Hey, I want to record a field memo."* Oz plays *"Ok, recording."* Then: optionally switch to **Field Notes** and press **P** if you want the row in the table; go back to `#/field-app` and **tap the orb** to play *"Ok, I saved your field note — thanks!"* and continue to Script 4. You can **tap the orb** without using **P** if you only need the thank-you and quote flow (no new Field Notes row).
+
+| # | You say (read aloud) | Then | Oz plays |
+| --- | --- | --- | --- |
+| 7 | *"Hey, I want to record a field memo."* (then stop so Oz can reply) | After *"Ok, recording":* (optional) `#/field-notes` → **P** for Sami’s line above. Return to the Field app → **tap the orb** to continue. | *"Ok, I saved your field note — thanks!"* (after the orb tap) |
+
+Open `#/field-notes` after **P** to see the row at the top; **View conversation** shows **Rep** = the paragraph above, **System** lines = recording ack and saved line. There is no live dictation in this path.
 
 ### Script 4 — Summit Ridge lumber package (one-by-one Q&A → Job Cost Recap sheet)
 
@@ -70,20 +77,21 @@ The voice walkthrough fills the same **Q26-0601-LB** / **Q25-4420-LUM** sheet yo
 
 Immediately after turn 13’s Oz line finishes, Oz plays *"Okay, generating the quote."* with **no rep line** — then the run completes.
 
-After Script 3 dictation, if the memo saves successfully, Oz plays *"Ok, I saved your field note — thanks!"* before Script 4 (no rep line). The saved memo in Field Notes includes a **System** line ending with *`— general`*.
+The saved Field Notes row from step 7 includes a **System** line ending with *`— general`* when applicable.
 
-After that, the orb dims and the status reads *All 16 lines played. Tap the orb to run the demo again.*
+After that, the orb dims and the status reads *All 12 lines played. Tap the orb to run the demo again.* (The step counter tracks **orchestrated Oz + P + auto** line items in the app queue, not only spoken rep lines.)
 
 ## If something goes wrong
 
 - **Orb won't advance after I stop talking.** Background noise may stay above the silence threshold (linear RMS **0.01**). Move closer to the mic, reduce fan noise, or bump `silenceMs` in [`fieldVoiceTurnTaking.ts`](../../frontend/src/features/fieldApp/fieldVoiceTurnTaking.ts) up from 1000 ms. Conversely, if it advances mid-sentence, you probably paused for ≥1 s or the room is lifting the RMS.
 - **TTS doesn't play.** A `Voice failed: …` banner appears under the orb and the run drops back to `listening` — speak again to retry. Common causes: missing `ELEVENLABS_API_KEY`, the dev server isn't proxying `/api/oz/elevenlabs/tts`, or the request hit the 90 s timeout. Restart the server after fixing.
+- **After “Ok, recording” the orb is waiting for a tap** (not for **P**). **P** only works on `#/field-notes`. If you use **Skip to next script →** from the memo bridge step, you leave Script 3 (including the thank-you line) and jump to Script 4.
 - **Mic permission was denied.** The mic-setup card stays expanded with the error. Click *Allow microphone* again or pick a different input.
 - **Wrong voice / accent.** Set `ELEVENLABS_VOICE_ID` and `ELEVENLABS_MODEL_ID` in `.env`. Default is "Rachel" + `eleven_multilingual_v2`.
 
 ## Where the lines live
 
-- All thirteen Oz strings are constants in [`fieldDemoVoiceCopy.ts`](../../frontend/src/features/fieldApp/fieldDemoVoiceCopy.ts) (Scripts 1, 2, 3 turns 1–6, and 4) and [`fieldDemoKennyData.ts`](../../frontend/src/features/fieldApp/fieldDemoKennyData.ts) (`KENNY_TTS_AUDIO_BRIEF`).
+- The Oz strings for the queue are in [`fieldDemoVoiceCopy.ts`](../../frontend/src/features/fieldApp/fieldDemoVoiceCopy.ts) and [`fieldDemoKennyData.ts`](../../frontend/src/features/fieldApp/fieldDemoKennyData.ts) (`KENNY_TTS_AUDIO_BRIEF`). The **Sami** memo body for **P** is `SAMI_FIELD_MEMO_CANNED_TEXT` in the same file.
 - The order — and which turns belong to which script (used by the **Skip to next script** button) — is the queue in [`fieldDemoScriptQueue.ts`](../../frontend/src/features/fieldApp/fieldDemoScriptQueue.ts).
 - The Summit Ridge / lumber package demo data the Script 4 answers must match is in [`jobCostEstimateRecap.ts`](../../frontend/src/features/fieldApp/jobCostEstimateRecap.ts) (`JCR_JSON_EXAMPLE_DEFAULTS`). Change the seed values there if you want the rep to read different numbers.
 - To rewrite a line, edit the constant. To reorder turns, edit the queue. Tag each step with the right `scriptIndex` so Skip jumps to the correct boundary.
@@ -91,6 +99,6 @@ After that, the orb dims and the status reads *All 16 lines played. Tap the orb 
 
 ## Why it's built this way
 
-- **Tap-to-start, silence-to-advance** is the only reliable phone-friendly way to drive the demo: one big touch target, no keyboard, no router. Hotkeys were removed for the same reason.
-- **Most steps use VAD only** (mic envelope); the Script 3 memo turn uses **speech-to-text** to save text to Field Notes. On other turns, as long as you pause to advance and the TTS lines match the queue, the run stays in sync.
+- **Tap-to-start, silence-to-advance** drives most of the demo. The Field Notes row uses **P** on `#/field-notes` so the transcript is **deterministic** and not coupled to the voice run; the orb only needs a **tap** after *"Ok, recording."*
+- **Most steps use VAD only** (mic envelope). Script 3 **optionally** uses **P** on **Field Notes** to save Sami’s canned line; the orb only needs a **tap** to play the thank-you. On other turns, as long as you pause to advance and the TTS lines match the queue, the run stays in sync.
 - **The orb pulses speech-like while Oz is speaking** so the demo doesn't visually stall while audio plays. The motion is synthesized from three sines (syllable / phrase / flutter) — see `useSpeechLikePulse` in [`FieldAppView.tsx`](../../frontend/src/features/fieldApp/FieldAppView.tsx).

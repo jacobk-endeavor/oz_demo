@@ -16,7 +16,7 @@ export const quoteAutomationDemoData: QuoteAutomationDemoData = {
       type: 'voice_memo',
       status: 'Ready for review',
       summary:
-        '"Walked Marshall Court with Summit Ridge — ready to lock SPF, LVL/I-joist mix, OSB, three drops next month. Quote tied to Q25-4420-LUM."',
+        '"Summit Ridge walkthrough — customer upbeat, collaborative tone, strong trust. Opportunity feels hot; no relationship concerns."',
     },
     {
       id: 'source-pdf',

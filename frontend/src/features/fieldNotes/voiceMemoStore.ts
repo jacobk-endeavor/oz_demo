@@ -1,8 +1,6 @@
 /**
- * Local store for **incoming voice memos** captured by the Field App's voice flow
- * (Field App Script 3 — live STT). The Field Notes page merges this list with the
- * static `VOICE_MEMO_DEMO` array so memos dictated during a demo run appear in the
- * "Incoming voice memos" table the same way as the canned ones.
+ * Local store for **incoming voice memos** (Field App Script 3 and Field Notes **P**).
+ * The Field Notes page merges this list with the static `VOICE_MEMO_DEMO` array.
  */
 import type { VoiceMemoRow } from './fieldNotesDashboardData'
 
@@ -10,6 +8,8 @@ const STORAGE_KEY = 'oz-demo-voice-memos-v1'
 export const VOICE_MEMOS_CHANGED_EVENT = 'oz-voice-memos-changed' as const
 
 const MAX_MEMOS = 24
+/** Previous default for demo memos; migrate to `Summit Ridge` on read (see `readStoredVoiceMemos`). */
+const LEGACY_MEMO_CUSTOMER = 'Field visit'
 
 function safeParse(raw: string | null): VoiceMemoRow[] {
   if (!raw) return []
@@ -36,7 +36,15 @@ export function readStoredVoiceMemos(): VoiceMemoRow[] {
   if (import.meta.env.VITEST) return []
   if (typeof window === 'undefined') return []
   try {
-    return safeParse(window.localStorage.getItem(STORAGE_KEY))
+    const raw = safeParse(window.localStorage.getItem(STORAGE_KEY))
+    const hadLegacy = raw.some((r) => r.customer === LEGACY_MEMO_CUSTOMER)
+    if (!hadLegacy) return raw
+    const next = raw.map((r) =>
+      r.customer === LEGACY_MEMO_CUSTOMER ? { ...r, customer: 'Summit Ridge' } : r,
+    )
+    writeLocal(next)
+    queueMicrotask(() => dispatchChanged())
+    return next
   } catch {
     return []
   }

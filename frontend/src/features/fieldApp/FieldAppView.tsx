@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
-import { transcribeFieldMemoAudio } from '../../services/fieldOpenAiTranscribe'
 import { joinClasses } from '../../shared/ui'
 import { playFieldElevenTts, stopFieldTts } from '../../services/fieldElevenTts'
 import { FieldVoiceSphere } from './FieldVoiceSphere'
@@ -20,9 +19,6 @@ import {
 import { useFieldMicrophone } from './useFieldMicrophone'
 import { buildFieldScriptQueue, nextScriptStartIndex } from './fieldDemoScriptQueue'
 import { useFieldVoiceTurnTaking } from './fieldVoiceTurnTaking'
-import { useFieldMemoDictationRecorder } from './useFieldMemoDictationRecorder'
-import { useFieldMemoDictationSilenceEnd } from './useFieldMemoDictationSilenceEnd'
-import { appendFieldMemoFromDictation } from './fieldDemoVoiceMemo'
 import { sendProductSpecsEmail } from './fieldDemoProductSpecsEmail'
 import {
   seedJcrLumberQuoteIfAbsent,
@@ -47,13 +43,12 @@ export function FieldAppView({ mode, workflowId }: FieldAppViewProps) {
   return <FieldAppVoiceColumn />
 }
 
-type Phase = 'idle' | 'listening' | 'speaking' | 'oz' | 'memo-recording' | 'memo-processing' | 'done'
+type Phase = 'idle' | 'listening' | 'speaking' | 'oz' | 'memo-orb-continue' | 'done'
 
 /**
  * Field App home: tap the orb to start. The mic opens, the rep speaks the next
  * scripted line, and when they stop talking the next Eleven Labs line plays.
- * Loops until every Oz line in `buildFieldScriptQueue()` (Scripts 1–5 from
- * `scripts.md`, top to bottom) has played.
+ * Loops until every step in `buildFieldScriptQueue()` (Field voice runbook) has played.
  */
 function FieldAppVoiceColumn() {
   const {
@@ -76,71 +71,9 @@ function FieldAppVoiceColumn() {
   const [micSetupExpanded, setMicSetupExpanded] = useState(false)
   const cancelTtsRef = useRef(false)
   const phaseRef = useRef<Phase>('idle')
-  const memoSessionBusyRef = useRef(false)
-
   useEffect(() => {
     phaseRef.current = phase
   }, [phase])
-
-  const { finalize: finalizeMemoRecording } = useFieldMemoDictationRecorder(
-    micStream,
-    phase === 'memo-recording',
-  )
-
-  const completeMemoDictation = useCallback(async () => {
-    if (memoSessionBusyRef.current || phaseRef.current !== 'memo-recording') return
-    memoSessionBusyRef.current = true
-    setPhase('memo-processing')
-    setTtsError(null)
-    let playMemoThanks = false
-    try {
-      const blob = await finalizeMemoRecording()
-      if (!blob?.size) {
-        setTtsError('No audio captured — speak after the prompt, or tap the orb when you are done.')
-      } else {
-        const text = await transcribeFieldMemoAudio(blob)
-        try {
-          appendFieldMemoFromDictation(text)
-          playMemoThanks = true
-        } catch {
-          /* demo-only persistence */
-        }
-      }
-    } catch (e: unknown) {
-      setTtsError(e instanceof Error ? e.message : String(e))
-    } finally {
-      memoSessionBusyRef.current = false
-      setStepIndex((i) => {
-        const thanksIdx = i + 1
-        const afterThanks = i + 2
-        const thanksStep = thanksIdx < queue.length ? queue[thanksIdx] : undefined
-        if (
-          playMemoThanks &&
-          thanksStep?.memoCompleteAck &&
-          thanksIdx < queue.length
-        ) {
-          setPhase('oz')
-          return thanksIdx
-        }
-        if (afterThanks < queue.length) {
-          setPhase('listening')
-          return afterThanks
-        }
-        setPhase('done')
-        return queue.length
-      })
-    }
-  }, [finalizeMemoRecording, queue])
-
-  const memoSilenceDoneRef = useRef(() => {})
-  memoSilenceDoneRef.current = () => {
-    void completeMemoDictation()
-  }
-
-  useFieldMemoDictationSilenceEnd(micStream, phase === 'memo-recording', {
-    onDone: () => memoSilenceDoneRef.current(),
-    silenceTailMs: 3600,
-  })
 
   const onSpeechStart = useCallback(() => {
     setPhase((p) => (p === 'listening' ? 'speaking' : p))
@@ -190,8 +123,8 @@ function FieldAppVoiceColumn() {
         }
         const next = stepIndex + 1
         setStepIndex(next)
-        if (next < queue.length && queue[next]?.memoDictation) {
-          setPhase('memo-recording')
+        if (next < queue.length && queue[next]?.awaitFieldMemoOrb) {
+          setPhase('memo-orb-continue')
         } else if (next < queue.length && queue[next]?.skipRepListen) {
           setPhase('oz')
         } else if (next < queue.length) {
@@ -230,19 +163,24 @@ function FieldAppVoiceColumn() {
         setMicSetupExpanded(true)
         return
       }
-      if (phase === 'memo-recording') {
+      if (phase === 'memo-orb-continue') {
         e.preventDefault()
-        void completeMemoDictation()
-        return
-      }
-      if (phase === 'memo-processing') {
+        setTtsError(null)
+        const thanksIdx = stepIndex + 1
+        if (thanksIdx < queue.length) {
+          setStepIndex(thanksIdx)
+          setPhase('oz')
+        } else {
+          setStepIndex(queue.length)
+          setPhase('done')
+        }
         return
       }
       if (phase === 'idle' || phase === 'done') {
         void startRun()
       }
     },
-    [completeMemoDictation, micOnboardingDone, phase, startRun],
+    [micOnboardingDone, phase, queue.length, startRun, stepIndex],
   )
 
   const onFieldMicAllow = useCallback(() => {
@@ -263,8 +201,7 @@ function FieldAppVoiceColumn() {
     (phase === 'listening' ||
       phase === 'speaking' ||
       phase === 'oz' ||
-      phase === 'memo-recording' ||
-      phase === 'memo-processing')
+      phase === 'memo-orb-continue')
   const onSkipScript = useCallback(() => {
     if (skipTarget === null) return
     cancelTtsRef.current = true
@@ -279,9 +216,15 @@ function FieldAppVoiceColumn() {
 
   const ozPulse = useSpeechLikePulse(phase === 'oz')
   const showFullMicUI = !micOnboardingDone || micSetupExpanded
-  const drivePulseFromMic =
-    phase === 'listening' || phase === 'speaking' || phase === 'memo-recording'
-  const pulseTarget = drivePulseFromMic ? 1 : phase === 'oz' ? ozPulse : 0.16
+  const drivePulseFromMic = phase === 'listening' || phase === 'speaking'
+  const pulseTarget =
+    drivePulseFromMic
+      ? 1
+      : phase === 'oz'
+        ? ozPulse
+        : phase === 'memo-orb-continue'
+          ? 0.38
+          : 0.16
   const stepLabel = stepIndex < queue.length ? queue[stepIndex]!.label : 'Done'
   const stepNumber = Math.min(stepIndex + 1, queue.length)
   const statusLine = statusForPhase(phase, stepNumber, queue.length)
@@ -413,10 +356,8 @@ function statusForPhase(phase: Phase, stepNumber: number, total: number): string
       return 'Listening — keep going. Oz will pick up when you stop.'
     case 'oz':
       return 'Oz is speaking…'
-    case 'memo-recording':
-      return 'Dictating — pause ~3s when finished, or tap the orb to stop and save.'
-    case 'memo-processing':
-      return 'Transcribing your memo…'
+    case 'memo-orb-continue':
+      return 'On Field Notes: press P to add Sami’s memo. Then tap the orb to hear Oz’s thank-you line.'
     case 'done':
       return `All ${total} lines played. Tap the orb to run the demo again.`
   }
@@ -432,10 +373,8 @@ function orbLabelForPhase(phase: Phase): string {
       return 'Hearing you speak. Oz will reply when you stop.'
     case 'oz':
       return 'Oz is speaking. Wait for the line to finish.'
-    case 'memo-recording':
-      return 'Recording memo. Tap when you are done dictating.'
-    case 'memo-processing':
-      return 'Transcribing. Please wait.'
+    case 'memo-orb-continue':
+      return 'Add the memo on Field Notes with P, then tap the orb to continue the voice demo.'
     case 'done':
       return 'Demo complete. Tap to start over.'
   }
