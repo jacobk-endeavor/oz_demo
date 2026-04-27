@@ -280,6 +280,8 @@ export default defineConfig(({ mode }) => ({
     host: true,
     port: 4173,
     strictPort: false,
+    /** DigitalOcean / custom domains send a Host that Vite would otherwise block. */
+    allowedHosts: true,
   },
   /** One pdfjs build for `react-pdf` main thread + our worker `?url` import. */
   resolve: { dedupe: ['pdfjs-dist'] },
