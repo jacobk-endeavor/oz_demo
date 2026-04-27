@@ -23,11 +23,11 @@ import { buildMilwaukeeDistributorRows } from './features/leadGen/milwaukeeDistr
 import { LeadGenDistributorsTable } from './features/leadGen/LeadGenDistributorsTable'
 import { CompetitorOffersTable } from './features/lumberyard/CompetitorOffersTable'
 import { CompetitorSearchInterstitial } from './features/lumberyard/CompetitorSearchInterstitial'
+import { postCompetitorOffers } from './features/lumberyard/competitorOffersClient'
 import {
   COMPETITOR_SEARCH_MIN_DISPLAY_MS,
   withMinDuration,
 } from './features/lumberyard/competitorSearchTiming'
-import { postCompetitorOffers } from './features/lumberyard/competitorOffersClient'
 import type { CompetitorOfferRow } from './features/lumberyard/competitorOffersTypes'
 import { matchCompetitorProductSearchIntent } from './features/lumberyard/competitorProductIntents'
 import { LumberyardCallsTable } from './features/lumberyard/LumberyardCallsTable'
@@ -164,10 +164,23 @@ function isLeadTableChatPage(p: Page): boolean {
   return p === 'oz' || p === 'tables' || p === 'lead-generation'
 }
 
+/** Lets the right-hand call table panel mount and paint before the library fetch fills rows. */
+const LUMBERYARD_PANEL_SETTLE_BEFORE_ROWS_MS = 400
+const DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS = 200
+/** Longer row cascade when opening the lead grid for “likely buyers if we stock” (competitor run). */
+const LIKELY_BUYERS_LEAD_ROW_STAGGER_MS = 440
+
+function delayMs(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms))
+}
+
 export default function App() {
   const [page, navigate] = useHashRoute()
   const [leadGenContextOpen, setLeadGenContextOpen] = useState(false)
-  /** Single column: demand index, optional P&L when the user asked for profit in chat. */
+  const [leadDistributorRowStaggerMs, setLeadDistributorRowStaggerMs] = useState(
+    DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS,
+  )
+  /** Single column: units requested, optional P&L when the user asked for profit in chat. */
   const [ozCustomerDemandProfitOpen, setOzCustomerDemandProfitOpen] = useState(false)
   const [ozCustomerPanelIncludePnl, setOzCustomerPanelIncludePnl] = useState(false)
   /** Shown under the chart strip after **Export** (new **Your charts** group queued for Dashboards). */
@@ -190,10 +203,19 @@ export default function App() {
     connections: ReturnType<typeof connectionsForAgentRecord>
   } | null>(null)
   const [lumberyardCalls, setLumberyardCalls] = useState<LumberyardCallRow[]>([])
+  const [quotesContextHeaderDetailRow, setQuotesContextHeaderDetailRow] = useState<ReactNode>(null)
   const [tableChatAttachments, setTableChatAttachments] = useState<TableRowContextAttachment[]>([])
   const [tableView, setTableView] = useState(() => defaultLeadTableViewState())
   const viewRef = useRef(tableView)
   const lumberyardOpenRef = useRef(false)
+  /** `fetchLumberyardLibrary` is deferred until the in-chat knowledge pill sequence completes. */
+  const knowledgePreambleWaitRef = useRef<(() => void) | null>(null)
+  /** On Oz, customer-demand charts open only after the Excel + Endeavor in-chat pill finishes. */
+  const customerDemandOpenAfterPillRef = useRef<{ includePnl: boolean } | null>(null)
+
+  useEffect(() => {
+    if (page !== 'quotes-ready') setQuotesContextHeaderDetailRow(null)
+  }, [page])
 
   useEffect(() => {
     viewRef.current = tableView
@@ -274,16 +296,32 @@ export default function App() {
   }, [])
 
   const pendingLumberyardKnowledgeUi = useCallback(
-    (userText: string): 'thinking' | 'knowledge_base' => {
-      if (!isOpenAiConfigured()) return 'thinking'
+    (
+      userText: string,
+    ):
+      | 'thinking'
+      | 'knowledge_base'
+      | 'knowledge_web'
+      | 'knowledge_crm'
+      | 'knowledge_crm_likely_buyers'
+      | 'knowledge_customer_demand' => {
       if (!isLeadTableChatPage(page)) return 'thinking'
       if (isFieldAppCommandCenter(page)) return 'thinking'
-      if (matchProfitByProductGraphIntent(userText)) return 'thinking'
-      if (matchWarehouseBackfillPnlIntent(userText)) return 'thinking'
-      if (matchProductRequestCustomerDashboardIntent(userText)) return 'thinking'
+      if (
+        page === 'oz' &&
+        (matchProductRequestCustomerDashboardIntent(userText) ||
+          matchProfitByProductGraphIntent(userText) ||
+          matchWarehouseBackfillPnlIntent(userText))
+      ) {
+        return 'knowledge_customer_demand'
+      }
+      if (!isOpenAiConfigured()) return 'thinking'
       if (matchMilwaukeeLeadGridIntent(userText)) return 'thinking'
-      if (page === 'oz' && matchStockUpLikelyBuyersIntent(userText)) return 'thinking'
-      if (page === 'oz' && matchCompetitorProductSearchIntent(userText)) return 'knowledge_base'
+      if (page === 'oz' && matchStockUpLikelyBuyersIntent(userText)) {
+        if (lastCompetitorProductQueriesRef.current.length > 0) return 'knowledge_crm_likely_buyers'
+        return 'thinking'
+      }
+      if (page === 'oz' && matchCompetitorProductSearchIntent(userText)) return 'knowledge_web'
       const wantLumber =
         (matchLumberyardTableIntent(userText) ||
           matchLumberyardAnalyticsOrResearchIntent(userText) ||
@@ -297,6 +335,14 @@ export default function App() {
     async (text: string, context: OzChatTurnContext) => {
       if (isFieldAppCommandCenter(page)) return
       if (!isLeadTableChatPage(page)) return
+
+      const waitForKnowledgePreambleIfLoadingTable = () => {
+        const kind = pendingLumberyardKnowledgeUi(text)
+        if (kind === 'thinking') return Promise.resolve()
+        return new Promise<void>((resolve) => {
+          knowledgePreambleWaitRef.current = resolve
+        })
+      }
 
       const flow = backgroundAgentFlowRef.current
       const inCollecting = flow.kind === 'collecting'
@@ -328,8 +374,7 @@ export default function App() {
               const qBlock = ev.questions.map((q, i) => `**${i + 1}.** ${q}`).join('\n\n')
               return {
                 reply: `To finish configuring this **background agent**, I need a bit more:\n\n${qBlock}\n\nReply in your next message and I will save the agent.`,
-                delayMs: 0,
-                stream: false,
+                delayMs: 0
               }
             }
             backgroundAgentFlowRef.current = { kind: 'idle' }
@@ -346,9 +391,8 @@ export default function App() {
               connections: connectionsForAgentRecord(rec),
             })
             return {
-              reply: `**${e.taskTitle}** is saved. **Schedule:** ${e.scheduleDisplay}. **Outcome:** ${e.deliverable}\n\nOpen **Workflows → Background agents** to see the full card, **Connections** logos, and schedule details.`,
-              delayMs: 200,
-              stream: false,
+              reply: `**${e.taskTitle}** is saved. **Schedule:** ${e.scheduleDisplay}. **Outcome:** ${e.deliverable}\n\nOpen **Workflows → Background Agents** to see the full card, **Connections** logos, and schedule details.`,
+              delayMs: 100
             }
           } catch {
             if (r.ok) {
@@ -360,9 +404,8 @@ export default function App() {
                 connections: connectionsForAgentRecord(rec),
               })
               return {
-                reply: `**Background agent saved** (using your wording only — the AI check was skipped). It will: **${r.what}** on **${r.when}**. Open **Workflows → Background agents** to review.`,
-                delayMs: 200,
-                stream: false,
+                reply: `**Background agent saved** (using your wording only — the AI check was skipped). It will: **${r.what}** on **${r.when}**. Open **Workflows → Background Agents** to review.`,
+                delayMs: 100
               }
             }
           }
@@ -383,8 +426,7 @@ export default function App() {
             reply: inCollecting
               ? `I still need ${need.join(' and ')}. Add that in your next message and I will finish the setup.`
               : `I can set up a **background agent**. I still need ${need.join(' and ')}. Tell me in your own words, or in your next line.`,
-            delayMs: 0,
-            stream: false,
+            delayMs: 0
           }
         }
         backgroundAgentFlowRef.current = { kind: 'idle' }
@@ -396,10 +438,9 @@ export default function App() {
         })
         return {
           reply: inCollecting
-            ? `**Background agent saved.** It will: **${r.what}** — **${r.when}**. Open **Workflows → Background agents** to review.`
-            : `**Background agent is being created** — I will **${r.what}** on **${r.when}**. The agent is listed under **Workflows → Background agents**.`,
-          delayMs: 200,
-          stream: false,
+            ? `**Background agent saved.** It will: **${r.what}** — **${r.when}**. Open **Workflows → Background Agents** to review.`
+            : `**Background agent is being created** — I will **${r.what}** on **${r.when}**. The agent is listed under **Workflows → Background Agents**.`,
+          delayMs: 100
         }
       }
 
@@ -415,17 +456,22 @@ export default function App() {
         setCompetitorOffersMeta({ usedWebSearch: false, productQueries: [] })
         lastCompetitorProductQueriesRef.current = []
         setLeadGenContextOpen(false)
-        setOzCustomerPanelIncludePnl(includePnl)
-        setOzCustomerDemandProfitOpen(true)
+        if (page === 'oz') {
+          customerDemandOpenAfterPillRef.current = { includePnl }
+        } else {
+          setOzCustomerPanelIncludePnl(includePnl)
+          setOzCustomerDemandProfitOpen(true)
+        }
+        setLeadDistributorRowStaggerMs(DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS)
         return {
           reply: includePnl
-            ? 'Opened **Customer demand and P&L** beside the chat: **Products requested** (demand index) plus a synthetic P&L table and **realized profit** bars. **Export this group to Dashboards** sends the full set as one **Your charts** group.'
-            : 'Opened **Customer demand** beside the chat: **Products requested** (demand index). Ask for **profit** or **P&L by product** if you also want the synthetic P&L table and realized chart; **Export to Dashboards** includes whatever is shown.',
-          delayMs: 250,
-          stream: false,
+            ? 'Opened **Customer demand and P&L** beside the chat: **Products requested** (units requested) plus a synthetic P&L table and **realized profit** view. **Export this group to Dashboards** sends the full set as one **Your charts** group.'
+            : 'Opened **Customer demand** beside the chat: **Products requested** (units requested). Ask for **profit** or **P&L by product** if you also want the synthetic P&L table and realized chart; **Export to Dashboards** includes whatever is shown.',
+          delayMs: 125
         }
       }
       if (matchMilwaukeeLeadGridIntent(text)) {
+        customerDemandOpenAfterPillRef.current = null
         setOzCustomerDemandProfitOpen(false)
         setOzCustomerPanelIncludePnl(false)
         setLumberyardOpen(false)
@@ -436,30 +482,34 @@ export default function App() {
         setCompetitorOfferRows([])
         setCompetitorOffersMeta({ usedWebSearch: false, productQueries: [] })
         lastCompetitorProductQueriesRef.current = []
+        setLeadDistributorRowStaggerMs(DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS)
       }
       if (matchCompetitorProductSearchIntent(text) && page === 'oz') {
-        setLumberyardOpen(true)
+        customerDemandOpenAfterPillRef.current = null
         setOzCustomerDemandProfitOpen(false)
         setOzCustomerPanelIncludePnl(false)
         setLeadGenContextOpen(false)
+        setLeadDistributorRowStaggerMs(DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS)
+        await waitForKnowledgePreambleIfLoadingTable()
+        setLumberyardOpen(true)
         lumberyardOpenRef.current = true
         if (lumberyardCallsRef.current.length === 0) {
+          await delayMs(LUMBERYARD_PANEL_SETTLE_BEFORE_ROWS_MS)
           try {
             const lib = await fetchLumberyardLibrary()
             if (lib.ok) setLumberyardCalls(lib.calls)
           } catch (e) {
             return {
               reply: `I could not load customer activity: ${e instanceof Error ? e.message : String(e)}`,
-              delayMs: 0,
-              stream: false,
+              delayMs: 0
             }
           }
         }
         if (lumberyardCallsRef.current.length === 0) {
           return {
-            reply: 'There is no **customer activity** in the list yet. Open the activity grid with a product question, then try the competitor search again.',
-            delayMs: 0,
-            stream: false,
+            reply:
+              'There is no **customer activity** in the list yet. Open the activity grid with a product question, then try the competitor search again.',
+            delayMs: 0
           }
         }
         setCompetitorOfferRows([])
@@ -479,8 +529,7 @@ export default function App() {
             return {
               reply:
                 'I could not build a comparison table (no product lines came from the top activity rows). Try after more calls are in the list.',
-              delayMs: 0,
-              stream: false,
+              delayMs: 0
             }
           }
           setCompetitorOfferRows(res.rows)
@@ -490,16 +539,33 @@ export default function App() {
           })
           lastCompetitorProductQueriesRef.current = res.productQueries
           setCompetitorOffersSearching(false)
-          const pl = res.productQueries.length
-            ? `Products considered: **${res.productQueries.join('**, **')}**`
-            : 'Used titles from the first rows where tags were empty.'
-          const web = res.usedWebSearch
-            ? 'Live web hints were used where **Brave** is configured in `.env`.'
-            : 'Listing URLs are demo; add **BRAVE_API_KEY** (or `BRAVE_SEARCH_API_KEY`) for search-backed pages.'
+          const productLine = res.productQueries.length
+            ? res.productQueries.join(' · ')
+            : 'titles from the first rows where tags were empty'
+          const webNote = res.usedWebSearch
+            ? '\n\nLive web hints were blended in where search is enabled.'
+            : ''
           return {
-            reply: `Here’s a **competitor × product** board from the **top five** activity rows. ${pl}. ${web} Click any row in the right-hand table to open links (product page, Google Images, and web). **Next:** ask who is likely to **buy** if you stock those lines—I’ll open the lead grid filtered to engaged accounts that match this product set (not a Milwaukee-only distributor search).`,
-            delayMs: 200,
-            stream: false,
+            reply: [
+              '### Competitor × product board',
+              '',
+              'Sourced from the top five customer-activity rows.',
+              '',
+              res.productQueries.length
+                ? `- **Products:** ${productLine}`
+                : `- **Products:** ${productLine}.`,
+              '',
+              '**Table**',
+              '',
+              '- **Competitor** is a link to that store’s listing (new tab).',
+              '- Click **Product** or **Price** to attach the row to chat; **double-click** the row for listing, Google Images, and web shortcuts.',
+              '',
+              '**Next**',
+              '',
+              'Ask who is likely to **buy** if you stock those lines—I’ll open the lead grid on **engaged** accounts that match this product set (not a Milwaukee-only distributor search).',
+              webNote,
+            ].join('\n'),
+            delayMs: 40
           }
         } catch (e) {
           setCompetitorOffersSearching(false)
@@ -507,8 +573,7 @@ export default function App() {
           lastCompetitorProductQueriesRef.current = []
           return {
             reply: `Competitor search failed. ${e instanceof Error ? e.message : String(e)}`,
-            delayMs: 0,
-            stream: false,
+            delayMs: 0
           }
         }
       }
@@ -518,18 +583,20 @@ export default function App() {
           return {
             reply:
               'First run a **competitor product search** on your customer activity (which competitors list those product lines). After that, ask who is likely to **buy** if you stock those products—the lead table will use that product list to surface engaged, likely accounts.',
-            delayMs: 0,
-            stream: false,
+            delayMs: 0
           }
         }
+        await waitForKnowledgePreambleIfLoadingTable()
         setLumberyardOpen(false)
         lumberyardOpenRef.current = false
         setCompetitorOffersOpen(false)
         setCompetitorOffersSearching(false)
         setCompetitorOfferRows([])
         setCompetitorOffersMeta({ usedWebSearch: false, productQueries: [] })
+        customerDemandOpenAfterPillRef.current = null
         setOzCustomerDemandProfitOpen(false)
         setOzCustomerPanelIncludePnl(false)
+        setLeadDistributorRowStaggerMs(LIKELY_BUYERS_LEAD_ROW_STAGGER_MS)
         setLeadGenContextOpen(true)
         const needle = pickDescriptionFilterNeedle(queries)
         setTableView((prev) => ({
@@ -545,9 +612,8 @@ export default function App() {
         }))
         const qShort = queries.slice(0, 5).join(' · ')
         return {
-          reply: `Opened **likely buyers** on the right: **engaged** accounts whose company blurbs match **${needle}**, using product lines from your last competitor run (**${qShort}**). This is a buyer lens—not “Milwaukee distributors only.” Tighten with sort, source column, or clear filters in chat.`,
-          delayMs: 400,
-          stream: false,
+          reply: `Opened likely buyers on the right: engaged accounts whose company blurbs match ${needle}, using product lines from your last competitor run (${qShort}). This is a buyer lens—tighten with sort, the source column, or clear filters in chat.`,
+          delayMs: 450
         }
       }
       const wantLumberyard =
@@ -557,50 +623,60 @@ export default function App() {
           matchLumberyardAnalyticsOrResearchIntent(text) ||
           lumberyardOpenRef.current)
       if (wantLumberyard) {
-        setLumberyardOpen(true)
+        customerDemandOpenAfterPillRef.current = null
         setOzCustomerDemandProfitOpen(false)
         setOzCustomerPanelIncludePnl(false)
         setLeadGenContextOpen(false)
+        setLeadDistributorRowStaggerMs(DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS)
         setCompetitorOffersOpen(false)
         setCompetitorOffersSearching(false)
         setCompetitorOfferRows([])
         setCompetitorOffersMeta({ usedWebSearch: false, productQueries: [] })
         lastCompetitorProductQueriesRef.current = []
+        // Kick the LLM call off in parallel with the knowledge-pill animation so the reply
+        // is ready (or close to it) the instant the icons finish — instead of starting the
+        // network call only after the ~960ms pill sequence completes.
+        const intelPromise = isOpenAiConfigured()
+          ? (async () => {
+              const intelText = augmentUserMessageWithTableContext(text, context.tableContextAttachments, {
+                scopes: ['lumberyard', 'competitor'],
+              })
+              return postLumberyardIntel(intelText, context.priorExchanges)
+            })()
+          : null
+        await waitForKnowledgePreambleIfLoadingTable()
+        setLumberyardOpen(true)
+        lumberyardOpenRef.current = true
         if (lumberyardCallsRef.current.length === 0) {
+          await delayMs(LUMBERYARD_PANEL_SETTLE_BEFORE_ROWS_MS)
           try {
             const lib = await fetchLumberyardLibrary()
             if (lib.ok) setLumberyardCalls(lib.calls)
           } catch (e) {
             return {
               reply: `I could not load customer activity: ${e instanceof Error ? e.message : String(e)}`,
-              delayMs: 0,
-              stream: false,
+              delayMs: 0
             }
           }
         }
-        if (isOpenAiConfigured()) {
+        if (intelPromise) {
           try {
-            const intelText = augmentUserMessageWithTableContext(text, context.tableContextAttachments, {
-              scopes: ['lumberyard', 'competitor'],
-            })
-            const { reply, usedWebSearch } = await postLumberyardIntel(intelText, context.priorExchanges)
+            const { reply, usedWebSearch } = await intelPromise
             const foot = usedWebSearch
               ? '\n\n_Synthetic: **Brave web search** was used for the competitor / website portion where applicable._'
               : ''
-            return { reply: reply + foot, delayMs: 200, stream: false }
+            return { reply: reply + foot, delayMs: 0 }
           } catch (e) {
             return {
               reply: `Call mining failed. ${e instanceof Error ? e.message : String(e)}`,
-              delayMs: 0,
-              stream: false,
+              delayMs: 0
             }
           }
         }
         return {
           reply:
             'The **call log** is open on the right. Set **OPENAI_API_KEY** in your `.env` to ask about products, **revenue mix** (synthetic), and **competitor** listings on the web (when a search key is set).',
-          delayMs: 300,
-          stream: false,
+          delayMs: 0
         }
       }
       type TableOut = ReturnType<typeof processLeadTableChat>
@@ -613,8 +689,10 @@ export default function App() {
             setTableView(llm.state)
             if (llm.openLeadContext && page === 'oz') {
               setLumberyardOpen(false)
-              setOzCustomerDemandProfitOpen(false)
+              customerDemandOpenAfterPillRef.current = null
+        setOzCustomerDemandProfitOpen(false)
               setOzCustomerPanelIncludePnl(false)
+              setLeadDistributorRowStaggerMs(DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS)
               setLeadGenContextOpen(true)
             }
             out = {
@@ -637,13 +715,15 @@ export default function App() {
         setTableView(out.state)
         if (out.openLeadContext && page === 'oz') {
           setLumberyardOpen(false)
-          setOzCustomerDemandProfitOpen(false)
+          customerDemandOpenAfterPillRef.current = null
+        setOzCustomerDemandProfitOpen(false)
           setOzCustomerPanelIncludePnl(false)
+          setLeadDistributorRowStaggerMs(DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS)
           setLeadGenContextOpen(true)
         }
       }
       if (!isOpenAiConfigured()) {
-        return { reply: out.reply, delayMs: out.delayMs, stream: false }
+        return { reply: out.reply, delayMs: out.delayMs }
       }
 
       const baseForLlm = buildMilwaukeeDistributorRows(out.state.dataset)
@@ -683,12 +763,12 @@ export default function App() {
 
       try {
         const reply = await fetchOpenAiChatCompletion(messages, { maxTokens: 3_200 })
-        return { reply, delayMs: 500, stream: true }
+        return { reply, delayMs: 140 }
       } catch {
-        return { reply: out.reply, delayMs: out.delayMs, stream: false }
+        return { reply: out.reply, delayMs: out.delayMs }
       }
     },
-    [navigate, page],
+    [navigate, page, pendingLumberyardKnowledgeUi],
   )
 
   const onBackgroundAgentConnectingComplete = useCallback(() => {
@@ -696,7 +776,9 @@ export default function App() {
   }, [])
 
   const onContextPanelClose = useCallback(() => {
+    setLeadDistributorRowStaggerMs(DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS)
     setLeadGenContextOpen(false)
+    customerDemandOpenAfterPillRef.current = null
     setOzCustomerDemandProfitOpen(false)
     setOzCustomerPanelIncludePnl(false)
     setChatExportNotices([])
@@ -720,7 +802,9 @@ export default function App() {
 
   useEffect(() => {
     if (isCommandCenterFirstPage(page)) return
+    setLeadDistributorRowStaggerMs(DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS)
     setLeadGenContextOpen(false)
+    customerDemandOpenAfterPillRef.current = null
     setOzCustomerDemandProfitOpen(false)
     setOzCustomerPanelIncludePnl(false)
     setChatExportNotices([])
@@ -763,6 +847,8 @@ export default function App() {
       onSort={handleTableSort}
       onClose={page === 'oz' && leadGenContextOpen ? onContextPanelClose : undefined}
       phaseKey={tablePhaseKey}
+      rowStaggerMs={leadDistributorRowStaggerMs}
+      deferredDataPaint={leadDistributorRowStaggerMs === LIKELY_BUYERS_LEAD_ROW_STAGGER_MS}
       selectedRowIds={
         enableRowChatContext
           ? tableChatAttachments.filter((a) => a.scope === 'lead').map((a) => a.rowId)
@@ -804,6 +890,7 @@ export default function App() {
     <CompetitorOffersTable
       rows={competitorOfferRows}
       phaseKey={competitorPhaseKey}
+      tableTitle="Competitor × product board"
       selectedRowIds={tableChatAttachments.filter((a) => a.scope === 'competitor').map((a) => a.rowId)}
       onRowToggleContext={toggleCompetitorRowContext}
     />
@@ -818,7 +905,7 @@ export default function App() {
     ? (
         <div
           className={joinClasses(
-            'h-full min-h-0 min-w-0 overflow-hidden p-0 transition-opacity duration-300',
+            'h-full min-h-0 min-w-0 overflow-hidden p-0 transition-opacity duration-[390ms]',
             lumberyardKbHidingContext && 'pointer-events-none opacity-0',
           )}
         >
@@ -918,7 +1005,7 @@ export default function App() {
             : page === 'quotes-ready'
               ? (
                   <div className="h-full min-h-0 min-w-0">
-                    <QuotesReadyForReviewPage />
+                    <QuotesReadyForReviewPage onContextHeaderDetailRowChange={setQuotesContextHeaderDetailRow} />
                   </div>
                 )
             : page === 'quote-automation'
@@ -1031,6 +1118,7 @@ export default function App() {
         showContextPanel && !(showLeadForWorkspace && page !== 'oz') ? onContextPanelClose : undefined
       }
       assistant={fieldAssistant}
+      contextHeaderDetailRow={page === 'quotes-ready' ? quotesContextHeaderDetailRow : undefined}
       assistantProps={
         isFieldAppCommandCenter(page) || !isOzTextChat
           ? undefined
@@ -1043,10 +1131,26 @@ export default function App() {
               onRemoveComposerContextAttachment: (key: string) =>
                 setTableChatAttachments((p) => p.filter((a) => a.key !== key)),
               onAfterUserMessage: () => setTableChatAttachments([]),
-              onKnowledgePreambleStart: showLumberYard ? () => setLumberyardKbHidingContext(true) : undefined,
-              onKnowledgePreambleComplete: showLumberYard
-                ? () => setLumberyardKbHidingContext(false)
-                : undefined,
+              onKnowledgePreambleStart: (kind) => {
+                // Only dim the activity / competitor table while a **KB** or **web** pill runs.
+                // CRM / likely-buyer pills are chat-only; hiding here was blanking the right column
+                // for the whole sequence before the hand-off to the lead table.
+                if (kind === 'knowledge_base' || kind === 'knowledge_web') {
+                  setLumberyardKbHidingContext(true)
+                }
+              },
+              onKnowledgePreambleComplete: () => {
+                const customerDemand = customerDemandOpenAfterPillRef.current
+                if (customerDemand) {
+                  customerDemandOpenAfterPillRef.current = null
+                  setOzCustomerPanelIncludePnl(customerDemand.includePnl)
+                  setOzCustomerDemandProfitOpen(true)
+                }
+                const finish = knowledgePreambleWaitRef.current
+                knowledgePreambleWaitRef.current = null
+                finish?.()
+                setLumberyardKbHidingContext(false)
+              },
             }
       }
     >

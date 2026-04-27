@@ -25,10 +25,10 @@ const STARS: ConstellationStar[] = [
   { id: 'oz', label: 'Oz', x: 78, y: 9, kind: 'command', accent: 'bg-sky-300' },
   { id: 'knowledge-base', label: 'Knowledge base', x: 36, y: 32, kind: 'handle', accent: 'bg-cyan-300' },
   { id: 'field-app', label: 'Field App', x: 50, y: 44, kind: 'polaris', accent: 'bg-amber-200' },
-  { id: 'field-notes', label: 'Field notes', x: 58, y: 54, kind: 'bowl', accent: 'bg-emerald-300' },
+  { id: 'field-notes', label: 'Field Notes', x: 58, y: 54, kind: 'bowl', accent: 'bg-emerald-300' },
   { id: 'quotes-ready', label: 'Voice Quote Automation', x: 118, y: 50, kind: 'bowl', accent: 'bg-rose-300' },
-  { id: 'dashboards', label: 'Dashboards', x: 124, y: 80, kind: 'bowl', accent: 'bg-sky-300' },
-  { id: 'background-agents', label: 'Background agents', x: 52, y: 84, kind: 'bowl', accent: 'bg-violet-300' },
+  { id: 'dashboards', label: 'Dashboard Studio', x: 124, y: 80, kind: 'bowl', accent: 'bg-sky-300' },
+  { id: 'background-agents', label: 'Background Agents', x: 52, y: 84, kind: 'bowl', accent: 'bg-violet-300' },
 ]
 
 const NEBULA_POSITIONS_KEY = 'nebula-constellation-positions-v1'

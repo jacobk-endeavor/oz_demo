@@ -124,7 +124,7 @@ describe('App', () => {
   it('renders Dashboards when hash is #/dashboards', () => {
     window.location.hash = '#/dashboards'
     render(<App />)
-    expect(screen.getByRole('heading', { name: /^Dashboards$/i, level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Dashboard Studio', level: 1 })).toBeInTheDocument()
     expect(screen.getByTestId('dashboard-workflow')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '→ Build charts' })).toBeInTheDocument()
   })
@@ -132,7 +132,7 @@ describe('App', () => {
   it('renders Quote Automation when hash is #/quote-automation', () => {
     window.location.hash = '#/quote-automation'
     render(<App />)
-    expect(screen.getByText(/Review workspace for Russin Lumber/i)).toBeInTheDocument()
+    expect(screen.getByText(/Review workspace for Summit Ridge Framing/i)).toBeInTheDocument()
   })
 
   it('renders Quotes Ready for Review when hash is #/quotes-ready', () => {
@@ -161,7 +161,7 @@ describe('App', () => {
     expect(screen.getByTestId('nebula-hub-page')).toBeInTheDocument()
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('link', { name: /Dashboards/i }))
+      fireEvent.click(screen.getByRole('link', { name: /Dashboard Studio/i }))
     })
 
     expect(screen.getByTestId('dashboard-workflow')).toBeInTheDocument()
@@ -172,7 +172,7 @@ describe('App', () => {
     window.location.hash = '#/nebula'
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dashboards' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Dashboard Studio' }))
 
     expect(screen.getByTestId('dashboard-workflow')).toBeInTheDocument()
   })
