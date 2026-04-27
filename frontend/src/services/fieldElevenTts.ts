@@ -124,14 +124,17 @@ export async function playFieldElevenTts(
   ttsFetchAbort = null
 
   if (!res.ok) {
-    let detail = ''
+    // Read the body once: `res.json()` consumes the stream; a follow-up `res.text()` throws
+    // "Failed to execute 'text' on 'Response': body stream already read" in browsers.
+    const raw = await res.text()
+    let detail = raw
     try {
-      const j = (await res.json()) as { error?: string }
-      detail = j.error ?? ''
+      const j = JSON.parse(raw) as { error?: string }
+      if (typeof j.error === 'string' && j.error.trim().length > 0) detail = j.error
     } catch {
-      detail = await res.text()
+      // keep `raw` (HTML/plain error page from proxy, etc.)
     }
-    throw new Error(detail || `TTS failed (${res.status})`)
+    throw new Error(detail.trim() || `TTS failed (${res.status})`)
   }
   const blob = await res.blob()
   const url = URL.createObjectURL(blob)

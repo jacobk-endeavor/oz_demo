@@ -1055,14 +1055,6 @@ export default function App() {
       />
     ) : undefined
 
-  const commandCenterLabel = (() => {
-    if (isFieldMobileNavId(page)) {
-      return getFieldMobileWorkflow(fieldWorkflowIdForPage(page))!.shortTitle
-    }
-    if (page === 'field-app') return 'Field App'
-    return 'Oz'
-  })()
-
   const isOzTextChat = page === 'oz' && !isFieldAppCommandCenter(page)
   const commandCenterMode: 'rail' | 'centered' =
     isOzTextChat &&
@@ -1110,9 +1102,9 @@ export default function App() {
           : null
       }
       fieldMobileNavItems={fieldMobileNavItems}
-      commandCenterLabel={commandCenterLabel}
+      hidePrimaryNav={isFieldAppCommandCenter(page)}
       commandCenterMode={commandCenterMode}
-      showCommandBar={isFieldAppCommandCenter(page)}
+      showCommandBar={false}
       contextPanelOpen={showContextPanel}
       onContextPanelClose={
         showContextPanel && !(showLeadForWorkspace && page !== 'oz') ? onContextPanelClose : undefined

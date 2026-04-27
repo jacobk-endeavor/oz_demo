@@ -68,6 +68,8 @@ export interface OzWorkflowShellProps {
    * this section should not appear.
    */
   fieldMobileNavItems?: ReadonlyArray<{ id: string; label: string }>
+  /** When true, the left primary nav (logo, workspace links) is omitted for a full-width main column. */
+  hidePrimaryNav?: boolean
   /**
    * Hides the context column title block (eyebrow, title, subtitle). Use for surfaces
    * that are self-explanatory (e.g. a full-width generated table). Close / `headerActions`
@@ -266,6 +268,7 @@ export function OzWorkflowShell({
   onContextPanelClose,
   className,
   fieldMobileNavItems = [],
+  hidePrimaryNav = false,
   hideContextHeader = false,
   contextWide = false,
   commandCenterMode: commandCenterModeProp = 'rail',
@@ -401,6 +404,7 @@ export function OzWorkflowShell({
           <div className="pointer-events-auto min-w-0">{topRightNotification}</div>
         </div>
       ) : null}
+      {!hidePrimaryNav && (
       <nav
         aria-label="Primary navigation"
         className={joinClasses(
@@ -592,6 +596,7 @@ export function OzWorkflowShell({
           />
         </div>
       </nav>
+      )}
 
       <div ref={splitRef} className="relative flex min-h-0 min-w-0 flex-1">
         {/* One <OzAssistantPanel> instance so moving between centered and split layout does not unmount the chat. */}

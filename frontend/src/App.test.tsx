@@ -98,12 +98,12 @@ describe('App', () => {
     expect(screen.queryByRole('complementary', { name: 'Oz chat' })).not.toBeInTheDocument()
   })
 
-  it('does not list mobile workflow shortcuts in the left nav', () => {
+  it('hides the primary left nav on Field App (orb only)', () => {
     window.location.hash = '#/field-app'
     render(<App />)
-    const nav = screen.getByRole('navigation', { name: 'Primary navigation' })
-    expect(within(nav).queryByText('Mobile workflows')).not.toBeInTheDocument()
-    expect(within(nav).queryByRole('button', { name: 'Customer history' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', { name: 'Primary navigation' }),
+    ).not.toBeInTheDocument()
   })
 
   it('renders Field Notes when hash is #/field-notes', () => {
