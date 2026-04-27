@@ -12,7 +12,7 @@
    **Oz says:** *Here's a competitor × product board from the top five activity rows. Click any row to open links. Next: ask who is likely to buy if you stock those lines.*
 
 4. **You type:** *if I stock up on those, who is likely to buy?*
-   **Oz says:** *Opened likely buyers on the right: engaged accounts whose company blurbs match [product needle], using product lines from your last competitor run. This is a buyer lens — not "Milwaukee distributors only."*
+   **Oz says:** *Opened likely buyers on the right: engaged accounts whose company blurbs match [product needle], using product lines from your last competitor run. This is a buyer lens—tighten with sort, the source column, or clear filters in chat.*
 
 5. **You type:** *build a dashboard of the products customers are requesting*
    **Oz says:** *Opened Customer demand beside the chat: Products requested (demand index).*
@@ -26,7 +26,7 @@
 ## Voice — `#/field-app`
 
 1. **You say:** *I'm about to visit contractor Kenny Hills — what have we sold them, and what notes are on the account?*
-   **Oz says:** *I've got you, Alex. I'm opening Kenny Hills now—you'll get recent orders, value bands, and the field and service notes so you're not walking in cold.*
+   **Oz says:** *I've got you, Sami. I'm opening Kenny Hills now—you'll get recent orders, value bands, and the field and service notes so you're not walking in cold.*
 
 2. **You say:** *Read me the audio summary.*
    **Oz says:** *Kenny Hills Contracting is a reliable customer that is currently focusing on selling pool deck lines. In November, they bought a heavy lift cap composite resurfacing option, and it's the biggest dollar item on the account. From there, they've bought Westbury Rail to match their pool deck collection and have been looking for hidden fasteners of different types to make their orders pop for their customers. They are really pushing for clean surfaces with no screws showing.*
@@ -43,26 +43,27 @@
 6. **You say:** *Ok send me the product specs to my email.*
    **Oz says:** *Ok, sending.*
 
-7. **You say:** *Just left Sammy Carter's fab shop. Walked the floor with Sammy and his maintenance lead Mike. Sammy wants to upgrade the second packaging line — manual case packing is the bottleneck, about an hour a day on changeover. Robotic pick cell with vision and P-L-C, install before Q3, open to leasing if cap-ex is tight. Action items: pull the Q twenty-five dash eleven oh two spec, get the floor envelope from Mike, walk back with the cost recap.*
-   **Oz says:** *Cool, recording.*
+7. **You say:** *Hey, I want to record a field memo.* — then dictate your memo after Oz says *Ok, recording.* (saved to Field Notes via transcription).
+   **Oz says:** *Ok, recording.*
 
-8. **You say:** *Let's spec out Sammy Carter's quote — the automation cell upgrade at his fab shop.*
-   **Oz says:** *Got it, Alex. First — give me the project basics for Sammy Carter's automation cell upgrade: what project number, which existing quote we're tying to, and which P-M leads on our side? I'll auto-generate the P-O on the sheet — you can edit it after if Sammy supplies a real one.*
+   After a successful save, **Oz says:** *Ok, I saved your field note — thanks!* (no rep line). In Field Notes, the memo’s last **System** line is *Memo saved to Field Notes. — general*.
 
-9. **You say:** *Project Q twenty-six dash zero zero zero two dash zero four, ref quote Q twenty-five dash eleven oh two, James leads on our side.*
-   **Oz says:** *Locked. Next — give me a one-line job description and the order value Sammy sees on the cover.*
+8. **You say:** *Let's quote Summit Ridge's lumber package — multi-family framing, SPF and engineered, three-drop delivery.*
+   **Oz says:** *Got it, Sami. The lumber P-O will auto-generate on the sheet — you can edit it if they email you a real purchase order number. First, who is the customer and what's the deal we're quoting?*
 
-10. **You say:** *Robotic cell — conveyor integration, P-L-C controls, safety guarding, vision pick verification, on-site commissioning at Sammy's shop. Order value two hundred eighty-five thousand.*
-    **Oz says:** *Got it. Component costs — break it down: electrical, commercial mechanical, manufactured mechanical.*
+9. **You say:** *Customer is Summit Ridge Framing. The deal is a full framing-and-sheathing package for their Marshall Court job — twelve units, wood frame, lifts tied to their crane schedule.*
+   **Oz says:** *Locked. Next — give me a one-line job description and the order total on the cover.*
 
-11. **You say:** *Thirty-eight thousand five hundred electrical, sixty-two thousand commercial mechanical, no manufactured mechanical.*
-    **Oz says:** *Labor next. Design hours and assembly hours — mechanical first, then electrical. We'll keep our standard rates: sixty-eight an hour for design, sixty-one for assembly.*
+10. **You say:** *SPF dimensional and engineered floor system, OSB wall and roof sheathing, hardware bundle, three flatbed drops to the Marshall Court site. Order value two hundred eighty-five thousand.*
+    **Oz says:** *Got it. Material buckets — dimensional lumber and studs, engineered lumber, then treated or specialty stock if any.*
 
-12. **You say:** *One twenty mechanical design, eighty electrical design, two forty mechanical assembly, one sixty electrical assembly.*
+11. **You say:** *Thirty-eight thousand five hundred dimensional and stud packs, sixty-two thousand LVL and I-joists, no treated specialty on this phase.*
+    **Oz says:** *Labor next. Takeoff and yard time — layout and lift plan first, then crew staging and delivery alignment. We'll keep our standard rates: sixty-eight an hour for design, sixty-one for assembly.*
+
+12. **You say:** *One twenty on takeoff and lift plan, eighty on engineered-lumber coordination, two forty yard crew and staging hours, one sixty delivery-alignment hours.*
     **Oz says:** *Last block — indirect labor, travel, shipping, any sales commission, and the payment schedule. Walk me through it.*
 
-13. **You say:** *Sixty-five hundred indirect, forty-two hundred travel, twenty-eight hundred shipping, no commission. Payment schedule: half on P-O acceptance, half Net thirty after F-A-T.*
-    **Oz says:** *Locked in. Sammy's Job Cost Recap is staged — total cost about one hundred fifty-six thousand, profit one hundred twenty-eight thousand, around forty-five percent margin. Open the sheet to review and queue the invoice.*
+13. **You say:** *Sixty-five hundred indirect, forty-two hundred travel, twenty-eight hundred shipping, no commission. Payment schedule: half on lumber P-O acceptance, half Net thirty after final delivery.*
+    **Oz says:** *Locked in. Summit Ridge's Job Cost Recap is staged — total cost about one hundred fifty-six thousand, profit one hundred twenty-eight thousand, around forty-five percent margin. Open the sheet to review and queue the invoice.*
 
-14. **You say:** *Queue a background quote for me while I drive.*
-    **Oz says:** *Sounds good. I'm queuing a background quote to the web team—you'll get a handoff, not the full five-question visit note.*
+14. *(No rep line.)* After the Script 4 close, Oz automatically says: *Okay, generating the quote.* — then the Field home voice run ends. (Use **Workspace → Field App → Background quote** if you still want the separate drive-time workflow panel.)

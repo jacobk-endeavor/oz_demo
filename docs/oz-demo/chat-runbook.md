@@ -36,20 +36,20 @@ Read the **You type** column verbatim. The matchers are case-insensitive but the
 | --- | --- | --- |
 | 2 | *"what have my customers been requesting"* | The lumberyard call-log opens on the right with mock customer requests. Oz says: *"The call log is open on the right. Set OPENAI_API_KEY in your `.env` to ask about products, revenue mix (synthetic), and competitor listings on the web (when a search key is set)."* |
 | 3 | *"who else sells these products — search the web for the top 5"* | A *Searching the web…* interstitial plays, then a competitor × product board appears built from the top 5 activity rows (with Brave-sourced links if `BRAVE_API_KEY` is set, otherwise mock). Oz says: *"Here's a competitor × product board from the top five activity rows. Click any row to open links. Next: ask who is likely to buy if you stock those lines."* |
-| 4 | *"if I stock up on those, who is likely to buy?"* | The lead table re-opens, filtered to **engaged** accounts whose company description matches the product needles from turn 3. Sort defaults to industry/name. Oz says: *"Opened likely buyers on the right: engaged accounts whose company blurbs match [product needle], using product lines from your last competitor run. This is a buyer lens — not 'Milwaukee distributors only.'"* |
+| 4 | *"if I stock up on those, who is likely to buy?"* | The lead table re-opens, filtered to **engaged** accounts whose company description matches the product needles from turn 3. Sort defaults to industry/name. Oz says: *"Opened likely buyers on the right: engaged accounts whose company blurbs match [product needle], using product lines from your last competitor run. This is a buyer lens—tighten with sort, the source column, or clear filters in chat."* |
 
 ### Script 3 — Dashboards
 
 | # | You type | What happens |
 | --- | --- | --- |
-| 5 | *"build a dashboard of the products customers are requesting"* | The Customer Demand context panel opens on the right with a bar chart of requested products (demand index). Oz says: *"Opened Customer demand beside the chat: Products requested (demand index)."* |
+| 5 | *"build a chart of the products customers are requesting"* | The Customer Demand context panel opens on the right with a bar chart of requested products (demand index). Oz says: *"Opened Customer demand beside the chat: Products requested (demand index)."* |
 | 6 | *"add a chart for profit by product"* | The same panel extends with a synthetic P&L table and realized-profit bars. Oz says: *"Opened Customer demand and P&L beside the chat: Products requested (demand index) plus a synthetic P&L table and realized profit bars."* |
 
 ### Script 4 — Background agent
 
 | # | You type | What happens |
 | --- | --- | --- |
-| 7 | *"create a background agent to email me a weekly summary of new competitor offers every Monday at 9am"* | A connection toast appears, then a card lands in **Workflows → Background agents** with the parsed task title, schedule (Mondays 9 am), and outcome line. Oz says: *"[Task title] is saved. Schedule: weekly, Mondays 9 am. Outcome: emailed competitor-offer summary. Open Workflows → Background agents to see the full card, Connections logos, and schedule details."* |
+| 7 | *"create a background agent to email me a weekly who my best salesman is based on number of calls made every Monday at 9am* | A connection toast appears, then a card lands in **Workflows → Background agents** with the parsed task title, schedule (Mondays 9 am), and outcome line. Oz says: *"[Task title] is saved. Schedule: weekly, Mondays 9 am. Outcome: emailed competitor-offer summary. Open Workflows → Background agents to see the full card, Connections logos, and schedule details."* |
 
 ### Reset turn (optional)
 
