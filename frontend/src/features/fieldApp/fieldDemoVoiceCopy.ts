@@ -58,12 +58,12 @@ export const VOICE_MEMO_SAVED_SYSTEM_LINE = 'Memo saved to Field Notes. — gene
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Script 4 — one-by-one Q&A for Summit Ridge Framing / lumber package (Job Cost Recap).
- * Six turns: rep opens, Oz asks Q1; rep answers, Oz asks Q2; … rep answers Q5,
- * Oz closes with the formula totals from the JCR sheet. Each Oz line targets one
- * logical group of fields on the schema so the rep fills the sheet in passes.
+ * Rep flow: open → customer + deal → description + order → material buckets → indirect /
+ * payment. Oz skips the old labor prompt; design / assembly hours stay on the JCR from seeded
+ * defaults ($68 / $61 rates in `jobCostEstimateRecap`). Oz still closes with JCR formula totals.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-/** Turn 1 — rep opens; Oz confirms lumber P-O is auto-generated and asks for customer + deal. */
+/** After rep asks to quote Summit Ridge — Oz confirms lumber P-O is auto-generated and asks for customer + deal. */
 export const SCRIPT3_T1_PROJECT_BASICS = `Got it, ${DEMO_REP_FIRST_NAME}. The lumber P-O will auto-generate on the sheet — you can edit it if they email you a real purchase order number. First, who is the customer and what’s the deal we’re quoting?`
 
 /** Turn 2 — Oz asks for the job description and order value. */

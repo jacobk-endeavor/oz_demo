@@ -5,7 +5,6 @@ import {
   SCRIPT3_T1_PROJECT_BASICS,
   SCRIPT3_T2_DESCRIPTION_AND_ORDER,
   SCRIPT3_T3_COMPONENTS,
-  SCRIPT3_T4_LABOR,
   SCRIPT3_T5_ADDITIONAL_AND_PAYMENT,
   SCRIPT3_T6_CLOSE,
   SCRIPT_QUOTE_GENERATING,
@@ -62,7 +61,7 @@ export type FieldScriptStep = {
  *   Script 1 — customer history (Kenny Hills) — 2 turns
  *   Script 2 — recommend & cross-sell           — 4 turns
  *   Script 3 — field memo (demo rep)            — "Ok, recording" → rep speaks, VAD on **stop** → canned memo in Field Notes + Oz thanks (no P, no transcription)
- *   Script 4 — Summit Ridge lumber package      — 6 rep turns + automatic "generating quote" Oz line
+ *   Script 4 — Summit Ridge lumber package      — 5 rep turns + automatic "generating quote" Oz line (no labor Q&A)
  *
  * The voice-memo turn runs **before** the quote Q&A so the Field Notes table is
  * updated before the lumber walkthrough.
@@ -85,23 +84,19 @@ const REP_LN_UPSELL =
 const REP_LN_SPECS_EMAIL =
   'Do you have spec sheets? Send the capped composite and Apex fastener pack to my email from the product run.'
 
+const REP_LN_LUMBER_OPEN = "Let's do a quote for Summit Ridge."
+
 const REP_LN_LUMBER_1 =
-  "Let's quote the Summit Ridge framing package. I'll walk the Job Cost Recap — customer is Summit Ridge Framing, deal is a multi-phase lumber package for the pool deck and shell."
+  'Customer is Summit Ridge Framing. We are quoting the Marshall Court job — twelve wood-frame units over podium, full lumber-and-sheathing package, three flatbed drops locked to their crane picks and a PO reference that matches their release schedule.'
 
 const REP_LN_LUMBER_2 =
-  "Job description: residential pool deck and shell framing, staged delivery. Order total on the cover is about a hundred and fifty six thousand on this phase."
+  'Cover line: Marshall Court multi-family wood frame for Summit Ridge. Order value on the cover is two hundred eighty-five thousand dollars even, before tax.'
 
 const REP_LN_LUMBER_3 =
-  "Material: dimensional and studs, engineered joists, treated specialty where noted — buckles by line item on the sheet."
+  'Buckets for the sheet: thirty-eight thousand five hundred in dimensional and stud packs — long SPF, plates, and jack studs off the issued framing schedule. Sixty-two thousand in engineered — LVL beams and I-joist runs for the floor system they approved last week. Zero in treated or specialty stock on this phase — nothing exotic on the commodity side.'
 
 const REP_LN_LUMBER_4 =
-  'Labor: our takeoff and yard time — layout and lift plan, crew staging, delivery windows. Use the standard design and assembly rates on the sheet.'
-
-const REP_LN_LUMBER_5 =
-  "Indirect, travel, shipping, any commission, and payment schedule: mostly net thirty on draws as we've been running."
-
-const REP_LN_LUMBER_6 =
-  "We're set — close this recap and queue anything else you need for invoice."
+  'Wrap-up costs: sixty-five hundred indirect for PM and document control, forty-two hundred travel for site pulls and sign-offs, twenty-eight hundred freight on the three staged flatbeds. No rep commission booked on this one. Payment is fifty percent on lumber P-O acceptance and the balance net-thirty after final delivery — use P-O-S-R-MARSHALL-zero-four-two-six when they release so finance can tie the draw.'
 
 const REP_OZ_GENERATING = '(This step: Oz only — no line to read. Oz confirms the quote is generating.)'
 
@@ -133,12 +128,11 @@ export function buildFieldScriptQueue(): readonly FieldScriptStep[] {
       appendCannedFieldMemoOnSpeechEnd: true,
     },
     { scriptIndex: 3, label: 'Script 3 — Field memo (3/3) — Oz thank-you', repLine: '(Listen — Oz thank-you; no new rep line on this turn.)', ozSays: VOICE_MEMO_SAVED_THANKS },
-    { scriptIndex: 4, label: 'Script 4 — Lumber quote (1/6) customer + deal', repLine: REP_LN_LUMBER_1, ozSays: SCRIPT3_T1_PROJECT_BASICS },
-    { scriptIndex: 4, label: 'Script 4 — Lumber quote (2/6) description + order value', repLine: REP_LN_LUMBER_2, ozSays: SCRIPT3_T2_DESCRIPTION_AND_ORDER },
-    { scriptIndex: 4, label: 'Script 4 — Lumber quote (3/6) material buckets', repLine: REP_LN_LUMBER_3, ozSays: SCRIPT3_T3_COMPONENTS },
-    { scriptIndex: 4, label: 'Script 4 — Lumber quote (4/6) takeoff + yard labor', repLine: REP_LN_LUMBER_4, ozSays: SCRIPT3_T4_LABOR },
-    { scriptIndex: 4, label: 'Script 4 — Lumber quote (5/6) additional + payment', repLine: REP_LN_LUMBER_5, ozSays: SCRIPT3_T5_ADDITIONAL_AND_PAYMENT },
-    { scriptIndex: 4, label: 'Script 4 — Lumber quote (6/6) close', repLine: REP_LN_LUMBER_6, ozSays: SCRIPT3_T6_CLOSE },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (1/5) open — quote for Summit Ridge', repLine: REP_LN_LUMBER_OPEN, ozSays: SCRIPT3_T1_PROJECT_BASICS },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (2/5) customer + deal', repLine: REP_LN_LUMBER_1, ozSays: SCRIPT3_T2_DESCRIPTION_AND_ORDER },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (3/5) description + order value', repLine: REP_LN_LUMBER_2, ozSays: SCRIPT3_T3_COMPONENTS },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (4/5) material buckets', repLine: REP_LN_LUMBER_3, ozSays: SCRIPT3_T5_ADDITIONAL_AND_PAYMENT },
+    { scriptIndex: 4, label: 'Script 4 — Lumber quote (5/5) indirect + payment', repLine: REP_LN_LUMBER_4, ozSays: SCRIPT3_T6_CLOSE },
     {
       scriptIndex: 4,
       label: 'Script 4 — Generating quote (Oz only)',

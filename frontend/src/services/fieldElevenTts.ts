@@ -95,6 +95,21 @@ function isAbortError(e: unknown): boolean {
   return e instanceof DOMException && e.name === 'AbortError'
 }
 
+function ttsFetchFailureHint(message: string): string {
+  if (
+    message === 'Failed to fetch' ||
+    /NetworkError|load failed|Failed to fetch/i.test(message)
+  ) {
+    return (
+      ' Field voice needs the Vite server that exposes POST /api/oz/elevenlabs/tts on the same host as this page. ' +
+      'From the Oz-Demo repo root run `npm run dev` (or `npm run build && npm start`). ' +
+      'Set `ELEVENLABS_API_KEY` in `.env` at the repo root and restart. ' +
+      'Opening `dist/index.html` directly or static-only hosting will not work.'
+    )
+  }
+  return ''
+}
+
 /**
  * @throws on network / HTTP / playback error (aborted fetches resolve without throwing).
  */
@@ -138,7 +153,8 @@ export async function playFieldElevenTts(
     if (isAbortError(e)) {
       return
     }
-    throw e instanceof Error ? e : new Error(String(e))
+    const msg = e instanceof Error ? e.message : String(e)
+    throw new Error(msg + ttsFetchFailureHint(msg))
   }
 
   if (ttsFetchTimeout != null) {

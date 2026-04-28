@@ -48,22 +48,19 @@
 
    After a successful save, **Oz says:** *Ok, I saved your field note — thanks!* (no rep line). In Field Notes, the memo’s last **System** line is *Memo saved to Field Notes. — general*.
 
-8. **You say:** *Let's quote Summit Ridge's lumber package — multi-family framing, SPF and engineered, three-drop delivery.*
+8. **You say:** *Let's do a quote for Summit Ridge.*
    **Oz says:** *Got it, Sami. The lumber P-O will auto-generate on the sheet — you can edit it if they email you a real purchase order number. First, who is the customer and what's the deal we're quoting?*
 
-9. **You say:** *Customer is Summit Ridge Framing. The deal is a full framing-and-sheathing package for their Marshall Court job — twelve units, wood frame, lifts tied to their crane schedule.*
+9. **You say:** *Customer is Summit Ridge Framing. We are quoting the Marshall Court job — twelve wood-frame units over podium, full lumber-and-sheathing package, three flatbed drops locked to their crane picks and a PO reference that matches their release schedule.*
    **Oz says:** *Locked. Next — give me a one-line job description and the order total on the cover.*
 
-10. **You say:** *SPF dimensional and engineered floor system, OSB wall and roof sheathing, hardware bundle, three flatbed drops to the Marshall Court site. Order value two hundred eighty-five thousand.*
+10. **You say:** *Cover line: Marshall Court multi-family wood frame for Summit Ridge. Order value on the cover is two hundred eighty-five thousand dollars even, before tax.*
     **Oz says:** *Got it. Material buckets — dimensional lumber and studs, engineered lumber, then treated or specialty stock if any.*
 
-11. **You say:** *Thirty-eight thousand five hundred dimensional and stud packs, sixty-two thousand LVL and I-joists, no treated specialty on this phase.*
-    **Oz says:** *Labor next. Takeoff and yard time — layout and lift plan first, then crew staging and delivery alignment. We'll keep our standard rates: sixty-eight an hour for design, sixty-one for assembly.*
-
-12. **You say:** *One twenty on takeoff and lift plan, eighty on engineered-lumber coordination, two forty yard crew and staging hours, one sixty delivery-alignment hours.*
+11. **You say:** *Buckets for the sheet: thirty-eight thousand five hundred in dimensional and stud packs — long SPF, plates, and jack studs off the issued framing schedule. Sixty-two thousand in engineered — LVL beams and I-joist runs for the floor system they approved last week. Zero in treated or specialty stock on this phase — nothing exotic on the commodity side.*
     **Oz says:** *Last block — indirect labor, travel, shipping, any sales commission, and the payment schedule. Walk me through it.*
 
-13. **You say:** *Sixty-five hundred indirect, forty-two hundred travel, twenty-eight hundred shipping, no commission. Payment schedule: half on lumber P-O acceptance, half Net thirty after final delivery.*
+12. **You say:** *Wrap-up costs: sixty-five hundred indirect for PM and document control, forty-two hundred travel for site pulls and sign-offs, twenty-eight hundred freight on the three staged flatbeds. No rep commission booked on this one. Payment is fifty percent on lumber PO acceptance and the balance net-thirty after final delivery — use PO-SR-MARSHALL-0426 when they release so finance can tie the draw.*
     **Oz says:** *Locked in. Summit Ridge's Job Cost Recap is staged — total cost about one hundred fifty-six thousand, profit one hundred twenty-eight thousand, around forty-five percent margin. Open the sheet to review and queue the invoice.*
 
-14. *(No rep line.)* After the Script 4 close, Oz automatically says: *Okay, generating the quote.* — then the Field home voice run ends. (Use **Workspace → Field App → Background quote** if you still want the separate drive-time workflow panel.)
+13. *(No rep line.)* After the Script 4 close, Oz automatically says: *Okay, generating the quote.* — then the Field home voice run ends. (Use **Workspace → Field App → Background quote** if you still want the separate drive-time workflow panel.)

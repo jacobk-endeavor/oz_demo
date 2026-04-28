@@ -3,8 +3,8 @@
  *
  * Mirrors the "Job Cost Recap" sheet of Q26-0601-LB (lumber framing package) used
  * for on-site field entry. Section titles and line items follow Field voice Script 4
- * (material buckets; design vs assembly labor at $68 / $61; indirect, travel, shipping,
- * commission, payment). The grid is editable with live formulas like Excel.
+ * (material buckets; design vs assembly labor at $68 / $61 kept as sheet defaults when the
+ * Field voice script skips the labor Q&A; indirect, travel, shipping, commission, payment).
  *
  * Column letters used: A B C D E F G  (0-6).
  * Row numbers in this module are 1-indexed to match Excel — i.e. row 3 = "row 3".
@@ -57,8 +57,8 @@ export type JcrFieldRef = { kind: 'input'; field: JcrInputField } | { kind: 'com
 
 /**
  * Voice-demo example: Summit Ridge Framing / lumber package (ref Q25-4420-LUM).
- * Row labels follow Field voice Script 4: material buckets, then design / assembly
- * labor at the rates Oz states ($68 design, $61 assembly), then additional costs
+ * Row labels follow Field voice Script 4: material buckets; design / assembly labor hours stay
+ * on the seeded sheet (not verbalized in the shortened voice flow); then additional costs
  * and payment (SCRIPT3_T5).
  *
  * Sanity check:
@@ -85,10 +85,10 @@ export const JCR_JSON_EXAMPLE_DEFAULTS = {
   material_engineered_lumber: 62_000,
   /** Voice T3 — treated or specialty stock */
   material_treated_specialty: 0,
-  /** Voice T4 — takeoff, layout & lift plan (combined hours; rate $68 in voice) */
+  /** Design labor row — hours default on sheet (Script 4 voice no longer asks for this line). Rate $68. */
   design_labor_hours: 200,
   design_labor_rate: 68,
-  /** Voice T4 — crew staging & delivery alignment (rate $61 in voice) */
+  /** Assembly labor row — same; rate $61. */
   assembly_labor_hours: 400,
   assembly_labor_rate: 61,
   indirect_labor_cost: 6_500,
