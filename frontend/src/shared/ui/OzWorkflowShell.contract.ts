@@ -26,7 +26,6 @@ export type OzWorkflowNavId =
   | 'lead-generation'
   | 'background-agents'
   | 'help'
-  | 'settings'
 
 /** Small square in the Workflows list — matches sim.ai / “superark” style swatches. */
 export type WorkflowAccent = 'zinc' | 'emerald' | 'amber' | 'sky' | 'violet' | 'rose' | 'cyan'
@@ -44,7 +43,7 @@ export const workflowAccentClass: Record<WorkflowAccent, string> = {
 export interface OzWorkflowNavItem {
   id: Exclude<
     OzWorkflowNavId,
-    'oz' | 'search' | OzWorkspaceNavId | FieldMobileNavId | 'help' | 'settings'
+    'oz' | 'search' | OzWorkspaceNavId | FieldMobileNavId | 'help'
   >
   label: string
   accent: WorkflowAccent

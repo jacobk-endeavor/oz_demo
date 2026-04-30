@@ -8,7 +8,6 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react'
-import { matchMilwaukeeLeadGridIntent } from '../../features/leadGen/leadGenTableModel'
 import { matchStockUpLikelyBuyersIntent } from '../../features/leadGen/stockUpBuyerIntents'
 import type { TableRowContextAttachment } from '../tableRowContext'
 import { ArrowUpIcon } from './icons'
@@ -114,6 +113,13 @@ export interface OzAssistantPanelProps {
    * Use to clear composer row context chips so a turn does not keep rows “linked” after the message is sent.
    */
   onAfterUserMessage?: () => void
+  /** Rendered above the chat composer (e.g. Russin call DB scope). */
+  composerAccessory?: ReactNode
+  /**
+   * When this value changes, the thread resets to the initial seed (e.g. welcome line only).
+   * Use when switching contexts such as transcript/RAG user scope so prior messages are not reused.
+   */
+  transcriptResetKey?: string | number
 }
 
 function makeId() {
@@ -176,9 +182,6 @@ function buildScriptedReply(
   if (matchStockUpLikelyBuyersIntent(input)) {
     return 'After your competitor product search, I can open the lead grid for likely buyers filtered to those product lines—engaged accounts first. If you have not run a competitor search yet, do that on the activity grid, then ask again.'
   }
-  if (matchMilwaukeeLeadGridIntent(input)) {
-    return 'I found distributors in the Milwaukee area and added them to the lead table on the right. Skim size and type before you route visits or enrollments.'
-  }
   if (/^(yes|yeah|yep|yup|ok|okay|sounds good|sounds right|do it|please do)\b/.test(lower)) {
     if (lastOz || ctx.priorExchanges.length > 0) {
       return "Got it. I'll use that. What's the next move—tighten the list, re-sort, or line up a visit?"
@@ -214,7 +217,7 @@ function buildScriptedReply(
   if (contextSummary) {
     return `Right—on this view, the gist is: ${contextSummary} Tell me a tighter next step and I will stay in the back-and-forth.`
   }
-  return 'Alright. Tell me a bit more about the outcome you want, and I will answer in-thread—sorting, follow-ups, or the Milwaukee grid, for example.'
+  return 'Alright. Tell me a bit more about the outcome you want, and I will answer in-thread—sorting, follow-ups, or the lead table, for example.'
 }
 
 /** Reply text streams in small chunks per tick (including newlines). */
@@ -573,6 +576,8 @@ export function OzAssistantPanel({
   onKnowledgePreambleStart,
   onKnowledgePreambleComplete: onKnowledgePreambleCompleteFromParent,
   onAfterUserMessage,
+  composerAccessory,
+  transcriptResetKey,
 }: OzAssistantPanelProps) {
   const [transcript, setTranscript] = useState<OzAssistantMessage[]>(() =>
     buildInitialTranscript(seed, hideWelcome),
@@ -598,7 +603,7 @@ export function OzAssistantPanel({
     setStreamingId(null)
     // `seed` omitted on purpose: `messages={[]}` from parents is a new `[]` each render, but
     // `seedSignature` is stable for the same content.
-  }, [hideWelcome, seedSignature])
+  }, [hideWelcome, seedSignature, transcriptResetKey])
 
   useEffect(() => {
     return () => {
@@ -850,6 +855,9 @@ export function OzAssistantPanel({
           className="flex w-full flex-col items-center justify-center gap-2 px-2"
           aria-label="Oz conversation"
         >
+          {composerAccessory ? (
+            <div className="w-full max-w-md md:max-w-lg">{composerAccessory}</div>
+          ) : null}
           {sharedComposer({
             size: 'hero',
             className: 'max-w-md md:max-w-lg',
@@ -917,11 +925,14 @@ export function OzAssistantPanel({
               : 'border-t border-zinc-200/90 bg-zinc-50/80 px-3 py-3',
         )}
       >
-        {sharedComposer({
-          size: 'compact',
-          className: isCentered ? 'mx-auto w-full max-w-2xl' : 'w-full',
-          inputId: 'oz-chat-input',
-        })}
+        <div className={joinClasses('flex flex-col gap-2', isCentered && 'mx-auto w-full max-w-2xl')}>
+          {composerAccessory}
+          {sharedComposer({
+            size: 'compact',
+            className: isCentered ? 'w-full' : 'w-full',
+            inputId: 'oz-chat-input',
+          })}
+        </div>
       </div>
     </aside>
   )

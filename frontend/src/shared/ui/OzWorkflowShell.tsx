@@ -81,6 +81,17 @@ export interface OzWorkflowShellProps {
   /** Fixed top-right status (e.g. in-app toasts). Rendered above the main layout. */
   topRightNotification?: ReactNode
   /**
+   * Rendered to the right of the Endeavor logo in the primary nav header (e.g. transcript scope).
+   * Hidden when the sidebar is collapsed. Omit when unused.
+   */
+  navAccessory?: ReactNode
+  /** Compact settings tab anchored above the sidebar footer (not a route). */
+  settingsTabOpen?: boolean
+  settingsTab?: ReactNode
+  onSettingsTabClose?: () => void
+  /** Invoked instead of navigating when the sidebar Settings footer is pressed. */
+  onSettingsFooterClick?: () => void
+  /**
    * Replaces the default title + subtitle block in the context header (eyebrow unchanged).
    * Use for a single compact row (e.g. quote id, timestamp, back action).
    */
@@ -231,15 +242,21 @@ function FooterButton({
   collapsed,
   label,
   onClick,
+  ariaExpanded,
+  ariaControls,
 }: {
   collapsed: boolean
   label: string
   onClick: () => void
+  ariaExpanded?: boolean
+  ariaControls?: string
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-expanded={ariaExpanded}
+      aria-controls={ariaControls}
       className={joinClasses(
         'w-full rounded-lg text-left text-sm text-zinc-500 transition-colors hover:bg-zinc-200/50 hover:text-zinc-800',
         collapsed ? 'px-0 py-2 text-center' : 'px-2.5 py-2',
@@ -275,7 +292,12 @@ export function OzWorkflowShell({
   showCommandBar: showCommandBarProp,
   splitChatHeader,
   topRightNotification,
+  navAccessory,
   contextHeaderDetailRow,
+  settingsTabOpen = false,
+  settingsTab,
+  onSettingsTabClose,
+  onSettingsFooterClick,
 }: OzWorkflowShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useStoredFlag(SIDEBAR_KEY, false)
   const [workflowsOpen, setWorkflowsOpen] = useStoredFlag(WORKFLOWS_OPEN_KEY, false)
@@ -404,6 +426,14 @@ export function OzWorkflowShell({
           <div className="pointer-events-auto min-w-0">{topRightNotification}</div>
         </div>
       ) : null}
+      {settingsTabOpen && onSettingsTabClose ? (
+        <button
+          type="button"
+          aria-label="Close settings"
+          className="fixed inset-0 z-[175] cursor-default bg-zinc-950/20"
+          onClick={onSettingsTabClose}
+        />
+      ) : null}
       {!hidePrimaryNav && (
       <nav
         aria-label="Primary navigation"
@@ -414,7 +444,7 @@ export function OzWorkflowShell({
       >
         <div
           className={joinClasses(
-            'flex items-center border-b border-zinc-200 px-2.5 py-2.5',
+            'relative z-[70] flex items-center gap-1 border-b border-zinc-200 bg-white px-2.5 py-2.5',
             sidebarCollapsed ? 'justify-center' : 'justify-start',
           )}
         >
@@ -422,10 +452,10 @@ export function OzWorkflowShell({
             type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className={joinClasses(
-              'flex min-w-0 items-center rounded-md transition-colors hover:bg-zinc-200/50',
+              'flex min-w-0 shrink-0 items-center rounded-md transition-colors hover:bg-zinc-200/50',
               sidebarCollapsed
                 ? 'w-full justify-center p-1'
-                : 'flex-1 justify-start p-1 pl-0.5 pr-2',
+                : 'justify-start p-1 pl-0.5 pr-2',
             )}
             aria-expanded={!sidebarCollapsed}
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -443,6 +473,9 @@ export function OzWorkflowShell({
               draggable={false}
             />
           </button>
+          {!sidebarCollapsed && navAccessory ? (
+            <div className="relative z-[70] min-w-0 flex-1 overflow-visible pl-0.5">{navAccessory}</div>
+          ) : null}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2 pt-1.5">
@@ -583,7 +616,17 @@ export function OzWorkflowShell({
           )}
         </div>
 
-        <div className="shrink-0 border-t border-zinc-200 px-1.5 py-1.5">
+        <div className="relative z-[200] shrink-0 border-t border-zinc-200 px-1.5 py-1.5">
+          {settingsTabOpen && settingsTab != null ? (
+            <div
+              id="oz-settings-tab-panel"
+              role="dialog"
+              aria-label="Settings"
+              className="absolute bottom-full left-1.5 z-[190] mb-2 w-max max-w-[min(28rem,calc(100vw-0.75rem))] min-w-[12.5rem] rounded-lg border border-zinc-200 bg-white px-2.5 py-2 shadow-xl ring-1 ring-black/5"
+            >
+              {settingsTab}
+            </div>
+          ) : null}
           <FooterButton
             collapsed={sidebarCollapsed}
             label="Help"
@@ -592,7 +635,11 @@ export function OzWorkflowShell({
           <FooterButton
             collapsed={sidebarCollapsed}
             label="Settings"
-            onClick={() => onNavItemChange?.('settings')}
+            ariaExpanded={settingsTabOpen}
+            ariaControls={settingsTab != null ? 'oz-settings-tab-panel' : undefined}
+            onClick={() => {
+              onSettingsFooterClick?.()
+            }}
           />
         </div>
       </nav>

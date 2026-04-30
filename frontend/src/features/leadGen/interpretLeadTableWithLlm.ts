@@ -1,10 +1,5 @@
 import { fetchOpenAiJsonObject, type OzOpenAiMessage } from '../../services/ozOpenAi'
-import {
-  defaultLeadTableViewState,
-  describeTableState,
-  type LeadTableViewState,
-  type SortColumn,
-} from './leadGenTableModel'
+import { describeTableState, type LeadTableViewState, type SortColumn } from './leadGenTableModel'
 import { LEAD_SOURCE_IDS, type LeadSourceId } from './leadSourceMeta'
 
 const SORT_COLUMNS: readonly SortColumn[] = [
@@ -20,14 +15,13 @@ const SORT_COLUMNS: readonly SortColumn[] = [
   'engagement',
 ] as const
 
-const TABLE_INTERPRET_SYSTEM = `You control filters and sorting for a **Milwaukee-area distributor lead table** in a product demo. Reply with **a single JSON object** only (no markdown).
+const TABLE_INTERPRET_SYSTEM = `You control filters and sorting for a **distributor lead table** in a product demo. Reply with **a single JSON object** only (no markdown).
 
 Use this exact shape. Omit keys you are not changing (except affectsTable and reply as needed).
 
 {
   "affectsTable": boolean,
   "reply": "One short user-facing sentence when affectsTable is true; optional when false",
-  "openMilwaukeeGrid": boolean,
   "resetAllFilters": boolean,
   "sourceFilter": null | string[],
   "columnTextFilters": object,
@@ -49,7 +43,6 @@ Rules:
   - "only in pharma" / "pharmaceutical" / "biotech" → **industry** contains e.g. "pharma" or "Biotech" per the row text.
   - "in Wisconsin" / "WI" / "Germany" → **location** or **country** as appropriate.
 - **resetAllFilters**: true clears source, all columnTextFilters, engagement=all.
-- **openMilwaukeeGrid**: true for Milwaukee distributor / Milwaukee leads.
 - **sortPrimary** / **sortSecondary**: user may request sort by **any** column, e.g. "sort by size desc", "order by name", "sub-sort by industry" — set sort fields accordingly; if only primary sort, set **sortSecondary** to null to clear a previous sub-sort.
 - **engagement** "engaged" = only people we already know / net new hidden when appropriate from user wording.
 - For "companies of a certain size", set **columnTextFilters.size** to a **short substring** that will match the Size column (digits and commas as shown in data).
@@ -71,19 +64,6 @@ function normalizeLlmState(
   /** When the model set affectsTable: true we still apply a visible refresh even if the patch is empty. */
   affectsTableIntent: boolean,
 ): { state: LeadTableViewState; rephase: boolean; openLeadContext: boolean; delayMs: number } {
-  if (data.openMilwaukeeGrid === true) {
-    return {
-      state: {
-        ...defaultLeadTableViewState(),
-        phaseToken: prev.phaseToken + 1,
-        dataset: 'standard',
-      },
-      rephase: true,
-      openLeadContext: true,
-      delayMs: 750,
-    }
-  }
-
   let s: LeadTableViewState = { ...prev, phaseToken: prev.phaseToken }
   let changed = false
 
@@ -181,7 +161,7 @@ export type LeadTableLlmResult =
 
 /**
  * Uses the chat model (JSON mode) to interpret natural language table commands: sources with typos,
- * multi-column filters, size/industry, sort, expand, open Milwaukee grid, reset.
+ * multi-column filters, size/industry, sort, expand, reset.
  * Returns **handled: false** when the message is not a table action or in tests / on error.
  */
 export async function interpretLeadTableWithLlm(

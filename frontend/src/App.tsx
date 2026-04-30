@@ -9,7 +9,6 @@ import { getFieldMobileWorkflow } from './features/fieldApp/fieldMobileWorkflows
 import {
   applyLeadTableView,
   defaultLeadTableViewState,
-  matchMilwaukeeLeadGridIntent,
   processLeadTableChat,
 } from './features/leadGen/leadGenTableModel'
 import {
@@ -39,6 +38,13 @@ import {
   matchLumberyardAnalyticsOrResearchIntent,
   matchLumberyardTableIntent,
 } from './features/lumberyard/lumberyardIntents'
+import {
+  postRagCallsQuery,
+  RAG_CALLS_DEFAULT_TOP_K,
+  RAG_CALLS_SCOPE_TRANSITION_MS,
+  type RagCallsScope,
+} from './features/ragCalls/ragCallsClient'
+import { SettingsPerspectiveTab } from './features/settings/SettingsPerspectiveTab'
 import type { DistributorRow } from './features/leadGen/milwaukeeDistributorsMock'
 import type { LumberyardCallRow } from './features/lumberyard/lumberyardTypes'
 import {
@@ -104,7 +110,6 @@ const allPages = new Set<Page>([
   'lead-generation',
   'background-agents',
   'help',
-  'settings',
 ])
 
 
@@ -133,6 +138,8 @@ export function getHashPage(): Page {
   const hashPath = window.location.hash.replace(/^#\/?/, '').split('?')[0]
   if (hashPath === '') return 'oz'
   if (hashPath === 'files') return 'knowledge-base' // legacy: Files was merged into Knowledge Base
+  /** `#/settings` opens the sidebar settings tab — route treats it as Oz. */
+  if (hashPath === 'settings') return 'oz'
   return isPage(hashPath) ? hashPath : 'oz'
 }
 
@@ -171,13 +178,45 @@ const DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS = 200
 /** Longer row cascade when opening the lead grid for “likely buyers if we stock” (competitor run). */
 const LIKELY_BUYERS_LEAD_ROW_STAGGER_MS = 440
 
+const RAG_CALLS_SCOPE_STORAGE_KEY = 'oz-demo-rag-calls-scope'
+
+function readInitialRagCallsScope(): RagCallsScope {
+  try {
+    const v = localStorage.getItem(RAG_CALLS_SCOPE_STORAGE_KEY)
+    if (v === 'admin') return 'admin'
+    if (v === 'Jacob' || v === 'Sami' || v === 'Ryan' || v === 'Joanna') return v
+  } catch {
+    /* ignore */
+  }
+  return 'Jacob'
+}
+
 function delayMs(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
 }
 
 export default function App() {
   useFieldTtsMuteHotkey()
-  const [page, navigate] = useHashRoute()
+  const [page, navigateBase] = useHashRoute()
+  const [settingsTabOpen, setSettingsTabOpen] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.location.hash.replace(/^#\/?/, '').split('?')[0] === 'settings'
+  })
+
+  const navigate = useCallback(
+    (p: Page) => {
+      setSettingsTabOpen(false)
+      navigateBase(p)
+    },
+    [navigateBase],
+  )
+
+  useEffect(() => {
+    const p = window.location.hash.replace(/^#\/?/, '').split('?')[0]
+    if (p !== 'settings') return
+    const base = `${window.location.pathname}${window.location.search}`
+    window.history.replaceState(null, '', `${base}#/oz`)
+  }, [])
   const [leadGenContextOpen, setLeadGenContextOpen] = useState(false)
   const [leadDistributorRowStaggerMs, setLeadDistributorRowStaggerMs] = useState(
     DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS,
@@ -208,6 +247,13 @@ export default function App() {
   const [quotesContextHeaderDetailRow, setQuotesContextHeaderDetailRow] = useState<ReactNode>(null)
   const [tableChatAttachments, setTableChatAttachments] = useState<TableRowContextAttachment[]>([])
   const [tableView, setTableView] = useState(() => defaultLeadTableViewState())
+  const [ragCallsScope, setRagCallsScope] = useState<RagCallsScope>(() => readInitialRagCallsScope())
+  const [ragCallsScopeSelect, setRagCallsScopeSelect] = useState<RagCallsScope>(() =>
+    readInitialRagCallsScope(),
+  )
+  const [ragCallsScopeBusy, setRagCallsScopeBusy] = useState(false)
+  const ragScopePendingRef = useRef<RagCallsScope | null>(null)
+  const ragScopeCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const viewRef = useRef(tableView)
   const lumberyardOpenRef = useRef(false)
   /** `fetchLumberyardLibrary` is deferred until the in-chat knowledge pill sequence completes. */
@@ -216,8 +262,41 @@ export default function App() {
   const customerDemandOpenAfterPillRef = useRef<{ includePnl: boolean } | null>(null)
 
   useEffect(() => {
+    return () => {
+      if (ragScopeCommitTimerRef.current != null) {
+        clearTimeout(ragScopeCommitTimerRef.current)
+        ragScopeCommitTimerRef.current = null
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     if (page !== 'quotes-ready') setQuotesContextHeaderDetailRow(null)
   }, [page])
+
+  const onRagCallsScopeChange = useCallback((next: RagCallsScope) => {
+    setSettingsTabOpen(false)
+    if (next === ragCallsScopeSelect) return
+    setRagCallsScopeSelect(next)
+    ragScopePendingRef.current = next
+    setRagCallsScopeBusy(true)
+    if (ragScopeCommitTimerRef.current != null) clearTimeout(ragScopeCommitTimerRef.current)
+    ragScopeCommitTimerRef.current = setTimeout(() => {
+      ragScopeCommitTimerRef.current = null
+      const commit = ragScopePendingRef.current ?? next
+      setRagCallsScope(commit)
+      try {
+        localStorage.setItem(RAG_CALLS_SCOPE_STORAGE_KEY, commit)
+      } catch {
+        /* ignore */
+      }
+      setRagCallsScopeBusy(false)
+    }, RAG_CALLS_SCOPE_TRANSITION_MS)
+  }, [ragCallsScopeSelect])
+
+  useEffect(() => {
+    setTableChatAttachments([])
+  }, [ragCallsScopeSelect])
 
   useEffect(() => {
     viewRef.current = tableView
@@ -318,7 +397,6 @@ export default function App() {
         return 'knowledge_customer_demand'
       }
       if (!isOpenAiConfigured()) return 'thinking'
-      if (matchMilwaukeeLeadGridIntent(userText)) return 'thinking'
       if (page === 'oz' && matchStockUpLikelyBuyersIntent(userText)) {
         if (lastCompetitorProductQueriesRef.current.length > 0) return 'knowledge_crm_likely_buyers'
         return 'thinking'
@@ -472,20 +550,6 @@ export default function App() {
           delayMs: 125
         }
       }
-      if (matchMilwaukeeLeadGridIntent(text)) {
-        customerDemandOpenAfterPillRef.current = null
-        setOzCustomerDemandProfitOpen(false)
-        setOzCustomerPanelIncludePnl(false)
-        setLumberyardOpen(false)
-        lumberyardOpenRef.current = false
-        setTableChatAttachments([])
-        setCompetitorOffersOpen(false)
-        setCompetitorOffersSearching(false)
-        setCompetitorOfferRows([])
-        setCompetitorOffersMeta({ usedWebSearch: false, productQueries: [] })
-        lastCompetitorProductQueriesRef.current = []
-        setLeadDistributorRowStaggerMs(DEFAULT_LEAD_DISTRIBUTOR_ROW_STAGGER_MS)
-      }
       if (matchCompetitorProductSearchIntent(text) && page === 'oz') {
         customerDemandOpenAfterPillRef.current = null
         setOzCustomerDemandProfitOpen(false)
@@ -619,11 +683,8 @@ export default function App() {
         }
       }
       const wantLumberyard =
-        !matchMilwaukeeLeadGridIntent(text) &&
         !matchStockUpLikelyBuyersIntent(text) &&
-        (matchLumberyardTableIntent(text) ||
-          matchLumberyardAnalyticsOrResearchIntent(text) ||
-          lumberyardOpenRef.current)
+        (matchLumberyardTableIntent(text) || matchLumberyardAnalyticsOrResearchIntent(text))
       if (wantLumberyard) {
         customerDemandOpenAfterPillRef.current = null
         setOzCustomerDemandProfitOpen(false)
@@ -703,6 +764,7 @@ export default function App() {
               rephase: llm.rephase,
               openLeadContext: llm.openLeadContext,
               delayMs: llm.delayMs,
+              usedConversationalFallback: false,
             }
           }
         } catch {
@@ -724,6 +786,38 @@ export default function App() {
           setLeadGenContextOpen(true)
         }
       }
+
+      if (page === 'oz' && isOpenAiConfigured() && out.usedConversationalFallback) {
+        try {
+          const rag = await postRagCallsQuery({
+            query: text,
+            scope: ragCallsScope,
+            topK: RAG_CALLS_DEFAULT_TOP_K,
+          })
+          if (rag.ok) {
+            return { reply: rag.reply, delayMs: 0 }
+          }
+          const detail = rag.detail ? `\n\n${rag.detail}` : ''
+          return {
+            reply: [
+              'Transcript search (**RAG**) is not available for this question.',
+              rag.error ? `\n**Reason:** ${rag.error}` : '',
+              detail,
+              '',
+              'Set **DATABASE_URL** or **PGHOST** / **PGUSER** / **PGPASSWORD** / **PGDATABASE**, run **`sauron-calls/scripts/ingest_calls_pgvector.py`**, then try again.',
+            ]
+              .filter((line) => line !== '')
+              .join('\n'),
+            delayMs: 0,
+          }
+        } catch (e) {
+          return {
+            reply: `Transcript search failed: ${e instanceof Error ? e.message : String(e)}`,
+            delayMs: 0,
+          }
+        }
+      }
+
       if (!isOpenAiConfigured()) {
         return { reply: out.reply, delayMs: out.delayMs }
       }
@@ -742,7 +836,7 @@ export default function App() {
       const appStateLines: string[] = [
         '## What the app just did (you must not contradict; weave into a natural reply)',
         out.openLeadContext
-          ? '- **The Milwaukee-area distributor/lead table is now open** beside the chat. Point the user to that table and what to skim first (e.g. source, size, industry, sort).'
+          ? '- **The distributor/lead table is now open** beside the chat. Point the user to that table and what to skim first (e.g. source, size, industry, sort).'
           : null,
         `- List/table handler: ${out.reply}`,
       ].filter((x): x is string => x != null)
@@ -770,7 +864,7 @@ export default function App() {
         return { reply: out.reply, delayMs: out.delayMs }
       }
     },
-    [navigate, page, pendingLumberyardKnowledgeUi],
+    [navigate, page, pendingLumberyardKnowledgeUi, ragCallsScope],
   )
 
   const onBackgroundAgentConnectingComplete = useCallback(() => {
@@ -1068,7 +1162,8 @@ export default function App() {
       ? 'centered'
       : 'rail'
   return (
-    <OzWorkflowShell
+    <>
+      <OzWorkflowShell
       activeNavItem={page}
       onNavItemChange={(id) => navigate(id as Page)}
       eyebrow={meta.eyebrow}
@@ -1103,6 +1198,16 @@ export default function App() {
             )
           : null
       }
+      settingsTabOpen={settingsTabOpen}
+      settingsTab={
+        <SettingsPerspectiveTab
+          ragCallsScope={ragCallsScopeSelect}
+          ragCallsScopeBusy={ragCallsScopeBusy}
+          onRagCallsScopeChange={onRagCallsScopeChange}
+        />
+      }
+      onSettingsTabClose={() => setSettingsTabOpen(false)}
+      onSettingsFooterClick={() => setSettingsTabOpen((o) => !o)}
       fieldMobileNavItems={fieldMobileNavItems}
       hidePrimaryNav={isFieldAppCommandCenter(page)}
       commandCenterMode={commandCenterMode}
@@ -1119,6 +1224,7 @@ export default function App() {
           : {
               contextSummary: meta.subtitle ?? '',
               messages: OZ_ASSISTANT_NO_SEED,
+              transcriptResetKey: ragCallsScopeSelect,
               onUserMessage,
               pendingAssistantPlaceholder: pendingLumberyardKnowledgeUi,
               composerContextAttachments: tableChatAttachments,
@@ -1150,5 +1256,31 @@ export default function App() {
     >
       {body}
     </OzWorkflowShell>
+      {ragCallsScopeBusy ? (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-zinc-100/90 backdrop-blur-md motion-reduce:backdrop-blur-sm"
+          role="alertdialog"
+          aria-modal="true"
+          aria-busy="true"
+          aria-labelledby="oz-rag-scope-loading-title"
+          aria-describedby="oz-rag-scope-loading-desc"
+        >
+          <div className="flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-zinc-200/90 bg-white px-12 py-10 shadow-2xl">
+            <span
+              className="h-14 w-14 shrink-0 animate-spin rounded-full border-[4px] border-zinc-200 border-t-zinc-800 motion-reduce:animate-none motion-reduce:border-t-zinc-500"
+              aria-hidden
+            />
+            <div className="text-center">
+              <p id="oz-rag-scope-loading-title" className="text-base font-semibold text-zinc-900">
+                Switching transcript scope
+              </p>
+              <p id="oz-rag-scope-loading-desc" className="mt-1 text-sm text-zinc-500">
+                Please wait…
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   )
 }

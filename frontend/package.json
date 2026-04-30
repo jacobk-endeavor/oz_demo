@@ -13,6 +13,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "pg": "^8.13.1",
     "@testing-library/user-event": "^14.6.1",
     "jspdf": "^2.5.2",
     "nodemailer": "^8.0.6",
@@ -27,6 +28,7 @@
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/pg": "^8.11.10",
     "@types/node": "^25.6.0",
     "@types/nodemailer": "^8.0.0",
     "@types/react": "^19.0.0",

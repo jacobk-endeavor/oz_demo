@@ -76,7 +76,7 @@ export function buildLeadTableLlmContext(
     : ''
   const spendSection = buildSpendSection(take)
 
-  const block = `### Milwaukee distributor lead list (authoritative; answer Q&A with this; cite __row #__ from the TSV)
+  const block = `### Distributor lead list (authoritative; answer Q&A with this; cite __row #__ from the TSV)
 **List state / sort:** ${stateLine}
 **Row count in view:** ${n}
 
@@ -88,7 +88,7 @@ ${note}When the user asks to **sort** or **sub-sort**, the app’s command handl
   if (block.length <= maxChars) return block
   for (let k = take.length; k > 3; k--) {
     const bodyShort = [header, ...lines.slice(0, k - 1)].join('\n')
-    const sBlock = `### Milwaukee distributor lead list (authoritative; cite **row #**)
+    const sBlock = `### Distributor lead list (authoritative; cite **row #**)
 **List state / sort:** ${stateLine}
 **Row count in view:** ${n}
 

@@ -118,28 +118,6 @@ export function applyLeadTableView(rows: DistributorRow[], s: LeadTableViewState
   return sorted
 }
 
-/**
- * Detects chat that should open / refresh the Milwaukee distributor lead grid.
- * Kept permissive so “give me milwaukee distributors”, “Milwaukee leads”, etc. all work.
- */
-export function matchMilwaukeeLeadGridIntent(raw: string): boolean {
-  const t = raw.trim()
-  if (!t) return false
-  const lower = t.toLowerCase()
-  if (!/\bmilwaukee\b/i.test(t)) return false
-
-  if (
-    /\b(distributors?|dealer|dealers|distribution)\b/i.test(lower) ||
-    /distribut/i.test(lower)
-  ) {
-    return true
-  }
-  if (/\b(leads?|accounts?|pipeline|grid|table|list)\b/i.test(lower)) return true
-  if (/\bmilwaukee\s+(?:area|metro|region|wi|wisconsin)\b/i.test(lower)) return true
-  if (/^(?:find|get|give|show|list|pull)\s+(?:me\s+)?(?:the\s+)?milwaukee\b/im.test(t)) return true
-  return false
-}
-
 export function sourceLabelForChat(id: LeadSourceId): string {
   const map: Record<LeadSourceId, string> = {
     salesforce: 'Salesforce',
@@ -544,7 +522,7 @@ export function parseSortColumn(t: string): {
 }
 
 /**
- * @returns { state, reply, rephase, openLeadContext, delayMs }
+ * @returns { state, reply, rephase, openLeadContext, delayMs, usedConversationalFallback }
  */
 export function processLeadTableChat(
   text: string,
@@ -557,6 +535,8 @@ export function processLeadTableChat(
   rephase: boolean
   openLeadContext: boolean
   delayMs: number
+  /** True only when the rules engine used generic lead-table small-talk (not a sort/filter/grid command). */
+  usedConversationalFallback: boolean
 } {
   const priorUser = options?.priorUserMessages ?? []
   const t = text.trim()
@@ -567,26 +547,13 @@ export function processLeadTableChat(
   let openLeadContext = false
   let delayMs = 360
 
-  if (matchMilwaukeeLeadGridIntent(t)) {
-    openLeadContext = true
-    rephase = true
-    s = {
-      ...defaultLeadTableViewState(),
-      phaseToken: prev.phaseToken + 1,
-      dataset: 'standard',
-    }
-    reply =
-      'Pulling the Milwaukee distributor grid — I’m phasing it in on the right. Ask to narrow, sort, or sub-sort (e.g. by source, then by industry or location).'
-    return { state: s, reply, rephase, openLeadContext, delayMs: 600 }
-  }
-
   if (/\bfind more|more leads|expand (?:the )?set|bigger (?:data )?set\b/i.test(t)) {
     s.dataset = 'expanded'
     s.phaseToken += 1
     rephase = true
     reply = `Expanding the sample — ${s.dataset === 'expanded' ? 'a lot' : 'more'} of leads are materializing, staggered on purpose.`
     delayMs = 700
-    return { state: s, reply, rephase, openLeadContext: false, delayMs }
+    return { state: s, reply, rephase, openLeadContext: false, delayMs, usedConversationalFallback: false }
   }
 
   const sourceIntent = isSourceFilterCommandIntent(t)
@@ -605,7 +572,7 @@ export function processLeadTableChat(
       reply = shouldKeepSortOnSourceFilter(t)
         ? `Filtering to ${list} — your sort is unchanged; the grid is narrowed in the **Source** column.`
         : `Filtering to ${list} — re-hashing under ${scope}, then your sub-sorts apply.`
-      return { state: s, reply, rephase, openLeadContext: false, delayMs: 450 }
+      return { state: s, reply, rephase, openLeadContext: false, delayMs: 450, usedConversationalFallback: false }
     }
   }
   if (/\bclear (?:the )?source|all sources|drop source filter\b/i.test(t)) {
@@ -613,7 +580,7 @@ export function processLeadTableChat(
     s.phaseToken += 1
     rephase = true
     reply = 'Cleared the source filter. Re-sorting the full set.'
-    return { state: s, reply, rephase, openLeadContext: false, delayMs: 450 }
+    return { state: s, reply, rephase, openLeadContext: false, delayMs: 450, usedConversationalFallback: false }
   }
 
   if (
@@ -628,7 +595,7 @@ export function processLeadTableChat(
     rephase = true
     reply =
       'Keeping **people we already know** (engaged / net-new is filtered). Rows are repainting with a relationship bias.'
-    return { state: s, reply, rephase, openLeadContext: false, delayMs: 450 }
+    return { state: s, reply, rephase, openLeadContext: false, delayMs: 450, usedConversationalFallback: false }
   }
 
   if (/\ball leads|show everyone|include net.?new|reset filter|clear engagement|drop engagement filter\b/i.test(t)) {
@@ -638,7 +605,7 @@ export function processLeadTableChat(
     s.phaseToken += 1
     rephase = true
     reply = 'Opening back up: **all** engagement types, sources, and column text filters. Watch the set breathe back in row by row.'
-    return { state: s, reply, rephase, openLeadContext: false, delayMs: 500 }
+    return { state: s, reply, rephase, openLeadContext: false, delayMs: 500, usedConversationalFallback: false }
   }
 
   const sortBits = parseSortColumn(t)
@@ -659,7 +626,7 @@ export function processLeadTableChat(
         s.sortSecondaryDir
       }) so buckets (e.g. under **Salesforce**) are stable, then ties break.`
       : `Sorting by **${pWord}** (${s.sortPrimaryDir}) — the table is reflowing.`
-    return { state: s, reply, rephase, openLeadContext: false, delayMs: 400 }
+    return { state: s, reply, rephase, openLeadContext: false, delayMs: 400, usedConversationalFallback: false }
   }
 
   if (
@@ -674,17 +641,25 @@ export function processLeadTableChat(
       rephase: false,
       openLeadContext: false,
       delayMs: 360,
+      usedConversationalFallback: false,
     }
   }
 
   const heur = tryHeuristicColumnTextFilters(t, s)
   if (heur) {
-    return { state: heur.state, reply: heur.reply, rephase: true, openLeadContext: false, delayMs: heur.delayMs }
+    return {
+      state: heur.state,
+      reply: heur.reply,
+      rephase: true,
+      openLeadContext: false,
+      delayMs: heur.delayMs,
+      usedConversationalFallback: false,
+    }
   }
 
   if (reply == null) {
     reply = conversationalLeadTableFallback(t, s, priorUser)
   }
 
-  return { state: s, reply, rephase, openLeadContext, delayMs }
+  return { state: s, reply, rephase, openLeadContext, delayMs, usedConversationalFallback: true }
 }

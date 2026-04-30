@@ -197,6 +197,17 @@ export function LeadIcon({ className, ...props }: IconProps) {
   )
 }
 
+/** Account / identity — silhouette inside a circular frame (distinct from `LeadIcon`). */
+export function UserCircleIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>
+      <circle cx="10" cy="10" r="7" />
+      <circle cx="10" cy="7.2" r="2.25" />
+      <path d="M5 15a5 5 0 0 1 10 0" />
+    </svg>
+  )
+}
+
 export function ReportIcon({ className, ...props }: IconProps) {
   return (
     <svg {...defaults} viewBox="0 0 20 20" className={className} {...props}>

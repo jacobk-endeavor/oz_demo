@@ -35,7 +35,7 @@ export const WORKFLOW_PAGE_META: Record<WorkflowPageId, WorkflowPageMeta> = {
     eyebrow: 'Workspace',
     title: 'Tables',
     subtitle:
-      'The Milwaukee distributor lead grid stays open here. Chat to sort, sub-sort, filter by source, or say “find more leads”.',
+      'The distributor lead grid stays open here. Chat to sort, sub-sort, filter by source, or say “find more leads”.',
   },
   'knowledge-base': {
     eyebrow: 'Workspace',
@@ -78,9 +78,5 @@ export const WORKFLOW_PAGE_META: Record<WorkflowPageId, WorkflowPageMeta> = {
   help: {
     title: 'Help',
     subtitle: 'Documentation and support — replace with your help center when you are ready.',
-  },
-  settings: {
-    title: 'Settings',
-    subtitle: 'Workspace and profile preferences (shell only in this demo).',
   },
 }

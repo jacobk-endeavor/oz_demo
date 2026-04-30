@@ -3,45 +3,19 @@ import {
   applyLeadTableView,
   defaultLeadTableViewState,
   matchAllSourcesFromChat,
-  matchMilwaukeeLeadGridIntent,
   parseSortColumn,
   processLeadTableChat,
 } from './leadGenTableModel'
 import { buildLeadTableLlmContext } from './leadTableLlmContext'
 import { buildMilwaukeeDistributorRows } from './milwaukeeDistributorsMock'
 
-describe('matchMilwaukeeLeadGridIntent', () => {
-  it('matches give/show/find + milwaukee distributors and similar', () => {
-    expect(matchMilwaukeeLeadGridIntent('give me milwaukee distributors')).toBe(true)
-    expect(matchMilwaukeeLeadGridIntent('Give me Milwaukee distributors')).toBe(true)
-    expect(matchMilwaukeeLeadGridIntent('show me milwaukee dealers')).toBe(true)
-    expect(matchMilwaukeeLeadGridIntent('find distributors in Milwaukee')).toBe(true)
-    expect(matchMilwaukeeLeadGridIntent('milwaukee distribution')).toBe(true)
-  })
-
-  it('matches milwaukee + leads / area / short commands', () => {
-    expect(matchMilwaukeeLeadGridIntent('milwaukee leads')).toBe(true)
-    expect(matchMilwaukeeLeadGridIntent('give me milwaukee')).toBe(true)
-    expect(matchMilwaukeeLeadGridIntent('get me milwaukee')).toBe(true)
-    expect(matchMilwaukeeLeadGridIntent('milwaukee area')).toBe(true)
-  })
-
-  it('does not match unrelated text', () => {
-    expect(matchMilwaukeeLeadGridIntent('hello')).toBe(false)
-    expect(matchMilwaukeeLeadGridIntent('chicago distributors')).toBe(false)
-    expect(matchMilwaukeeLeadGridIntent('milwaukee')).toBe(false)
-  })
-})
-
-describe('processLeadTableChat milwaukee', () => {
-  it('opens lead context and resets table state', () => {
+describe('processLeadTableChat (no Milwaukee chat shortcut)', () => {
+  it('does not auto-open lead context for former Milwaukee runbook phrasing', () => {
     const prev = defaultLeadTableViewState()
     prev.dataset = 'expanded'
     const out = processLeadTableChat('give me milwaukee distributors', prev, 'oz')
-    expect(out.openLeadContext).toBe(true)
-    expect(out.reply).toBeTruthy()
-    expect(out.state.dataset).toBe('standard')
-    expect(out.rephase).toBe(true)
+    expect(out.openLeadContext).toBe(false)
+    expect(out.state.dataset).toBe('expanded')
   })
 })
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect } from 'vitest'
-import { render, screen, within, cleanup, act, fireEvent } from '@testing-library/react'
+import { render, screen, within, cleanup, act, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import App, { getHashPage } from './App'
@@ -204,7 +204,7 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: 'Ingest' })).not.toBeInTheDocument()
   })
 
-  it('opens the Milwaukee distributors lead table from chat on the home route', async () => {
+  it('does not open the lead table from former Milwaukee-only chat phrasing on the home route', async () => {
     const user = userEvent.setup()
     window.location.hash = '#/oz'
     render(<App />)
@@ -212,7 +212,8 @@ describe('App', () => {
     await user.type(screen.getByPlaceholderText('Ask Oz…'), 'distributors in Milwaukee')
     await user.click(screen.getByRole('button', { name: 'Send message' }))
 
-    expect(await screen.findByTestId('lead-gen-distributors-table')).toBeInTheDocument()
-    expect(screen.getByRole('main', { name: 'Context' })).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByTestId('lead-gen-distributors-table')).not.toBeInTheDocument()
+    })
   })
 })
