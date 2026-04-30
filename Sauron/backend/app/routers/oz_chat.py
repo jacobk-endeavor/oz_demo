@@ -4,9 +4,8 @@ import json
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_current_user, get_db
+from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.oz_chat import OzChatRequest
 from app.services.oz_chat_runtime import RuntimeContext, run_oz_chat_runtime
@@ -24,7 +23,6 @@ def _sse_data(payload: dict | str) -> str:
 async def stream_oz_chat(
     body: OzChatRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ):
     async def _stream():
         context = RuntimeContext(
@@ -35,7 +33,6 @@ async def stream_oz_chat(
                 if hasattr(current_user.role, "value")
                 else str(current_user.role)
             ),
-            db=db,
         )
         async for event in run_oz_chat_runtime(request=body, context=context):
             yield _sse_data(event)
