@@ -3,8 +3,10 @@
 This document defines who owns which modules during the Oz Demo cleanup migration and where logic must live going forward.
 
 Related docs:
-- [`docs/repo-cleanup-and-breakup-task-plan.md`](./repo-cleanup-and-breakup-task-plan.md)
-- [`docs/beads-cleanup-task-outline.md`](./beads-cleanup-task-outline.md)
+- [`docs/README.md`](./README.md)
+- [`docs/oz-demo/migration-status-tracker.md`](./oz-demo/migration-status-tracker.md)
+- [`docs/oz-demo/handoff-status.md`](./oz-demo/handoff-status.md)
+- [`docs/oz-demo/contributor-change-map.md`](./oz-demo/contributor-change-map.md)
 - [`docs/chat-routing-oz-demo-and-sauron.md`](./chat-routing-oz-demo-and-sauron.md)
 - [`docs/naming-conventions.md`](./naming-conventions.md)
 

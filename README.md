@@ -30,6 +30,14 @@ npm run validate
 - `npm run guardrails:arch` enforces Oz architecture boundaries (see `docs/oz-demo/ci-guardrails.md`).
 - `npm run validate` runs architecture guardrails, typecheck, lint, tests, and build.
 
+## Documentation
+
+- Docs hub: `docs/README.md`
+- Migration tracker: `docs/oz-demo/migration-status-tracker.md`
+- Handoff status/run instructions: `docs/oz-demo/handoff-status.md`
+- Contributor change map: `docs/oz-demo/contributor-change-map.md`
+- Ownership boundaries: `docs/module-ownership-map.md`
+
 ## DigitalOcean Prep
 
 Use **one Web Service** for this repo root (not a static site only). Vite’s `vite preview` serves `dist/` **and** the `/api/oz/*` proxies defined in `frontend/vite.config.ts` (voice, OpenAI, etc.); a static component cannot run those routes.
