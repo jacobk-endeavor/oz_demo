@@ -69,6 +69,7 @@ import {
 import { BackgroundAgentsPage } from './features/backgroundAgents/BackgroundAgentsPage'
 import { KnowledgeBasePage } from './features/oz/KnowledgeBasePage'
 import { NebulaHubPage } from './features/oz/NebulaHubPage'
+import { useOzChatStream } from './features/oz/useOzChatStream'
 import { DashboardGeneratorPage } from './features/dashboardGenerator/DashboardGeneratorPage'
 import { FieldNotesPage } from './features/fieldNotes/FieldNotesPage'
 import { QuotesReadyForReviewPage } from './features/quotesReady/QuotesReadyForReviewPage'
@@ -410,6 +411,31 @@ export default function App() {
     },
     [page],
   )
+  const { sendNonHardcodedTurn } = useOzChatStream({
+    fallbackReply: async ({ text, ragScope }) => {
+      const rag = await postRagCallsQuery({
+        query: text,
+        scope: ragScope as RagCallsScope,
+        topK: RAG_CALLS_DEFAULT_TOP_K,
+      })
+      if (rag.ok) {
+        return { reply: rag.reply, delayMs: 0 }
+      }
+      const detail = rag.detail ? `\n\n${rag.detail}` : ''
+      return {
+        reply: [
+          'Transcript search (**RAG**) is not available for this question.',
+          rag.error ? `\n**Reason:** ${rag.error}` : '',
+          detail,
+          '',
+          'Set **DATABASE_URL** or **PGHOST** / **PGUSER** / **PGPASSWORD** / **PGDATABASE**, run **`sauron-calls/scripts/ingest_calls_pgvector.py`**, then try again.',
+        ]
+          .filter((line) => line !== '')
+          .join('\n'),
+        delayMs: 0,
+      }
+    },
+  })
 
   const onUserMessage = useCallback(
     async (text: string, context: OzChatTurnContext) => {
@@ -789,27 +815,7 @@ export default function App() {
 
       if (page === 'oz' && isOpenAiConfigured() && out.usedConversationalFallback) {
         try {
-          const rag = await postRagCallsQuery({
-            query: text,
-            scope: ragCallsScope,
-            topK: RAG_CALLS_DEFAULT_TOP_K,
-          })
-          if (rag.ok) {
-            return { reply: rag.reply, delayMs: 0 }
-          }
-          const detail = rag.detail ? `\n\n${rag.detail}` : ''
-          return {
-            reply: [
-              'Transcript search (**RAG**) is not available for this question.',
-              rag.error ? `\n**Reason:** ${rag.error}` : '',
-              detail,
-              '',
-              'Set **DATABASE_URL** or **PGHOST** / **PGUSER** / **PGPASSWORD** / **PGDATABASE**, run **`sauron-calls/scripts/ingest_calls_pgvector.py`**, then try again.',
-            ]
-              .filter((line) => line !== '')
-              .join('\n'),
-            delayMs: 0,
-          }
+          return await sendNonHardcodedTurn({ text, context, ragScope: ragCallsScope })
         } catch (e) {
           return {
             reply: `Transcript search failed: ${e instanceof Error ? e.message : String(e)}`,
@@ -864,7 +870,7 @@ export default function App() {
         return { reply: out.reply, delayMs: out.delayMs }
       }
     },
-    [navigate, page, pendingLumberyardKnowledgeUi, ragCallsScope],
+    [navigate, page, pendingLumberyardKnowledgeUi, ragCallsScope, sendNonHardcodedTurn],
   )
 
   const onBackgroundAgentConnectingComplete = useCallback(() => {
