@@ -29,7 +29,9 @@ def test_runtime_emits_trace_token_done_sequence():
         return events
 
     events = asyncio.run(_collect())
-    assert [event["event"] for event in events] == ["trace", "token", "done"]
+    assert [event["event"] for event in events] == ["trace", "trace", "token", "done"]
     assert events[0]["trace_id"] == "trace-test"
+    assert events[1]["stage"] == "memory_recall"
+    assert "write_policy" in events[1]["detail"]
     assert events[-1]["route"] in {"hardcoded", "agent"}
 
