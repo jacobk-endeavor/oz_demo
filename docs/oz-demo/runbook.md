@@ -120,22 +120,3 @@ Oz then **polishes** replies using the table snapshot + distributor context (`bu
     **Oz says:** *Locked in. Summit Ridge's Job Cost Recap is staged — total cost about one hundred fifty-six thousand, profit one hundred twenty-eight thousand, around forty-five percent margin. Open the sheet to review and queue the invoice.*
 
 13. *(No rep line.)* After the Script 4 close, Oz automatically says: *Okay, generating the quote.* — then the Field home voice run ends. (Use **Workspace → Field App → Background quote** if you still want the separate drive-time workflow panel.)
-
-## Oz graph tool stubs and limits
-
-The Oz backend tool loop now exposes two knowledge-graph adapter stubs:
-
-- `graph_search(query, scope, depth, size)`
-- `graph_neighbors(node_id, scope, depth, size)`
-
-Traversal guardrails are configurable in backend env/settings:
-
-- `GRAPH_DEFAULT_TRAVERSAL_DEPTH` / `GRAPH_MAX_TRAVERSAL_DEPTH`
-- `GRAPH_DEFAULT_RESULT_SIZE` / `GRAPH_MAX_RESULT_SIZE`
-- `GRAPH_ALLOWED_SCOPES` (scope allowlist, default `all,current`)
-
-Security and scope behavior:
-
-- Requested depth/size are always clamped to configured maxima.
-- Calls with a scope outside `GRAPH_ALLOWED_SCOPES` are rejected.
-- Current implementation is intentionally stubbed (returns empty graph payloads) behind the adapter boundary until a concrete graph backend is connected.

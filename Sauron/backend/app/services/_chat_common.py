@@ -35,12 +35,6 @@ from app.services.transcript_indexer import (
     is_enabled as tpuf_enabled,
     search_transcripts,
 )
-from app.services.graph_tool_adapter import (
-    GraphToolAdapter,
-    StubGraphToolAdapter,
-    resolve_graph_depth_limit,
-    resolve_graph_size_limit,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -167,72 +161,6 @@ _WEB_SEARCH_TOOL: dict = {
                 },
             },
             "required": ["objective", "search_queries"],
-        },
-    },
-}
-
-_GRAPH_SEARCH_TOOL: dict = {
-    "type": "function",
-    "function": {
-        "name": "graph_search",
-        "description": (
-            "Search the knowledge graph for entities and relationships relevant "
-            "to a query. Traversal is scope-constrained and depth/size-limited."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "What to find in the graph",
-                },
-                "scope": {
-                    "type": "string",
-                    "description": "Graph scope identifier (for example: all, current)",
-                },
-                "depth": {
-                    "type": "integer",
-                    "description": "Requested traversal depth (clamped by server policy)",
-                },
-                "size": {
-                    "type": "integer",
-                    "description": "Requested max result size (clamped by server policy)",
-                },
-            },
-            "required": ["query"],
-        },
-    },
-}
-
-_GRAPH_NEIGHBORS_TOOL: dict = {
-    "type": "function",
-    "function": {
-        "name": "graph_neighbors",
-        "description": (
-            "Expand neighbors for a graph node with server-side scope checks and "
-            "traversal depth/size guardrails."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "node_id": {
-                    "type": "string",
-                    "description": "Node identifier from a prior graph tool result",
-                },
-                "scope": {
-                    "type": "string",
-                    "description": "Graph scope identifier (for example: all, current)",
-                },
-                "depth": {
-                    "type": "integer",
-                    "description": "Requested traversal depth (clamped by server policy)",
-                },
-                "size": {
-                    "type": "integer",
-                    "description": "Requested max neighbor count (clamped by server policy)",
-                },
-            },
-            "required": ["node_id"],
         },
     },
 }
@@ -975,88 +903,6 @@ async def _exec_web_search(arguments: str) -> str | tuple[str, Any]:
     return llm_content, {"result_count": len(metadata_results), "results": metadata_results}
 
 
-async def _exec_graph_search(
-    arguments: str,
-    *,
-    adapter: GraphToolAdapter,
-    default_scope: str,
-) -> str | tuple[str, Any]:
-    args = json.loads(arguments)
-    query = str(args.get("query") or "").strip()
-    if not query:
-        return _error_response("query is required")
-
-    scope = str(args.get("scope") or default_scope).strip().lower()
-    depth = resolve_graph_depth_limit(
-        args.get("depth"),
-        default_depth=settings.graph_default_traversal_depth,
-        max_depth=settings.graph_max_traversal_depth,
-    )
-    size = resolve_graph_size_limit(
-        args.get("size"),
-        default_size=settings.graph_default_result_size,
-        max_size=settings.graph_max_result_size,
-    )
-    try:
-        result = await adapter.graph_search(
-            query=query,
-            scope=scope,
-            max_depth=depth,
-            max_size=size,
-        )
-    except ValueError as exc:
-        return _error_response(str(exc))
-
-    node_count = len(result.get("nodes", []))
-    edge_count = len(result.get("edges", []))
-    llm_content = (
-        f"Graph search completed for '{query}' in scope '{scope}'. "
-        f"Found {node_count} node(s) and {edge_count} edge(s)."
-    )
-    return llm_content, result
-
-
-async def _exec_graph_neighbors(
-    arguments: str,
-    *,
-    adapter: GraphToolAdapter,
-    default_scope: str,
-) -> str | tuple[str, Any]:
-    args = json.loads(arguments)
-    node_id = str(args.get("node_id") or "").strip()
-    if not node_id:
-        return _error_response("node_id is required")
-
-    scope = str(args.get("scope") or default_scope).strip().lower()
-    depth = resolve_graph_depth_limit(
-        args.get("depth"),
-        default_depth=settings.graph_default_traversal_depth,
-        max_depth=settings.graph_max_traversal_depth,
-    )
-    size = resolve_graph_size_limit(
-        args.get("size"),
-        default_size=settings.graph_default_result_size,
-        max_size=settings.graph_max_result_size,
-    )
-    try:
-        result = await adapter.graph_neighbors(
-            node_id=node_id,
-            scope=scope,
-            depth=depth,
-            max_size=size,
-        )
-    except ValueError as exc:
-        return _error_response(str(exc))
-
-    neighbor_count = len(result.get("neighbors", []))
-    edge_count = len(result.get("edges", []))
-    llm_content = (
-        f"Graph neighbor expansion completed for '{node_id}' in scope '{scope}'. "
-        f"Found {neighbor_count} neighbor(s) and {edge_count} edge(s)."
-    )
-    return llm_content, result
-
-
 def _extract_phone_numbers(person: dict) -> list[dict[str, Any]]:
     """Extract typed phone numbers from an Apollo person response."""
     raw_phone_numbers: list[dict[str, Any]] = []
@@ -1274,7 +1120,6 @@ async def _exec_enrich_organization(arguments: str) -> str | tuple[str, Any]:
 def _tool_addendum(
     current_label: str, *, has_search: bool, has_db: bool, has_web: bool,
     has_apollo: bool, has_company_emails: bool, company_email_scope: str,
-    has_graph: bool,
 ) -> str:
     if (
         not has_search
@@ -1282,7 +1127,6 @@ def _tool_addendum(
         and not has_web
         and not has_apollo
         and not has_company_emails
-        and not has_graph
     ):
         return ""
     lines = ["\n\nYou have access to tools:"]
@@ -1324,15 +1168,6 @@ def _tool_addendum(
             "- enrich_organization: look up detailed information about a "
             "company via Apollo by domain (industry, employees, "
             "funding, tech stack, departmental headcount)."
-        )
-    if has_graph:
-        lines.append(
-            "- graph_search: retrieve graph entities and edges by query with "
-            "scope and traversal limits."
-        )
-        lines.append(
-            "- graph_neighbors: expand node neighbors with server-enforced "
-            "scope, depth, and size limits."
         )
     lines.append(
         "\nTool-use strategy (IMPORTANT — follow this closely):"
@@ -1434,7 +1269,6 @@ async def stream_chat_sse(
     has_db = db is not None
     has_web = _web_search_enabled()
     has_apollo = _apollo_enabled()
-    has_graph = settings.graph_tools_enabled
     company_email_scope = _email_access_scope(user_role, user_email)
     has_company_emails = has_db and company_email_scope != "no synced company emails"
 
@@ -1451,15 +1285,12 @@ async def stream_chat_sse(
     if has_apollo:
         tools.append(_ENRICH_PERSON_TOOL)
         tools.append(_ENRICH_ORG_TOOL)
-    if has_graph:
-        tools.append(_GRAPH_SEARCH_TOOL)
-        tools.append(_GRAPH_NEIGHBORS_TOOL)
 
     use_tools = len(tools) > 0
 
     system_content = (
         f"{system_prompt}"
-        f"{_tool_addendum(current_scope_label, has_search=has_search, has_db=has_db, has_web=has_web, has_apollo=has_apollo, has_company_emails=has_company_emails, company_email_scope=company_email_scope, has_graph=has_graph) if use_tools else ''}"
+        f"{_tool_addendum(current_scope_label, has_search=has_search, has_db=has_db, has_web=has_web, has_apollo=has_apollo, has_company_emails=has_company_emails, company_email_scope=company_email_scope) if use_tools else ''}"
         f"\n\n{context_block}"
     )
 
@@ -1471,21 +1302,6 @@ async def stream_chat_sse(
     try:
         if use_tools:
             scope_filters = current_scope_filters or {}
-            graph_adapter: GraphToolAdapter | None = None
-            if has_graph:
-                graph_adapter = StubGraphToolAdapter(
-                    allowed_scopes=set(
-                        scope.strip().lower()
-                        for scope in settings.graph_allowed_scopes
-                        if scope.strip()
-                    )
-                    or {"all"}
-                )
-            default_graph_scope = (
-                current_scope_filters.get("scope")
-                if isinstance(current_scope_filters, dict)
-                else None
-            ) or "all"
 
             async def _execute_tool(
                 name: str, arguments: str
@@ -1513,18 +1329,6 @@ async def stream_chat_sse(
                     return await _exec_enrich_person(arguments)
                 if name == "enrich_organization":
                     return await _exec_enrich_organization(arguments)
-                if name == "graph_search" and graph_adapter is not None:
-                    return await _exec_graph_search(
-                        arguments,
-                        adapter=graph_adapter,
-                        default_scope=default_graph_scope,
-                    )
-                if name == "graph_neighbors" and graph_adapter is not None:
-                    return await _exec_graph_neighbors(
-                        arguments,
-                        adapter=graph_adapter,
-                        default_scope=default_graph_scope,
-                    )
                 return _error_response(f"Unknown tool: {name}")
 
             async for content in stream_chat_with_tools(
