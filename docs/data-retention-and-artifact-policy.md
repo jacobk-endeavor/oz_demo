@@ -21,7 +21,7 @@ The following are treated as disposable artifacts and must be ignored or removed
 - Python and Node runtime caches (`__pycache__`, `.venv`, `node_modules`, test/build caches).
 - Build outputs (`dist`, SSR bundles, temporary reports, coverage outputs).
 - Logs, lock/runtime socket files, and temporary extraction/work directories.
-- Ephemeral audio/transcript work products generated during local processing.
+- Ephemeral audio/transcript work products generated during local processing (for example under `lumberyard-calls/audio/` and `sauron-calls/audio/`).
 
 ## Retention expectations
 

@@ -17,6 +17,8 @@ coverage/
 .DS_Store
 lumberyard-calls/audio/
 lumberyard-calls/tools/temp-*/
+sauron-calls/audio/
+sauron-calls/tools/temp-*/
 
 # Oz frontend build artifacts
 frontend/dist/
