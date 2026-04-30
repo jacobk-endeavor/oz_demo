@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead Revenue Distribution</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        background: #0f172a;
+        color: #e2e8f0;
+        font-family: Arial, sans-serif;
+      }
+
+      #chart {
+        width: 100vw;
+        height: 850px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chart"></div>
+    <script>
+      const data = [{"type": "bar", "orientation": "h", "x": [109, 446, 902, 1073, 910, 425, 903, 314, 326, 382, 211, 262, 136, 157, 28, 52, 58, 44, 20, 106], "y": ["<$1M", "$1M-<$2.5M", "$2.5M-<$5M", "$5M-<$7.5M", "$7.5M-<$10M", "$10M-<$15M", "$15M-<$20M", "$20M-<$25M", "$25M-<$35M", "$35M-<$50M", "$50M-<$75M", "$75M-<$100M", "$100M-<$150M", "$150M-<$200M", "$200M-<$250M", "$250M-<$350M", "$350M-<$500M", "$500M-<$750M", "$750M-<$1B", "$1B+"], "marker": {"color": "#38bdf8"}, "text": [109, 446, 902, 1073, 910, 425, 903, 314, 326, 382, 211, 262, 136, 157, 28, 52, 58, 44, 20, 106], "textposition": "outside", "cliponaxis": false, "hovertemplate": "Revenue range: %{y}<br>Lead count: %{x}<extra></extra>"}];
+      const layout = {"title": {"text": "Lead Revenue Distribution<br><span style='font-size:14px;color:#94a3b8'>All leads grouped by annual revenue range (USD millions). Parsed 6864 numeric values; skipped 5 non-numeric values.</span>", "x": 0.02}, "height": 850, "paper_bgcolor": "#0f172a", "plot_bgcolor": "#0f172a", "font": {"color": "#e2e8f0", "family": "Arial, sans-serif"}, "margin": {"l": 180, "r": 80, "t": 110, "b": 70}, "xaxis": {"title": "Lead count", "gridcolor": "#1e293b", "zerolinecolor": "#1e293b", "automargin": true}, "yaxis": {"title": "Annual revenue range", "automargin": true, "autorange": "reversed", "categoryorder": "array", "categoryarray": ["<$1M", "$1M-<$2.5M", "$2.5M-<$5M", "$5M-<$7.5M", "$7.5M-<$10M", "$10M-<$15M", "$15M-<$20M", "$20M-<$25M", "$25M-<$35M", "$35M-<$50M", "$50M-<$75M", "$75M-<$100M", "$100M-<$150M", "$150M-<$200M", "$200M-<$250M", "$250M-<$350M", "$350M-<$500M", "$500M-<$750M", "$750M-<$1B", "$1B+"]}};
+      const config = {"displayModeBar": true, "responsive": true};
+      Plotly.newPlot("chart", data, layout, config);
+    </script>
+  </body>
+</html>

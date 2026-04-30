@@ -1,0 +1,3852 @@
+---
+title: Getting Started
+description: Learn how to install and configure Streamdown in your React application.
+type: guide
+summary: Install Streamdown and render your first streaming Markdown component in under five minutes.
+related:
+  - /docs/configuration
+  - /docs/usage
+---
+
+# Getting Started
+
+
+
+Get up and running with Streamdown in minutes. This guide will walk you through installation, configuration, and your first implementation.
+
+## Requirements
+
+* **Node.js** >= 18
+* **React** >= 19.1.1 (compatible with React 18+)
+* **Tailwind CSS** (for styling)
+
+## Installation
+
+You can install Streamdown directly, or use it as part of the [AI Elements](https://ai-sdk.dev/elements) library.
+
+### Direct Installation
+
+Install Streamdown using your preferred package manager:
+
+<CodeBlockTabs defaultValue="npm">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="npm">
+      npm
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="pnpm">
+      pnpm
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="yarn">
+      yarn
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="bun">
+      bun
+    </CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+
+  <CodeBlockTab value="npm">
+    ```bash
+    npm i streamdown
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="pnpm">
+    ```bash
+    pnpm add streamdown
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="yarn">
+    ```bash
+    yarn add streamdown
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="bun">
+    ```bash
+    bun add streamdown
+    ```
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+### AI Elements
+
+Install the `message` component from AI Elements:
+
+<CodeBlockTabs defaultValue="npm">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="npm">
+      npm
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="pnpm">
+      pnpm
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="yarn">
+      yarn
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="bun">
+      bun
+    </CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+
+  <CodeBlockTab value="npm">
+    ```bash
+    npx ai-elements@latest add message
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="pnpm">
+    ```bash
+    pnpm dlx ai-elements@latest add message
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="yarn">
+    ```bash
+    yarn dlx ai-elements@latest add message
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="bun">
+    ```bash
+    bun x ai-elements@latest add message
+    ```
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Tailwind CSS Configuration
+
+Streamdown uses Tailwind CSS for styling. To ensure the styles are properly applied, you need to configure your Tailwind setup to include Streamdown's source files.
+
+### Tailwind v4
+
+Add the following CSS source directive to your `globals.css` or main CSS file:
+
+```css title="globals.css"
+@source "../node_modules/streamdown/dist/*.js";
+```
+
+The path must be relative from your CSS file to the `node_modules` folder containing `streamdown`. In a standard Next.js project where `globals.css` lives in `app/`, the default path above should work.
+
+### Animation styles
+
+If you're using the built-in `animated` prop for streaming animation, import the animation CSS in your app:
+
+```tsx title="app/layout.tsx"
+import "streamdown/styles.css";
+```
+
+#### Monorepo setup
+
+In a monorepo (npm workspaces, Turbo, pnpm, etc.), dependencies are typically hoisted to the root `node_modules`. You need to adjust the relative path to point there:
+
+```
+monorepo/
+├── node_modules/streamdown/  ← hoisted here
+├── apps/
+│   └── web/
+│       └── app/
+│           └── globals.css   ← your CSS file
+```
+
+```css title="globals.css"
+/* apps/web/app/globals.css → 3 levels up to reach root node_modules */
+@source "../../../node_modules/streamdown/dist/*.js";
+```
+
+Adjust the number of `../` segments based on where your CSS file lives relative to the root `node_modules`.
+
+### Tailwind v3
+
+Add Streamdown to your `content` array in your `tailwind.config.js`:
+
+```js title="tailwind.config.js"
+module.exports = {
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./node_modules/streamdown/dist/*.js",
+  ],
+  // ... rest of your config
+};
+```
+
+In a monorepo, adjust the path to reach the root `node_modules`:
+
+```js title="tailwind.config.js"
+module.exports = {
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "../../node_modules/streamdown/dist/*.js",
+  ],
+  // ... rest of your config
+};
+```
+
+---
+title: Usage
+description: Learn how to use Streamdown in your project.
+type: guide
+summary: Integrate Streamdown with the Vercel AI SDK and other streaming providers.
+prerequisites:
+  - /docs/getting-started
+related:
+  - /docs/components
+  - /docs/configuration
+---
+
+# Usage
+
+
+
+Streamdown is a drop-in replacement for `react-markdown`, so you can use it just like you would use `react-markdown`.
+
+## Basic Usage
+
+Import and use the `Streamdown` component in your React application:
+
+```tsx title="app/page.tsx"
+import { Streamdown } from 'streamdown';
+
+export default function Page() {
+  const markdown = "# Hello World\n\nThis is **streaming** markdown!";
+
+  return <Streamdown>{markdown}</Streamdown>;
+}
+```
+
+That's it! Streamdown will render your Markdown with all the built-in features enabled.
+
+## With Plugins
+
+For syntax highlighting, diagrams, math rendering, and CJK support, install the plugin packages:
+
+<CodeBlockTabs defaultValue="npm">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="npm">
+      npm
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="pnpm">
+      pnpm
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="yarn">
+      yarn
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="bun">
+      bun
+    </CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+
+  <CodeBlockTab value="npm">
+    ```bash
+    npm install @streamdown/code @streamdown/mermaid @streamdown/math @streamdown/cjk
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="pnpm">
+    ```bash
+    pnpm add @streamdown/code @streamdown/mermaid @streamdown/math @streamdown/cjk
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="yarn">
+    ```bash
+    yarn add @streamdown/code @streamdown/mermaid @streamdown/math @streamdown/cjk
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="bun">
+    ```bash
+    bun add @streamdown/code @streamdown/mermaid @streamdown/math @streamdown/cjk
+    ```
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+Then import the plugins:
+
+```tsx title="app/page.tsx"
+import { Streamdown } from 'streamdown';
+import { code } from '@streamdown/code';
+import { mermaid } from '@streamdown/mermaid';
+import { math } from '@streamdown/math';
+import { cjk } from '@streamdown/cjk';
+
+// Import KaTeX styles for math rendering
+import 'katex/dist/katex.min.css';
+
+export default function Page() {
+  const markdown = `
+# Hello World
+
+Here's some code:
+
+\`\`\`typescript
+const greeting = "Hello, World!";
+console.log(greeting);
+\`\`\`
+
+And a diagram:
+
+\`\`\`mermaid
+graph LR
+    A[Start] --> B[End]
+\`\`\`
+
+And some math: $$E = mc^2$$
+  `;
+
+  return (
+    <Streamdown
+      plugins={{
+        code: code,
+        mermaid: mermaid,
+        math: math,
+        cjk: cjk,
+      }}
+    >
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+### Plugin Options
+
+Each plugin is optional - install and import only what you need:
+
+```bash
+# Just syntax highlighting
+npm install @streamdown/code
+```
+
+```tsx title="app/page.tsx"
+import { Streamdown } from 'streamdown';
+import { code } from '@streamdown/code';
+
+<Streamdown plugins={{ code: code }}>
+  {markdown}
+</Streamdown>
+```
+
+```bash
+# Just diagrams
+npm install @streamdown/mermaid
+```
+
+```tsx title="app/page.tsx"
+import { Streamdown } from 'streamdown';
+import { mermaid } from '@streamdown/mermaid';
+
+<Streamdown plugins={{ mermaid: mermaid }}>
+  {markdown}
+</Streamdown>
+```
+
+```bash
+# Just math
+npm install @streamdown/math
+```
+
+```tsx title="app/page.tsx"
+import { Streamdown } from 'streamdown';
+import { math } from '@streamdown/math';
+import 'katex/dist/katex.min.css';
+
+<Streamdown plugins={{ math: math }}>
+  {markdown}
+</Streamdown>
+```
+
+```bash
+# Just CJK support
+npm install @streamdown/cjk
+```
+
+```tsx title="app/page.tsx"
+import { Streamdown } from 'streamdown';
+import { cjk } from '@streamdown/cjk';
+
+<Streamdown plugins={{ cjk: cjk }}>
+  {markdown}
+</Streamdown>
+```
+
+## With AI Streaming
+
+Streamdown really shines when used with AI streaming. Here's an example using the Vercel AI SDK:
+
+```tsx title="app/page.tsx"
+'use client';
+
+import { useChat } from '@ai-sdk/react';
+import { Streamdown } from 'streamdown';
+import { code } from '@streamdown/code';
+import { mermaid } from '@streamdown/mermaid';
+
+export default function ChatPage() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat();
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={message.role === 'user' ? 'text-right' : 'text-left'}
+          >
+            <div className="inline-block max-w-2xl">
+              <Streamdown
+                plugins={{
+                  code: code,
+                  mermaid: mermaid,
+                }}
+                isAnimating={isLoading && message.role === 'assistant'}
+              >
+                {message.content}
+              </Streamdown>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-4 border-t">
+        <input
+          value={input}
+          onChange={handleInputChange}
+          placeholder="Ask me anything..."
+          className="w-full px-4 py-2 border rounded-lg"
+          disabled={isLoading}
+        />
+      </form>
+    </div>
+  );
+}
+```
+
+## Static Mode
+
+Static mode is designed for rendering pre-generated markdown content, such as blog posts, documentation, or other static pages where content is already complete.
+
+### When to Use Static Mode
+
+Use static mode when:
+
+* Rendering static markdown content (e.g., blog posts, docs)
+* Content is pre-generated and not streaming
+* You need improved fallback rendering for code blocks
+* Streaming optimizations are unnecessary
+
+### Basic Static Mode Usage
+
+Enable static mode by setting the `mode` prop to `"static"`:
+
+```tsx title="app/blog/[slug]/page.tsx"
+import { Streamdown } from 'streamdown';
+import { code } from '@streamdown/code';
+
+export default function BlogPost({ content }: { content: string }) {
+  return (
+    <Streamdown
+      mode="static"
+      plugins={{ code: code }}
+    >
+      {content}
+    </Streamdown>
+  );
+}
+```
+
+### How Static Mode Works
+
+Static mode skips streaming-related optimizations:
+
+* **No block parsing**: Content is rendered as a single unit instead of being split into blocks
+* **No incomplete markdown handling**: Assumes markdown is complete and well-formed
+* **Improved code blocks**: Uses optimized rendering for static code blocks
+* **Simpler rendering**: Direct ReactMarkdown rendering without streaming overhead
+
+### Configuration
+
+All standard Streamdown props work in static mode, including:
+
+* Custom components
+* Syntax highlighting themes
+* Mermaid diagrams
+* Plugin configuration
+
+```tsx title="app/blog/[slug]/page.tsx"
+<Streamdown
+  mode="static"
+  plugins={{
+    code: code,
+    mermaid: mermaid,
+  }}
+  shikiTheme={['github-light', 'github-dark']}
+  mermaid={{ config: { theme: 'neutral' } }}
+>
+  {content}
+</Streamdown>
+```
+---
+title: FAQ
+description: Common questions about Streamdown and how it works with AI-powered streaming applications.
+type: troubleshooting
+summary: Answers to common questions about compatibility, performance, and streaming behavior.
+related:
+  - /docs/getting-started
+  - /docs/configuration
+---
+
+# FAQ
+
+
+
+Answers to frequently asked questions about using Streamdown in your projects.
+
+## What makes Streamdown different from react-markdown?
+
+Streamdown is specifically designed for AI-powered streaming applications. It integrates with the [remend](https://www.npmjs.com/package/remend) preprocessor to handle incomplete markdown syntax, which means it can render markdown gracefully even while it's being generated by AI models. It also includes security features like URL prefix restrictions and better performance optimizations for streaming contexts.
+
+## Can I use custom components with Streamdown?
+
+Yes! Streamdown fully supports custom components through the `components` prop, just like react-markdown. You can override any markdown element with your own React components to customize the rendering.
+
+## How does the incomplete markdown parsing work?
+
+When `parseIncompleteMarkdown` is enabled (default), Streamdown uses the [remend](https://www.npmjs.com/package/remend) package to preprocess the markdown before rendering. Remend automatically detects and completes common issues in incomplete markdown like unclosed bold/italic markers, incomplete links, and partial code blocks. This preprocessing ensures smooth rendering even as markdown is being streamed from AI models. You can also use remend as a standalone package in your own projects.
+
+## Is Streamdown compatible with all react-markdown plugins?
+
+Streamdown supports both remark and rehype plugins, making it compatible with most react-markdown plugins. It includes `remarkGfm` by default, and supports additional plugins like `@streamdown/math` and `@streamdown/mermaid` through the `plugins` prop. You can also add custom remark and rehype plugins through the `remarkPlugins` and `rehypePlugins` props.
+
+## Why do I get a `Package shiki can't be external` warning?
+
+This warning occurs when Next.js tries to treat Shiki as an external package. To fix this, you need to install Shiki explicitly with `npm install shiki` and add it to your `transpilePackages` array in your `next.config.ts`:
+
+```tsx title="next.config.ts"
+{
+  // ... other config
+  transpilePackages: ["shiki"],
+}
+```
+
+This ensures Shiki is properly bundled with your application.
+
+## Why do I get a CSS loading error when using Streamdown with Vite SSR?
+
+When using Streamdown with Vite and server-side rendering, you might encounter a `TypeError [ERR_UNKNOWN_FILE_EXTENSION]` error for CSS files (like `katex.min.css`). To fix this, add Streamdown to your `vite.config.ts`:
+
+```tsx title="vite.config.ts"
+export default {
+  // ... other config
+  ssr: {
+    noExternal: ['streamdown'],
+  },
+}
+```
+
+This prevents Vite from treating Streamdown as an external module during SSR, ensuring CSS files are properly processed.
+
+## How do I configure Tailwind CSS to work with Streamdown?
+
+### Tailwind v4
+
+Add a `@source` directive to your `globals.css` file with the path to Streamdown's distribution files:
+
+```css title="globals.css"
+@source "../node_modules/streamdown/dist/*.js";
+```
+
+### Tailwind v3
+
+Add Streamdown to your `content` array in `tailwind.config.js`:
+
+```js title="tailwind.config.js"
+content: [
+  // ... your other content paths
+  "./node_modules/streamdown/dist/*.js",
+]
+```
+
+Adjust the paths based on your project structure. This ensures Tailwind scans Streamdown's files for any utility classes used in the component.
+
+## Why do I get `Module not found: Can't resolve 'vscode-jsonrpc'` errors with Next.js?
+
+If you run into bundling errors related to `vscode-jsonrpc`, `langium`, or other Node.js-only packages when using Streamdown with Next.js/Turbopack, this is due to Mermaid's dependency tree including server-side packages. To fix this, configure Next.js to exclude these packages from client-side bundling:
+
+```js title="next.config.js"
+export default {
+  serverComponentsExternalPackages: ['langium', '@mermaid-js/parser'],
+
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'vscode-jsonrpc': false,
+        'langium': false,
+      };
+    }
+    return config;
+  },
+};
+```
+
+This tells Next.js not to bundle these Node.js-only dependencies for the browser. This is an upstream issue being tracked in the [Mermaid repository](https://github.com/mermaid-js/mermaid/issues/7094).
+
+---
+title: Configuration
+description: Learn how to configure Streamdown in your project.
+type: reference
+summary: All available props and options for the Streamdown component.
+prerequisites:
+  - /docs/getting-started
+related:
+  - /docs/usage
+  - /docs/plugins
+---
+
+# Configuration
+
+
+
+Streamdown can be configured to suit your needs. This guide will walk you through the available options and how to configure them.
+
+## Core Props
+
+<TypeTable
+  type={{
+  children: {
+    description: "The Markdown content to render",
+    type: "string",
+  },
+  parseIncompleteMarkdown: {
+    description:
+      "Enable remend preprocessor for unterminated Markdown blocks",
+    type: "boolean",
+    default: "true",
+  },
+  remend: {
+    description: "Configure which Markdown completions remend should perform",
+    type: "RemendOptions",
+  },
+  normalizeHtmlIndentation: {
+    description:
+      'Normalize indentation in HTML blocks to prevent 4+ space indents from being treated as code blocks',
+    type: 'boolean',
+    default: 'false',
+  },
+  isAnimating: {
+    description:
+      "Indicates if content is currently streaming (disables copy buttons)",
+    type: "boolean",
+    default: "false",
+  },
+  className: {
+    description: "CSS class for the container element",
+    type: "string",
+  },
+  mode: {
+    description: "Mode of the Streamdown component",
+    type: '"streaming" | "static"',
+    default: "streaming",
+    options: ["streaming", "static"],
+  },
+}}
+/>
+
+## Styling Props
+
+<TypeTable
+  type={{
+  shikiTheme: {
+    description:
+      "Light and dark themes for code syntax highlighting. Any Shiki theme name can be used - bundled themes (github-light, github-dark) load instantly, others load from CDN.",
+    type: "[string, string]",
+    default: "['github-light', 'github-dark']",
+  },
+  components: {
+    description: "Custom component overrides for Markdown elements",
+    type: "object",
+  },
+  allowedTags: {
+    description:
+      "Custom HTML tags to allow through sanitization, with their permitted attributes. Use with 'components' to render custom tags like <ref> or <mention>. Only works with default rehype plugins.",
+    type: "Record<string, string[]>",
+  },
+}}
+/>
+
+## Plugin Props
+
+<TypeTable
+  type={{
+  rehypePlugins: {
+    description: "Rehype plugins for HTML processing",
+    type: "Pluggable[]",
+    default: "Object.values(defaultRehypePlugins)",
+  },
+  remarkPlugins: {
+    description: "Remark plugins for Markdown processing",
+    type: "Pluggable[]",
+    default: "Object.values(defaultRemarkPlugins)",
+  },
+}}
+/>
+
+**Default Rehype Plugins:**
+
+* `rehype-raw` - HTML support
+* `rehype-sanitize` - XSS protection and safe HTML rendering
+* `rehype-harden` - Security hardening (allows all image and link prefixes, data images enabled)
+
+**Default Remark Plugins:**
+
+* `remark-gfm` - GitHub Flavored Markdown
+
+Math rendering and CJK support require installing separate plugins. See [Mathematics](/docs/plugins/math) and [CJK Language Support](/docs/plugins/cjk).
+
+## Feature-Specific Props
+
+<TypeTable
+  type={{
+  mermaid: {
+    description: "Mermaid diagram configuration and error handling",
+    type: "MermaidOptions",
+  },
+  controls: {
+    description: "Control visibility of interactive buttons",
+    type: "ControlsConfig",
+    default: "true",
+  },
+  animated: {
+    description: "Enable character-by-character animation for streaming content. See [Animation](/docs/animation).",
+    type: "boolean | AnimateOptions",
+  },
+  linkSafety: {
+    description: "Configure link safety modals for external URLs. See [Link Safety](/docs/link-safety).",
+    type: "LinkSafetyConfig",
+    default: "{ enabled: true }",
+  },
+  plugins: {
+    description: "Plugin configuration for math, mermaid, code highlighting, and CJK support. See [Plugins](/docs/plugins).",
+    type: "PluginConfig",
+  },
+  caret: {
+    description: "Show a caret indicator at the end of streaming content. See [Carets](/docs/carets).",
+    type: '"block" | "circle"',
+  },
+}}
+/>
+
+### Mermaid Options
+
+The `mermaid` prop accepts an object with the following properties:
+
+<TypeTable
+  type={{
+  config: {
+    description: "Custom configuration for Mermaid diagrams",
+    type: "MermaidConfig",
+  },
+  errorComponent: {
+    description:
+      "Custom React component for handling Mermaid rendering errors",
+    type: "React.ComponentType<MermaidErrorComponentProps>",
+  },
+}}
+/>
+
+## Element Filtering Props
+
+These props match the [react-markdown](https://github.com/remarkjs/react-markdown) API, making Streamdown a drop-in replacement.
+
+<TypeTable
+  type={{
+  allowedElements: {
+    description:
+      "Tag names to allow (all others are removed). Cannot combine with disallowedElements.",
+    type: "string[]",
+  },
+  disallowedElements: {
+    description:
+      "Tag names to disallow (all others are kept). Cannot combine with allowedElements.",
+    type: "string[]",
+    default: "[]",
+  },
+  allowElement: {
+    description:
+      "Custom filter function called for each element. Return false to remove. Applied after allowedElements/disallowedElements.",
+    type: "(element: Element, index: number, parent: Parent | undefined) => boolean",
+  },
+  unwrapDisallowed: {
+    description:
+      "When true, disallowed elements are replaced by their children instead of being removed entirely.",
+    type: "boolean",
+    default: "false",
+  },
+  skipHtml: {
+    description:
+      "Ignore raw HTML in Markdown completely (removes raw HTML nodes from the tree).",
+    type: "boolean",
+    default: "false",
+  },
+  urlTransform: {
+    description:
+      "Transform all URLs in the Markdown (links, images, etc). Return an empty string to remove the URL. Defaults to defaultUrlTransform (passthrough). URL security is handled by rehype-sanitize and rehype-harden.",
+    type: "(url: string, key: string, node: Element) => string | null | undefined",
+    default: "defaultUrlTransform",
+  },
+}}
+/>
+
+### Element filtering example
+
+```tsx title="app/page.tsx"
+// Only allow paragraphs, links, and emphasis
+<Streamdown allowedElements={["p", "a", "em"]}>
+  {markdown}
+</Streamdown>
+
+// Remove images but keep everything else
+<Streamdown disallowedElements={["img"]}>
+  {markdown}
+</Streamdown>
+
+// Remove images but keep their alt text
+<Streamdown disallowedElements={["img"]} unwrapDisallowed>
+  {markdown}
+</Streamdown>
+
+// Custom filter: remove all h3+ headings
+<Streamdown
+  allowElement={(element) =>
+    !["h3", "h4", "h5", "h6"].includes(element.tagName)
+  }
+>
+  {markdown}
+</Streamdown>
+```
+
+### URL transform example
+
+```tsx title="app/page.tsx"
+import { Streamdown, defaultUrlTransform } from 'streamdown';
+
+// Proxy all image URLs through your CDN
+<Streamdown
+  urlTransform={(url, key, node) => {
+    if (key === 'src') {
+      return `https://your-cdn.com/proxy?url=${encodeURIComponent(url)}`;
+    }
+    return defaultUrlTransform(url, key, node);
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+## Advanced Props
+
+<TypeTable
+  type={{
+  BlockComponent: {
+    description:
+      "Custom block component for rendering individual markdown blocks",
+    type: "React.ComponentType<BlockProps>",
+    default: "Block",
+  },
+  parseMarkdownIntoBlocksFn: {
+    description: "Custom function to parse markdown into blocks",
+    type: "(markdown: string) => string[]",
+    default: "parseMarkdownIntoBlocks",
+  },
+}}
+/>
+
+The `controls` prop can be configured granularly:
+
+```tsx title="app/page.tsx"
+<Streamdown
+  controls={{
+    table: true, // Show table download button
+    code: true, // Show code copy button
+    mermaid: {
+      download: true, // Show mermaid download button
+      copy: true, // Show mermaid copy button
+      fullscreen: true, // Show mermaid fullscreen button
+      panZoom: true, // Show mermaid pan/zoom controls
+    },
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+### Remend Options
+
+The `remend` prop configures which Markdown completions are performed during streaming. All options default to `true` when not specified. Set an option to `false` to disable that completion:
+
+<TypeTable
+  type={{
+  links: {
+    description: "Complete incomplete links",
+    type: "boolean",
+    default: "true",
+  },
+  images: {
+    description: "Complete incomplete images",
+    type: "boolean",
+    default: "true",
+  },
+  bold: {
+    description: "Complete bold formatting (**)",
+    type: "boolean",
+    default: "true",
+  },
+  italic: {
+    description: "Complete italic formatting (* and _)",
+    type: "boolean",
+    default: "true",
+  },
+  boldItalic: {
+    description: "Complete bold-italic formatting (***)",
+    type: "boolean",
+    default: "true",
+  },
+  inlineCode: {
+    description: "Complete inline code formatting (`)",
+    type: "boolean",
+    default: "true",
+  },
+  strikethrough: {
+    description: "Complete strikethrough formatting (~~)",
+    type: "boolean",
+    default: "true",
+  },
+  katex: {
+    description: "Complete block KaTeX math ($$)",
+    type: "boolean",
+    default: "true",
+  },
+  setextHeadings: {
+    description: "Handle incomplete setext headings",
+    type: "boolean",
+    default: "true",
+  },
+  comparisonOperators: {
+    description: "Escape > as comparison operators in list items",
+    type: "boolean",
+    default: "true",
+  },
+  htmlTags: {
+    description: "Strip incomplete HTML tags at end of streaming text",
+    type: "boolean",
+    default: "true",
+  },
+  linkMode: {
+    description: "How to handle incomplete links: 'protocol' uses a placeholder URL, 'text-only' displays plain text",
+    type: '"protocol" | "text-only"',
+    default: '"protocol"',
+  },
+  handlers: {
+    description: "Custom handlers to extend remend with your own completion logic",
+    type: "RemendHandler[]",
+  },
+}}
+/>
+
+```tsx title="app/page.tsx"
+<Streamdown
+  remend={{
+    links: false, // Disable link completion
+    katex: false, // Disable KaTeX completion
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+---
+title: Styling
+description: Learn how to customize the appearance of Streamdown components.
+type: guide
+summary: Apply custom CSS, Tailwind classes, and theme overrides to Streamdown output.
+prerequisites:
+  - /docs/getting-started
+related:
+  - /docs/typography
+  - /docs/components
+---
+
+# Styling
+
+
+
+Streamdown is designed to be flexible and customizable, allowing you to adapt its appearance to match your application's design system. This guide covers the various ways you can modify Streamdown's styles to suit your needs.
+
+## CSS Variables (Recommended)
+
+Streamdown components are built using shadcn/ui's design system, which means they use CSS variables for theming. This is the simplest way to customize colors, borders, and other design tokens across all Streamdown components.
+
+### Setting Up Variables
+
+Add or modify the CSS variables in your `globals.css` file:
+
+```css title="app/globals.css"
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+```
+
+### Variables Used by Streamdown
+
+Streamdown components primarily use these CSS variables:
+
+| Variable               | Usage                               | Example Elements                      |
+| ---------------------- | ----------------------------------- | ------------------------------------- |
+| `--primary`            | Links, accent colors                | Links (`<a>`)                         |
+| `--primary-foreground` | Text on primary backgrounds         | N/A                                   |
+| `--muted`              | Subtle backgrounds                  | Code blocks, table headers            |
+| `--muted-foreground`   | De-emphasized text                  | Blockquote text                       |
+| `--border`             | Borders and dividers                | Tables, horizontal rules, code blocks |
+| `--ring`               | Focus rings on interactive elements | Buttons (copy, download)              |
+| `--radius`             | Border radius                       | Code blocks, tables, buttons          |
+
+### Quick Theme Examples
+
+**Minimal Gray Theme:**
+
+```css title="app/globals.css"
+:root {
+  --primary: 0 0% 20%;
+  --muted: 0 0% 96%;
+  --border: 0 0% 90%;
+  --radius: 0.25rem;
+}
+```
+
+**Vibrant Blue Theme:**
+
+```css title="app/globals.css"
+:root {
+  --primary: 217 91% 60%;
+  --muted: 214 100% 97%;
+  --border: 214 32% 91%;
+  --radius: 0.75rem;
+}
+```
+
+**No Borders Theme:**
+
+```css title="app/globals.css"
+:root {
+  --border: transparent;
+  --muted: 0 0% 98%;
+  --radius: 0rem;
+}
+```
+
+## Custom Components
+
+For structural changes like replacing Markdown elements with custom React components, see the [Components](/docs/components) documentation.
+
+## Global CSS Targeting
+
+For simpler styling needs, you can use global CSS to target Streamdown elements using the `data-streamdown` attribute. Every Streamdown element includes a unique `data-streamdown` attribute that makes it easy to apply custom styles.
+
+### Available Selectors
+
+Target specific Streamdown elements using these data attributes:
+
+```css title="styles/streamdown.css"
+/* Headings */
+[data-streamdown="heading-1"] { }
+[data-streamdown="heading-2"] { }
+[data-streamdown="heading-3"] { }
+[data-streamdown="heading-4"] { }
+[data-streamdown="heading-5"] { }
+[data-streamdown="heading-6"] { }
+
+/* Text elements */
+[data-streamdown="strong"] { }
+[data-streamdown="link"] { }
+[data-streamdown="inline-code"] { }
+
+/* Lists */
+[data-streamdown="ordered-list"] { }
+[data-streamdown="unordered-list"] { }
+[data-streamdown="list-item"] { }
+
+/* Blocks */
+[data-streamdown="blockquote"] { }
+[data-streamdown="horizontal-rule"] { }
+
+/* Code */
+[data-streamdown="code-block"] { }
+[data-streamdown="mermaid-block"] { }
+
+/* Tables */
+[data-streamdown="table-wrapper"] { }
+[data-streamdown="table"] { }
+[data-streamdown="table-header"] { }
+[data-streamdown="table-body"] { }
+[data-streamdown="table-row"] { }
+[data-streamdown="table-header-cell"] { }
+[data-streamdown="table-cell"] { }
+
+/* Other */
+[data-streamdown="superscript"] { }
+[data-streamdown="subscript"] { }
+```
+
+### Example Usage
+
+Here's a practical example of customizing Streamdown styles with CSS:
+
+```css title="styles/streamdown.css"
+/* Custom heading styles */
+[data-streamdown="heading-1"] {
+  color: #1a202c;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+[data-streamdown="heading-2"] {
+  color: #2d3748;
+  margin-top: 2rem;
+}
+
+/* Custom link appearance */
+[data-streamdown="link"] {
+  color: #3182ce;
+  text-decoration: none;
+  border-bottom: 1px solid #90cdf4;
+  transition: border-color 0.2s;
+}
+
+[data-streamdown="link"]:hover {
+  border-bottom-color: #3182ce;
+}
+
+/* Custom code block styling */
+[data-streamdown="code-block"] {
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom table styling */
+[data-streamdown="table"] {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+[data-streamdown="table-header"] {
+  background: linear-gradient(to bottom, #f7fafc, #edf2f7);
+}
+
+/* Custom blockquote styling */
+[data-streamdown="blockquote"] {
+  background-color: #f7fafc;
+  border-left-color: #4299e1;
+  border-radius: 0.25rem;
+}
+```
+
+### Scoped Styling
+
+You can scope your styles to specific instances of Streamdown by using the `className` prop:
+
+```tsx title="app/page.tsx"
+<Streamdown className="docs-content">
+  {markdown}
+</Streamdown>
+```
+
+```css title="styles/streamdown.css"
+/* Styles only apply to this specific instance */
+.docs-content [data-streamdown="heading-1"] {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.docs-content [data-streamdown="code-block"] {
+  font-family: 'Fira Code', monospace;
+}
+```
+
+## Combining Approaches
+
+For maximum flexibility, you can combine both approaches - using custom components for structural changes and CSS for visual styling:
+
+```tsx title="app/page.tsx"
+<Streamdown
+  className="custom-markdown"
+  components={{
+    h1: ({ children, ...props }) => (
+      <h1 {...props}>
+        <span className="heading-icon">📖</span>
+        {children}
+      </h1>
+    ),
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+```css title="styles/streamdown.css"
+.custom-markdown [data-streamdown="heading-1"] {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.custom-markdown .heading-icon {
+  font-size: 1.5rem;
+}
+```
+
+## Additional Styling Props
+
+Beyond component overrides and CSS, Streamdown provides additional styling-related props:
+
+### Container Class Name
+
+Use the `className` prop to add custom classes to the Streamdown container:
+
+```tsx title="app/page.tsx"
+<Streamdown className="prose prose-lg dark:prose-invert max-w-none">
+  {markdown}
+</Streamdown>
+```
+
+### Syntax Highlighting Themes
+
+Customize code block appearance with Shiki themes:
+
+```tsx title="app/page.tsx"
+<Streamdown
+  shikiTheme={['github-light', 'github-dark']}
+>
+  {markdown}
+</Streamdown>
+```
+
+See the [Code Blocks](/docs/code-blocks) documentation for more details on syntax highlighting customization.
+
+## Best Practices
+
+When customizing Streamdown styles, consider these best practices:
+
+1. **Start with CSS Variables** - For most theming needs (colors, borders, radius), modifying CSS variables in `globals.css` is the simplest and most maintainable approach.
+
+2. **Use `data-streamdown` Selectors for Specific Elements** - When you need to target individual elements without affecting the entire theme, use the `data-streamdown` attribute selectors.
+
+3. **Use Custom Components for Structural Changes** - When you need to change the HTML structure or add wrapper elements, use the `components` prop. See the [Components](/docs/components) documentation for details.
+
+4. **Maintain Accessibility** - Ensure your custom styles maintain proper color contrast, focus states, and semantic HTML structure.
+
+5. **Test During Streaming** - Verify that your custom styles work well with incomplete content during streaming.
+
+6. **Scope Your Styles** - Use the `className` prop to scope styles and avoid conflicts with other parts of your application.
+
+7. **Preserve Animations** - Streamdown includes built-in animations for smooth streaming. Be careful not to override animation-related classes unless intentional.
+
+## Styling Priority
+
+The three styling approaches have the following priority (highest to lowest):
+
+1. **Custom Components** - Complete control over rendering
+2. **CSS via `data-streamdown` selectors** - Element-specific styling
+3. **CSS Variables** - Global theme tokens
+---
+title: Components
+description: Learn how to customize and extend Streamdown with custom component overrides.
+type: reference
+summary: Override default HTML elements with custom React components for full rendering control.
+prerequisites:
+  - /docs/getting-started
+related:
+  - /docs/styling
+  - /docs/plugins
+---
+
+# Components
+
+
+
+Streamdown allows you to replace any Markdown element with your own React component while maintaining all of Streamdown's functionality.
+
+## Basic Usage
+
+Pass custom components using the `components` prop:
+
+```tsx title="app/page.tsx"
+<Streamdown
+  components={{
+    h1: ({ children }) => (
+      <h1 className="text-4xl font-bold text-blue-600">
+        {children}
+      </h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-3xl font-semibold text-blue-500">
+        {children}
+      </h2>
+    ),
+    p: ({ children }) => (
+      <p className="text-gray-700 leading-relaxed">
+        {children}
+      </p>
+    ),
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+## Available Components
+
+You can override any of the following standard HTML components:
+
+* **Headings**: `h1`, `h2`, `h3`, `h4`, `h5`, `h6`
+* **Text**: `p`, `strong`, `em`
+* **Lists**: `ul`, `ol`, `li`
+* **Links**: `a`
+* **Code**: `code`, `pre`
+* **Quotes**: `blockquote`
+* **Tables**: `table`, `thead`, `tbody`, `tr`, `th`, `td`
+* **Media**: `img`
+* **Other**: `hr`, `sup`, `sub`, `section`
+
+## Component Props
+
+Custom components receive all the props that the default components would receive, including:
+
+* `children` - The content to render
+* `className` - CSS class names from the Markdown AST (if applicable)
+* `node` - The Markdown AST node (for advanced use cases)
+* Element-specific props (e.g., `href` for links, `src` for images)
+
+<Callout type="warn">
+  Custom components **fully replace** the default implementations, including their built-in Tailwind styles. The `className` prop only contains classes from the Markdown AST (e.g., `language-js` on code elements) — it does **not** include the default styles that Streamdown normally applies.
+
+  If you need to preserve the default appearance, you must re-apply the styles yourself. See the [Styling](/docs/styling) documentation for the default classes, or use [CSS selectors with `data-streamdown` attributes](/docs/styling#global-css-targeting) instead of component overrides when you only need visual changes.
+</Callout>
+
+For example, the default `h2` component applies `mt-6 mb-2 font-semibold text-2xl`. When you override it, those styles are lost unless you include them:
+
+```tsx title="app/page.tsx"
+<Streamdown
+  components={{
+    // ❌ Loses default spacing and font styles
+    h2: ({ children }) => (
+      <h2 className="text-blue-500">{children}</h2>
+    ),
+    // ✅ Preserves default styles alongside custom ones
+    h2: ({ children, className }) => (
+      <h2 className={`mt-6 mb-2 font-semibold text-2xl text-blue-500 ${className ?? ''}`}>
+        {children}
+      </h2>
+    ),
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+## Streaming State
+
+When streaming markdown, custom components can detect if their code fence is still being streamed using the `useIsCodeFenceIncomplete` hook. This is useful for expensive-to-render components where you want to show a loading state until the code block is complete.
+
+```tsx title="app/page.tsx"
+import { Streamdown, useIsCodeFenceIncomplete } from "streamdown";
+
+const MyCodeBlock = ({ children }) => {
+  const isIncomplete = useIsCodeFenceIncomplete();
+
+  if (isIncomplete) {
+    return <div className="animate-pulse bg-muted h-24 rounded" />;
+  }
+
+  return <pre><code>{children}</code></pre>;
+};
+
+export default function Page() {
+  return (
+    <Streamdown
+      components={{ code: MyCodeBlock }}
+      isAnimating={isStreaming}
+    >
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+The hook returns `true` when all of the following are true:
+
+* `isAnimating={true}` (streaming mode is active)
+* The component is in the last block being streamed
+* That block has an unclosed code fence (` ``` ` without a closing ` ``` `)
+
+Once the code fence closes, the hook returns `false` and your component can render normally—even while the rest of the markdown continues streaming.
+
+<Callout type="info">
+  This is particularly useful for Mermaid diagrams and syntax highlighters where continuous re-rendering during streaming would cause performance issues.
+</Callout>
+
+```tsx title="app/page.tsx"
+<Streamdown
+  components={{
+    a: ({ href, children, ...props }) => (
+      <a
+        href={href}
+        className="text-purple-600 hover:text-purple-800 underline"
+        {...props}
+      >
+        {children}
+      </a>
+    ),
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+## Custom HTML Tags
+
+You can render custom HTML tags from AI responses (like `<source>`, `<mention>`, etc.) using the `allowedTags` prop alongside `components`. This is useful when you instruct the AI to output structured data that renders as interactive components.
+
+For example, you might add a system prompt:
+
+```
+When referencing a source, use: <source id="123">Source Title</source>
+```
+
+The AI then outputs markdown containing:
+
+```markdown
+According to the documentation <source id="abc">Getting Started Guide</source>, you should...
+```
+
+### Setup
+
+Use the `allowedTags` prop to specify which custom tags and attributes to allow through sanitization, then map them to React components:
+
+```tsx title="app/page.tsx"
+<Streamdown
+  allowedTags={{
+    source: ["id"],  // Allow <source> tag with id attribute
+  }}
+  components={{
+    source: ({ id, children }) => (
+      <button
+        onClick={() => console.log(`Navigate to source: ${id}`)}
+        className="text-blue-600 underline cursor-pointer"
+      >
+        {children}
+      </button>
+    ),
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+### Multiple Custom Tags
+
+You can allow multiple custom tags:
+
+```tsx title="app/page.tsx"
+<Streamdown
+  allowedTags={{
+    source: ["id"],
+    mention: ["user_id", "type"],
+    action: ["name", "payload"],
+  }}
+  components={{
+    source: ({ id, children }) => (
+      <SourceBadge sourceId={id as string}>{children}</SourceBadge>
+    ),
+    mention: ({ user_id, children }) => (
+      <UserMention userId={user_id as string}>{children}</UserMention>
+    ),
+    action: ({ name, payload, children }) => (
+      <ActionButton name={name as string} payload={payload as string}>
+        {children}
+      </ActionButton>
+    ),
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+### Data Attributes
+
+Use `data*` in the attributes array to allow all `data-*` attributes on a tag:
+
+```tsx title="app/page.tsx"
+<Streamdown
+  allowedTags={{
+    widget: ["data*"],  // Allow all data-* attributes
+  }}
+  components={{
+    widget: (props) => <Widget {...props} />,
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+### Important Notes
+
+* Without `allowedTags`, custom tags are stripped by the sanitizer (content is preserved, tags are removed)
+* Only attributes listed in `allowedTags` are preserved; unlisted attributes are stripped
+* The `allowedTags` prop only works with the default rehype plugins
+
+<Callout type="info">
+  If you provide custom `rehypePlugins`, you'll need to configure `rehype-sanitize` yourself to allow custom tags. See the [Security](/docs/security) documentation for details.
+</Callout>
+
+### Security Considerations
+
+When allowing custom HTML tags:
+
+* Only whitelist tags you explicitly need
+* Only whitelist attributes you explicitly need
+* Validate attribute values in your component before using them
+* Never allow `script`, `style`, or event handler attributes (`onclick`, etc.)
+
+See the [Security](/docs/security) documentation for more details on HTML handling.
+---
+title: Animation
+description: Smooth per-word text animation for streaming content.
+type: reference
+summary: Token-by-token text reveal animations that create a natural typing effect during streaming.
+related:
+  - /docs/carets
+  - /docs/memoization
+---
+
+# Animation
+
+
+
+Streamdown supports per-word streaming animation through the built-in `animated` prop. Words fade in as they mount, creating a smooth text-reveal effect during AI streaming. When streaming ends, the animation is removed entirely, leaving zero DOM overhead on completed messages.
+
+## Enabling animation
+
+Import the animation CSS and set the `animated` prop:
+
+```tsx title="app/page.tsx"
+import { Streamdown } from "streamdown";
+import "streamdown/styles.css";
+
+export default function Page() {
+  return (
+    <Streamdown animated isAnimating={status === "streaming"}>
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+The `isAnimating` prop controls when the animation is active. When `false`, the animate plugin is excluded from the rehype pipeline entirely, so completed messages render as plain text with no extra `<span>` wrappers.
+
+## How it works
+
+The animation is a rehype transformer that:
+
+1. Walks the HAST tree, visiting text nodes
+2. Splits each text node into per-word `<span>` elements with `data-sd-animate`
+3. Sets CSS custom properties for animation name, duration, and easing
+4. Skips text inside `code`, `pre`, `svg`, `math`, and `annotation` elements
+
+React's reconciliation ensures only newly-mounted spans trigger the CSS animation. Combined with a short default duration (150ms), this makes batch token arrivals look smooth rather than "chunky."
+
+## Animation types
+
+Three built-in animations are included in `styles.css`:
+
+### fadeIn (default)
+
+A simple opacity transition from invisible to visible.
+
+```tsx
+<Streamdown animated={{ animation: "fadeIn" }} isAnimating={status === "streaming"}>
+  {markdown}
+</Streamdown>
+```
+
+### blurIn
+
+Combines opacity with a blur-to-sharp transition. Works well with fast-streaming models where many tokens arrive at once — the blur masks the batch appearance better than pure opacity.
+
+```tsx
+<Streamdown animated={{ animation: "blurIn" }} isAnimating={status === "streaming"}>
+  {markdown}
+</Streamdown>
+```
+
+### slideUp
+
+Words fade in while sliding up 4px, creating a subtle rising effect.
+
+```tsx
+<Streamdown animated={{ animation: "slideUp" }} isAnimating={status === "streaming"}>
+  {markdown}
+</Streamdown>
+```
+
+## Configuration
+
+Pass an options object to `animated` to customize animation behavior:
+
+```tsx title="app/page.tsx"
+import { Streamdown } from "streamdown";
+import "streamdown/styles.css";
+
+export default function Page() {
+  return (
+    <Streamdown
+      animated={{
+        animation: "blurIn",  // "fadeIn" | "blurIn" | "slideUp" | custom string
+        duration: 200,         // milliseconds (default: 150)
+        easing: "ease-out",    // CSS timing function (default: "ease")
+        sep: "word",           // "word" | "char" (default: "word")
+      }}
+      isAnimating={status === "streaming"}
+    >
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+### Options
+
+| Option      | Type               | Default    | Description                                                                                      |
+| ----------- | ------------------ | ---------- | ------------------------------------------------------------------------------------------------ |
+| `animation` | `string`           | `"fadeIn"` | Animation name. Built-in: `fadeIn`, `blurIn`, `slideUp`. Custom strings are prefixed with `sd-`. |
+| `duration`  | `number`           | `150`      | Animation duration in milliseconds.                                                              |
+| `easing`    | `string`           | `"ease"`   | CSS timing function.                                                                             |
+| `sep`       | `"word" \| "char"` | `"word"`   | Split text by word or character.                                                                 |
+
+### Character-level animation
+
+Set `sep: "char"` to animate each character individually instead of whole words:
+
+```tsx
+<Streamdown animated={{ animation: "fadeIn", sep: "char" }} isAnimating={status === "streaming"}>
+  {markdown}
+</Streamdown>
+```
+
+This creates a typewriter-like effect but generates more DOM nodes. Use it sparingly.
+
+## Custom animations
+
+Define your own `@keyframes` and reference them by name:
+
+```css title="app/globals.css"
+@keyframes sd-myCustomAnimation {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+```
+
+```tsx
+<Streamdown animated={{ animation: "myCustomAnimation" }} isAnimating={status === "streaming"}>
+  {markdown}
+</Streamdown>
+```
+
+The animation name is automatically prefixed with `sd-`, so define your keyframes as `sd-yourName`.
+
+## Advanced usage
+
+For direct access to the rehype plugin (e.g. in custom pipelines), use `createAnimatePlugin`:
+
+```tsx
+import { createAnimatePlugin } from "streamdown";
+
+const animate = createAnimatePlugin({
+  animation: "blurIn",
+  duration: 200,
+});
+
+// animate.rehypePlugin is a standard rehype plugin
+```
+
+## Skipped elements
+
+The animation skips text inside these elements to avoid breaking their layout:
+
+* `<code>` — inline and block code
+* `<pre>` — preformatted text
+* `<svg>` — vector graphics
+* `<math>` — MathML elements
+* `<annotation>` — MathML annotations
+
+This means code blocks, syntax-highlighted code, math equations, and diagrams render without animation spans.
+
+## Fast-streaming models
+
+Fast models can dump many tokens per React commit. The default 150ms duration with `animation-fill-mode: both` ensures words start invisible and end visible, making simultaneous mounts look intentional.
+
+For smoother results with fast models:
+
+* Use `blurIn` — blur masks batch arrivals better than opacity alone
+* Increase duration slightly to 200-300ms
+* Consider `ease-out` easing for a more natural deceleration
+
+```tsx
+<Streamdown
+  animated={{
+    animation: "blurIn",
+    duration: 250,
+    easing: "ease-out",
+  }}
+  isAnimating={status === "streaming"}
+>
+  {markdown}
+</Streamdown>
+```
+
+## CSS custom properties
+
+Each animated span receives these CSS custom properties via inline styles:
+
+| Property         | Description                  |
+| ---------------- | ---------------------------- |
+| `--sd-animation` | The `@keyframes` name to use |
+| `--sd-duration`  | Animation duration           |
+| `--sd-easing`    | CSS timing function          |
+
+The `[data-sd-animate]` selector in `styles.css` reads these properties:
+
+```css
+[data-sd-animate] {
+  animation: var(--sd-animation, sd-fadeIn)
+    var(--sd-duration, 150ms)
+    var(--sd-easing, ease) both;
+}
+```
+
+You can override these in your own CSS for more control.
+
+## Related features
+
+* [Carets](/docs/carets) — Blinking cursor indicator during streaming
+* [Plugins](/docs/plugins) — Overview of the plugin system
+* [Configuration](/docs/configuration) — All Streamdown props including `isAnimating`
+---
+title: Carets
+description: Visual cursor indicators for streaming content to show active generation.
+type: reference
+summary: Blinking cursor indicators that show where new content is being generated.
+related:
+  - /docs/animation
+---
+
+# Carets
+
+
+
+Streamdown includes built-in caret (cursor) indicators that display at the end of streaming content. Carets provide a visual cue to users that content is actively being generated, similar to a blinking cursor in a text editor.
+
+## Overview
+
+The `caret` prop adds a visual indicator at the end of your streaming markdown content. This feature enhances the user experience by making it clear when content is actively being generated versus when generation is complete.
+
+Key features:
+
+* **Two built-in styles** - Choose between block (`▋`) and circle (`●`) carets
+* **Automatic positioning** - Carets automatically appear at the end of the last rendered element
+* **Streaming-aware** - Only displays when `isAnimating={true}` and `mode="streaming"` (default)
+* **CSS-based** - Uses CSS custom properties and pseudo-elements for efficient rendering
+
+## Usage
+
+To enable carets, pass the `caret` prop with either `"block"` or `"circle"`:
+
+```tsx title="chat.tsx"
+import { Streamdown } from 'streamdown';
+
+function StreamingChat() {
+  const [isStreaming, setIsStreaming] = useState(true);
+  const [content, setContent] = useState('');
+
+  return (
+    <Streamdown
+      caret="block"
+      isAnimating={isStreaming}
+    >
+      {content}
+    </Streamdown>
+  );
+}
+```
+
+## Caret Styles
+
+Streamdown provides two built-in caret styles:
+
+### Block Caret
+
+The block caret displays a vertical bar (`▋`) similar to a terminal cursor:
+
+```tsx title="chat.tsx"
+<Streamdown caret="block" isAnimating={true}>
+  Streaming content...
+</Streamdown>
+```
+
+### Circle Caret
+
+The circle caret displays a filled circle (`●`) for a subtler indicator:
+
+```tsx title="chat.tsx"
+<Streamdown caret="circle" isAnimating={true}>
+  Streaming content...
+</Streamdown>
+```
+
+## Behavior
+
+The caret visibility is controlled by two conditions:
+
+1. **`caret` prop is set** - You must specify either `"block"` or `"circle"`
+2. **`isAnimating={true}`** - The caret only appears during active streaming
+
+When streaming stops (when `isAnimating` becomes `false`), the caret automatically disappears, leaving only the completed content.
+
+## Conditional Display
+
+Streamdown doesn't know about roles or message ordering, so you should conditionally show carets for specific messages, such as only displaying them for the last message in a chat and only displaying them from assistant messages:
+
+```tsx title="chat.tsx"
+{messages.map((message, index) => (
+  <Streamdown
+    key={message.id}
+    caret={
+      message.role === 'assistant' &&
+      index === messages.length - 1
+        ? 'block'
+        : undefined
+    }
+    isAnimating={isStreaming}
+  >
+    {message.content}
+  </Streamdown>
+))}
+```
+
+## Technical Details
+
+Carets are implemented using CSS custom properties and pseudo-elements:
+
+* The caret value is passed as a CSS custom property (`--streamdown-caret`)
+* A `::after` pseudo-element is added to the last child element
+* The pseudo-element displays the caret character inline
+* When `isAnimating` becomes `false` or `caret` is `undefined`, the styles are removed
+
+This approach ensures efficient rendering without additional DOM elements.
+---
+title: Code Blocks
+description: Beautiful syntax highlighting and interactive code blocks powered by Shiki.
+type: reference
+summary: Shiki-powered syntax highlighting with line numbers, copy buttons, and language detection.
+prerequisites:
+  - /docs/getting-started
+related:
+  - /docs/interactivity
+  - /docs/plugins
+---
+
+# Code Blocks
+
+
+
+Streamdown provides beautiful, interactive code blocks with syntax highlighting powered by [Shiki](https://shiki.style/). Every code block includes a copy button and supports a wide range of programming languages.
+
+## Basic Usage
+
+Create code blocks using triple backticks with an optional language identifier:
+
+````markdown
+```javascript
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+```
+````
+
+Streamdown will automatically apply syntax highlighting based on the specified language.
+
+## Enabling Syntax Highlighting
+
+Syntax highlighting requires the code plugin. Install it:
+
+<CodeBlockTabs defaultValue="npm">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="npm">
+      npm
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="pnpm">
+      pnpm
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="yarn">
+      yarn
+    </CodeBlockTabsTrigger>
+
+    <CodeBlockTabsTrigger value="bun">
+      bun
+    </CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+
+  <CodeBlockTab value="npm">
+    ```bash
+    npm install @streamdown/code
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="pnpm">
+    ```bash
+    pnpm add @streamdown/code
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="yarn">
+    ```bash
+    yarn add @streamdown/code
+    ```
+  </CodeBlockTab>
+
+  <CodeBlockTab value="bun">
+    ```bash
+    bun add @streamdown/code
+    ```
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+Then import and pass the plugin to Streamdown:
+
+```tsx title="app/page.tsx"
+import { Streamdown } from "streamdown";
+import { code } from "@streamdown/code";
+
+export default function Page() {
+  return (
+    <Streamdown plugins={{ code: code }}>
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+Without the code plugin, code blocks render as plain text with no highlighting.
+
+## Supported Languages
+
+Streamdown supports 200+ programming languages through Shiki. All languages are lazy-loaded on demand, so only the grammars you use are downloaded.
+
+### Common Languages
+
+* **Web**: JavaScript, TypeScript, JSX, TSX, HTML, CSS
+* **Data**: JSON, YAML, TOML
+* **Shell**: Bash, Shell Script, PowerShell
+* **Backend**: Python, Go, Java, Rust, C, C++, C#, PHP, Ruby
+* **Functional**: Haskell, Elixir, Clojure, F#, OCaml
+* **Markup**: Markdown, LaTeX, MDX, XML
+* **And 180+ more languages**
+
+### Language Examples
+
+#### TypeScript
+
+````markdown
+```typescript
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+async function fetchUser(id: number): Promise<User> {
+  const response = await fetch(`/api/users/${id}`);
+  return response.json();
+}
+```
+````
+
+#### Python
+
+````markdown
+```python
+def fibonacci(n: int) -> list[int]:
+    """Generate Fibonacci sequence up to n terms."""
+    fib = [0, 1]
+    for i in range(2, n):
+        fib.append(fib[i-1] + fib[i-2])
+    return fib
+
+print(fibonacci(10))
+```
+````
+
+#### Rust
+
+````markdown
+```rust
+fn main() {
+    let numbers = vec![1, 2, 3, 4, 5];
+    let sum: i32 = numbers.iter().sum();
+    println!("Sum: {}", sum);
+}
+```
+````
+
+## Theme Configuration
+
+Streamdown uses dual themes for light and dark modes. You can customize the themes using the `shikiTheme` prop:
+
+```tsx title="app/page.tsx"
+import { Streamdown } from "streamdown";
+import { code } from "@streamdown/code";
+
+export default function Page() {
+  return (
+    <Streamdown
+      plugins={{ code: code }}
+      shikiTheme={["dracula", "dracula"]}
+    >
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+### Available Themes
+
+Streamdown supports all Shiki themes including:
+
+* `github-light` (default light theme)
+* `github-dark` (default dark theme)
+* `dracula`, `nord`, `one-dark-pro`, `monokai`
+* `catppuccin-latte`, `catppuccin-mocha`
+* `vitesse-light`, `vitesse-dark`
+* `tokyo-night`
+* And [many more](https://shiki.style/themes)
+
+## Interactive Features
+
+### Copy Button
+
+Every code block includes a copy button that appears on hover. Users can click to copy the entire code block content to their clipboard.
+
+The copy button:
+
+* Appears on hover (desktop) or is always visible (mobile)
+* Provides visual feedback on successful copy
+* Is automatically disabled during streaming (when `isAnimating={true}`)
+
+### Disable Copy Button
+
+You can disable the copy button using the `controls` prop:
+
+```tsx title="app/page.tsx"
+<Streamdown controls={{ code: false }}>{markdown}</Streamdown>
+```
+
+Or disable all controls:
+
+```tsx title="app/page.tsx"
+<Streamdown controls={false}>{markdown}</Streamdown>
+```
+
+## Inline Code
+
+Inline code uses backticks and receives subtle styling:
+
+```markdown
+Use the `useState` hook to manage state in React.
+```
+
+Inline code is styled with:
+
+* Monospace font family
+* Subtle background color
+* Rounded corners
+* Appropriate padding
+
+## Code Block Styling
+
+Code blocks include:
+
+* **Line Numbers** - Optional line numbers for reference
+* **Rounded Corners** - Modern, polished appearance
+* **Proper Padding** - Comfortable spacing
+* **Scrolling** - Horizontal scroll for long lines
+* **Responsive Design** - Adapts to container width
+
+## Streaming Considerations
+
+Code blocks work seamlessly with streaming content:
+
+### Incomplete Code Blocks
+
+When a code block is streaming in, Streamdown handles the incomplete state gracefully:
+
+````markdown
+```javascript
+function example() {
+  // Streaming in progress...
+```
+````
+
+The unterminated block parser ensures the code block renders properly even without the closing backticks.
+
+### Loading Behavior
+
+Code block shells render immediately with plain text content, then syntax colors are applied when highlighting resolves.
+
+This keeps code readable on first paint and improves visual stability during lazy highlight loading.
+
+### Disabling Interactions During Streaming
+
+Use the `isAnimating` prop to disable copy buttons while streaming:
+
+```tsx title="app/page.tsx"
+<Streamdown isAnimating={isStreaming}>{markdown}</Streamdown>
+```
+
+This prevents users from copying incomplete code.
+
+## Plugin Interface
+
+The Code plugin implements the `CodeHighlighterPlugin` interface:
+
+```tsx
+interface CodeHighlighterPlugin {
+  name: "shiki";
+  type: "code-highlighter";
+  highlight: (options: HighlightOptions, callback?: (result: HighlightResult) => void) => HighlightResult | null;
+  supportsLanguage: (language: BundledLanguage) => boolean;
+  getSupportedLanguages: () => BundledLanguage[];
+  getThemes: () => [BundledTheme, BundledTheme];
+}
+```
+
+### Exported Types
+
+```tsx
+import type {
+  CodeHighlighterPlugin,
+  HighlightOptions,
+  HighlightResult,
+} from '@streamdown/code';
+
+// HighlightOptions - parameters for highlighting
+interface HighlightOptions {
+  code: string;
+  language: BundledLanguage;
+  themes: [string, string];
+}
+
+// HighlightResult - Shiki's TokensResult type
+type HighlightResult = TokensResult;
+```
+
+### Programmatic Highlighting
+
+Use the plugin directly for custom highlighting:
+
+```tsx
+import { code } from '@streamdown/code';
+
+// Check language support
+if (code.supportsLanguage('typescript')) {
+  code.highlight(
+    { code: 'const x = 1;', language: 'typescript', themes: ['github-light', 'github-dark'] },
+    (result) => {
+      // Handle highlighted tokens
+      console.log(result.tokens);
+    }
+  );
+}
+```
+---
+title: GitHub Flavored Markdown
+description: Extended Markdown features including tables, task lists, strikethrough, and autolinks.
+type: integration
+summary: Tables, task lists, strikethrough, and autolinks following the GFM specification.
+prerequisites:
+  - /docs/getting-started
+related:
+  - /docs/plugins
+---
+
+# GitHub Flavored Markdown
+
+
+
+Streamdown includes full support for GitHub Flavored Markdown (GFM) through [remark-gfm](https://github.com/remarkjs/remark-gfm). This extends standard Markdown with powerful features commonly used on GitHub and other modern Markdown platforms.
+
+## Tables
+
+Create formatted tables with alignment options:
+
+```markdown
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| Tables | ✅ | Full support |
+| Task Lists | ✅ | Interactive |
+| Strikethrough | ✅ | ~~Like this~~ |
+```
+
+Renders as:
+
+| Feature       | Supported | Notes         |
+| ------------- | --------- | ------------- |
+| Tables        | ✅         | Full support  |
+| Task Lists    | ✅         | Interactive   |
+| Strikethrough | ✅         | ~~Like this~~ |
+
+### Column Alignment
+
+Control text alignment using colons in the separator row:
+
+```markdown
+| Left | Center | Right |
+|:-----|:------:|------:|
+| A | B | C |
+| 1 | 2 | 3 |
+```
+
+Result:
+
+| Left | Center | Right |
+| :--- | :----: | ----: |
+| A    |    B   |     C |
+| 1    |    2   |     3 |
+
+**Alignment Syntax:**
+
+* `:---` - Left-aligned (default)
+* `:---:` - Center-aligned
+* `---:` - Right-aligned
+
+### Table Features
+
+Streamdown enhances tables with:
+
+* **Responsive scrolling** - Tables scroll horizontally on narrow screens
+* **Download button** - Export tables as CSV, TSV, or Markdown
+* **Hover states** - Row highlighting for better readability
+* **Proper spacing** - Optimized cell padding
+
+### Complex Tables
+
+Tables support inline formatting:
+
+```markdown
+| Name | Description | Status |
+|------|-------------|--------|
+| **Streamdown** | A `react-markdown` replacement | ✅ Active |
+| *Feature X* | Under development | 🚧 WIP |
+| ~~Old Package~~ | Deprecated | ❌ Removed |
+```
+
+### Disabling Table Controls
+
+You can disable the table download button:
+
+```tsx
+<Streamdown controls={{ table: false }}>
+  {markdown}
+</Streamdown>
+```
+
+## Task Lists
+
+Create interactive todo lists:
+
+```markdown
+- [x] Setup project structure
+- [x] Install dependencies
+- [ ] Write documentation
+- [ ] Deploy to production
+```
+
+Renders as:
+
+* [x] Setup project structure
+* [x] Install dependencies
+* [ ] Write documentation
+* [ ] Deploy to production
+
+### Task List Syntax
+
+* `- [ ]` - Unchecked task (whitespace in brackets)
+* `- [x]` - Checked task (lowercase x)
+* `- [X]` - Also checked (uppercase X)
+
+### Nested Task Lists
+
+Task lists can be nested:
+
+```markdown
+- [ ] Phase 1: Setup
+  - [x] Initialize repository
+  - [x] Configure build tools
+  - [ ] Setup CI/CD
+- [ ] Phase 2: Development
+  - [ ] Implement features
+  - [ ] Write tests
+```
+
+### Task Lists in Different Contexts
+
+Task lists work in various contexts:
+
+```markdown
+## Shopping List
+- [ ] Milk
+- [ ] Eggs
+- [x] Bread
+
+> **Note**: Here's a quote with tasks:
+> - [x] Complete quote formatting
+> - [ ] Add more examples
+```
+
+## Strikethrough
+
+Mark text as deleted or outdated:
+
+```markdown
+~~This approach is deprecated~~
+
+Use this **new method** instead.
+```
+
+Result: ~~This approach is deprecated~~
+
+### Multiple Words
+
+Strikethrough works across multiple words:
+
+```markdown
+~~This entire sentence is struck through.~~
+```
+
+### In Context
+
+```markdown
+**Before:** ~~500ms response time~~
+**After:** 50ms response time ⚡
+```
+
+Result:
+**Before:** ~~500ms response time~~
+**After:** 50ms response time ⚡
+
+## Autolinks
+
+URLs and email addresses are automatically converted to links:
+
+```markdown
+Visit https://streamdown.ai for more info.
+
+Contact us at hello@streamdown.ai
+```
+
+No need for explicit link syntax:
+
+```markdown
+Check out github.com/vercel/streamdown
+```
+
+### URL Protocols
+
+Autolinks work with common protocols:
+
+* `http://` and `https://`
+* `ftp://`
+* `mailto:`
+
+```markdown
+https://example.com
+ftp://files.example.com
+mailto:hello@example.com
+```
+
+## Line Breaks
+
+In standard Markdown (and GFM), single newlines within a paragraph are treated as **soft breaks** and rendered as spaces — the lines are combined into one paragraph:
+
+```markdown
+This is line one
+This is line two
+This is line three
+```
+
+This renders as a single paragraph: "This is line one This is line two This is line three".
+
+To force a visible line break, use one of these approaches:
+
+### Two Trailing Spaces (Hard Break)
+
+Add two or more spaces at the end of a line:
+
+```markdown
+Line one··
+Line two··
+Line three
+```
+
+(where `··` represents two spaces)
+
+### Backslash (Hard Break)
+
+Use a trailing backslash:
+
+```markdown
+Line one\
+Line two\
+Line three
+```
+
+### Using `remark-breaks`
+
+If you want single newlines to always render as `<br>` without trailing spaces, add the [`remark-breaks`](https://github.com/remarkjs/remark-breaks) plugin:
+
+```tsx
+import remarkBreaks from "remark-breaks";
+import { Streamdown, defaultRemarkPlugins } from "streamdown";
+
+<Streamdown
+  remarkPlugins={[...Object.values(defaultRemarkPlugins), remarkBreaks]}
+>
+  {markdown}
+</Streamdown>
+```
+---
+title: Interactivity
+description: Interactive buttons for copying and downloading images, tables, and code blocks.
+type: reference
+summary: One-click copy and download actions for code blocks, tables, and images.
+related:
+  - /docs/code-blocks
+  - /docs/link-safety
+---
+
+# Interactivity
+
+
+
+Streamdown enhances the user experience by adding interactive buttons to images, tables, and code blocks. These controls allow users to easily copy content to their clipboard or download it for later use, making your markdown content more practical and user-friendly.
+
+## Overview
+
+Streamdown automatically adds interactive controls to:
+
+* **Images** - Download button on hover
+* **Tables** - Copy buttons for CSV/TSV formats and download buttons for CSV/Markdown formats
+* **Code Blocks** - Copy and download buttons
+* **Mermaid Diagrams** - Copy, download, and fullscreen buttons
+
+All interactive controls:
+
+* Appear on hover (desktop) or are always visible (mobile)
+* Provide visual feedback on successful actions
+* Are automatically disabled during streaming when `isAnimating={true}`
+* Can be customized or disabled via the `controls` prop
+
+## Image Buttons
+
+### Download Images
+
+Every image rendered by Streamdown includes a download button that appears on hover. A download button will be shown for images in the bottom-right corner on hover. Streamdown will automatically detect the image format and save it with the correct extension. The image's alt text will be used as the default filename. The download button only appears once the image has loaded successfully. If an image fails to load, the download button is hidden and "Image not available" text is displayed instead.
+
+## Table Buttons
+
+### Copy Tables
+
+Tables include a copy button that opens a dropdown menu allowing users to copy the table data in multiple formats. The copy button will be shown for tables in the top-right corner on hover. Users can choose to copy the table as Markdown, CSV, or TSV (tab-separated values). The table is also copied as HTML for rich pasting into applications that support it.
+
+### Download Tables
+
+Tables can be downloaded in two formats: CSV and Markdown. The download button will be shown for tables in the top-right corner on hover. The download button opens a dropdown menu with options to download as CSV or Markdown, making it easy to export table data for use in spreadsheets or documentation.
+
+## Code Block Buttons
+
+### Copy Code
+
+Every code block includes a copy button that appears on hover. The copy button will be shown for code blocks in the top-right corner on hover. The copy button will copy the raw code without syntax highlighting. It will also show a checkmark for 2 seconds after successful copy. It will be disabled during streaming to prevent copying incomplete code.
+
+### Download Code
+
+Code blocks also include a download button that appears on hover. The download button will be shown for code blocks in the top-right corner on hover. The download button will download the code with the appropriate file extension based on language. It will also use "file.\[extension]" as the filename. It will preserve formatting and indentation.
+
+## Mermaid Diagram Buttons
+
+### Copy Diagrams
+
+Mermaid diagrams include a copy button that allows users to copy the diagram source code. The copy button will be shown for Mermaid diagrams in the top-right corner on hover. The copy button will copy the raw Mermaid syntax for easy sharing and editing.
+
+### Download Diagrams
+
+Mermaid diagrams can be downloaded as SVG files. The download button will be shown for Mermaid diagrams in the top-right corner on hover. The download button will download the rendered diagram as an SVG file. It will use "diagram.svg" as the default filename.
+
+### Pan and Zoom
+
+Mermaid diagrams support pan and zoom controls for navigating large or detailed diagrams. Enable this with the `panZoom` option in the `controls` prop. When enabled, users can zoom in/out and pan around the diagram for closer inspection.
+
+### Fullscreen View
+
+Mermaid diagrams include a fullscreen button for better viewing of complex diagrams. The fullscreen button will be shown for Mermaid diagrams in the top-right corner on hover. The fullscreen button will open the diagram in a modal overlay for detailed inspection. Users can press Escape or click outside to close the fullscreen view.
+---
+title: Link Safety
+description: Configurable confirmation modal for external links to protect users from malicious URLs.
+type: reference
+summary: Intercept external link clicks with a confirmation dialog before navigating away.
+related:
+  - /docs/security
+  - /docs/interactivity
+---
+
+# Link Safety
+
+
+
+When rendering AI-generated or user-generated content, links can pose security risks. The link safety feature adds a confirmation modal before opening external links, similar to ChatGPT's implementation.
+
+## Default Behavior
+
+Link safety is **enabled by default**. When a user clicks any link, a confirmation modal appears with:
+
+* The full URL being opened
+* A "Copy link" button
+* An "Open link" button
+* Close via backdrop click or Escape key
+
+## Disabling Link Safety
+
+To disable the confirmation modal and allow links to open directly:
+
+```tsx
+import { Streamdown } from 'streamdown';
+
+export default function Chat({ content }) {
+  return (
+    <Streamdown linkSafety={{ enabled: false }}>
+      {content}
+    </Streamdown>
+  );
+}
+```
+
+## Safelist with onLinkCheck
+
+Use the `onLinkCheck` callback to allow trusted domains without showing the modal:
+
+```tsx
+<Streamdown
+  linkSafety={{
+    enabled: true,
+    onLinkCheck: (url) => {
+      // Return true to allow without modal (safelist)
+      // Return false to show confirmation modal
+      return url.startsWith('https://your-app.com') ||
+             url.startsWith('https://github.com');
+    }
+  }}
+>
+  {content}
+</Streamdown>
+```
+
+The callback receives the URL and can return:
+
+* `true` - Open the link directly without modal
+* `false` - Show the confirmation modal
+* `Promise<boolean>` - Async checks are supported
+
+### Async Safelist Check
+
+For server-side safelist validation:
+
+```tsx
+<Streamdown
+  linkSafety={{
+    enabled: true,
+    onLinkCheck: async (url) => {
+      const response = await fetch('/api/check-url', {
+        method: 'POST',
+        body: JSON.stringify({ url }),
+      });
+      const { isSafe } = await response.json();
+      return isSafe;
+    }
+  }}
+>
+  {content}
+</Streamdown>
+```
+
+## Custom Modal
+
+Replace the default modal with your own component using `renderModal`:
+
+```tsx
+import { Streamdown, type LinkSafetyModalProps } from 'streamdown';
+
+function CustomLinkModal({ url, isOpen, onClose, onConfirm }: LinkSafetyModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2>External Link</h2>
+        <p>You're about to visit:</p>
+        <code>{url}</code>
+        <div className="actions">
+          <button onClick={onClose}>Cancel</button>
+          <button onClick={onConfirm}>Continue</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Chat({ content }) {
+  return (
+    <Streamdown
+      linkSafety={{
+        enabled: true,
+        renderModal: (props) => <CustomLinkModal {...props} />,
+      }}
+    >
+      {content}
+    </Streamdown>
+  );
+}
+```
+
+### Modal Props
+
+The `renderModal` function receives:
+
+| Prop        | Type         | Description                               |
+| ----------- | ------------ | ----------------------------------------- |
+| `url`       | `string`     | The URL being opened                      |
+| `isOpen`    | `boolean`    | Whether the modal is visible              |
+| `onClose`   | `() => void` | Call to close the modal                   |
+| `onConfirm` | `() => void` | Call to open the link and close the modal |
+
+## Combining with Security Features
+
+Link safety works alongside [content hardening](/docs/security). Use both for comprehensive protection:
+
+```tsx
+import { Streamdown, defaultRehypePlugins } from 'streamdown';
+import { harden } from 'rehype-harden';
+
+export default function SecureChat({ content }) {
+  return (
+    <Streamdown
+      linkSafety={{
+        enabled: true,
+        onLinkCheck: (url) => url.startsWith('https://trusted.com'),
+      }}
+      rehypePlugins={[
+        defaultRehypePlugins.raw,
+        [
+          harden,
+          {
+            allowedLinkPrefixes: [
+              'https://trusted.com',
+              'https://github.com',
+            ],
+            allowedProtocols: ['https', 'mailto'],
+          },
+        ],
+      ]}
+    >
+      {content}
+    </Streamdown>
+  );
+}
+```
+
+This provides two layers of protection:
+
+1. **Content hardening** - Blocks or rewrites disallowed URLs at render time
+2. **Link safety modal** - Requires user confirmation before navigation
+
+## TypeScript
+
+Import the types for custom modal implementations:
+
+```tsx
+import type { LinkSafetyConfig, LinkSafetyModalProps } from 'streamdown';
+
+const config: LinkSafetyConfig = {
+  enabled: true,
+  onLinkCheck: (url) => url.startsWith('https://safe.com'),
+  renderModal: (props: LinkSafetyModalProps) => <CustomModal {...props} />,
+};
+```
+
+## API Reference
+
+### LinkSafetyConfig
+
+| Property      | Type                                           | Default | Description                        |
+| ------------- | ---------------------------------------------- | ------- | ---------------------------------- |
+| `enabled`     | `boolean`                                      | `true`  | Enable link interception and modal |
+| `onLinkCheck` | `(url: string) => boolean \| Promise<boolean>` | -       | Optional safelist callback         |
+| `renderModal` | `(props: LinkSafetyModalProps) => ReactNode`   | -       | Optional custom modal component    |
+
+### LinkSafetyModalProps
+
+| Property    | Type         | Description                        |
+| ----------- | ------------ | ---------------------------------- |
+| `url`       | `string`     | The URL to be opened               |
+| `isOpen`    | `boolean`    | Modal visibility state             |
+| `onClose`   | `() => void` | Close the modal without navigation |
+| `onConfirm` | `() => void` | Confirm and open the link          |
+---
+title: Memoization
+description: Performance optimization through intelligent memoization and caching.
+type: conceptual
+summary: Prevent unnecessary re-renders by caching parsed Markdown blocks between streaming updates.
+related:
+  - /docs/animation
+---
+
+# Memoization
+
+
+
+Streamdown is built with performance in mind, utilizing React's memoization capabilities to ensure efficient rendering even with large amounts of streaming content. The library intelligently caches computations and prevents unnecessary re-renders, making it ideal for real-time AI streaming applications.
+
+## How Memoization Works
+
+Streamdown implements memoization at multiple levels to maximize performance:
+
+### Component-Level Memoization
+
+The main `Streamdown` component is wrapped with `React.memo`, which prevents re-renders when props haven't changed:
+
+```tsx
+import { Streamdown } from 'streamdown';
+
+export default function Page() {
+  const markdown = "# Hello World\n\nThis is **streaming** markdown!";
+
+  return <Streamdown>{markdown}</Streamdown>;
+}
+```
+
+The component only re-renders when one of these props changes:
+
+* `children` (markdown content)
+* `shikiTheme`
+* `isAnimating`
+* `animated`
+* `mode`
+* `plugins`
+* `className`
+* `linkSafety`
+* `normalizeHtmlIndentation`
+
+All other prop changes are ignored, ensuring optimal performance.
+
+### Block-Level Memoization
+
+Streamdown parses markdown content into individual blocks, with each block memoized separately. This means:
+
+* Only blocks with changed content are re-rendered
+* Unchanged blocks remain memoized, even if new blocks are added
+* Parsing is cached per block for efficiency
+
+Expensive computations are also cached using `useMemo`.
+
+## Performance Benefits
+
+### Streaming Efficiency
+
+When content is streaming in, Streamdown's memoization strategy ensures:
+
+1. **Incremental Rendering** - Only new or changed blocks are processed
+2. **Stable Output** - Completed blocks remain stable and don't re-render
+3. **Minimal Overhead** - Parsing and rendering work is minimized
+
+Example with streaming content:
+
+```tsx
+'use client';
+
+import { useChat } from '@ai-sdk/react';
+import { Streamdown } from 'streamdown';
+
+export default function Chat() {
+  const { messages, sendMessage, status } = useChat();
+
+  return (
+    <>
+      {messages.map(message => (
+        <div key={message.id}>
+          {message.parts.filter(part => part.type === 'text').map((part, index) => (
+            <Streamdown
+              isAnimating={status === 'streaming'}
+              key={index}
+            >
+              {part.text}
+            </Streamdown>
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
+```
+
+In this example:
+
+* As new tokens arrive, only the affected blocks are re-rendered
+* Previous blocks remain memoized and stable
+* The rendering performance stays consistent regardless of content length
+
+### Syntax Highlighting Cache
+
+The syntax highlighter maintains an internal cache of loaded languages and themes. This means:
+
+* Languages are loaded once and cached for reuse
+* Theme changes don't require reloading languages
+* Multiple code blocks in the same language share the highlighter instance
+---
+title: Security
+description: Built-in content hardening and security features to protect against malicious Markdown.
+type: conceptual
+summary: Streamdown sanitizes HTML, prevents XSS attacks, and strips dangerous content by default.
+related:
+  - /docs/link-safety
+---
+
+# Security
+
+
+
+Streamdown is built with security as a top priority. When rendering user-generated or AI-generated Markdown content, it's crucial to protect against malicious content, especially when dealing with content that might have been subject to prompt injection attacks.
+
+## Why Security Matters
+
+Markdown can contain:
+
+* **Links to malicious sites** - Phishing or malware distribution
+* **External images** - Privacy tracking or CSRF attacks
+* **HTML content** - XSS vulnerabilities
+* **JavaScript execution** - Code injection
+* **Prompt injection** - AI models manipulated to include harmful content
+
+Streamdown uses two layers of protection:
+
+1. **[rehype-sanitize](https://github.com/rehypejs/rehype-sanitize)** — strips dangerous HTML elements and attributes using GitHub's sanitization schema, extended with `tel:` protocol support
+2. **[rehype-harden](https://github.com/vercel-labs/markdown-sanitizers)** — restricts URL protocols, link domains, and image sources
+
+## Default Security
+
+By default, Streamdown is configured with **permissive security** to allow maximum functionality:
+
+```tsx
+// Default rehype-harden configuration
+{
+  allowedImagePrefixes: ["*"],  // All images allowed
+  allowedLinkPrefixes: ["*"],   // All links allowed
+  allowedProtocols: ["*"],      // All protocols allowed
+  defaultOrigin: undefined,     // No origin restriction
+  allowDataImages: true,        // Base64 images allowed
+}
+```
+
+The default `rehype-sanitize` schema allows `http`, `https`, `irc`, `ircs`, `mailto`, `xmpp`, and `tel` protocols for links.
+
+This works well for trusted content but should be tightened for untrusted sources.
+
+## Restricting Protocols
+
+By default, all protocols are allowed. You can restrict which URL protocols are permitted:
+
+```tsx
+import { Streamdown, defaultRehypePlugins } from 'streamdown';
+import { harden } from 'rehype-harden';
+
+export default function Page() {
+  return (
+    <Streamdown
+      rehypePlugins={[
+        defaultRehypePlugins.raw,
+        defaultRehypePlugins.sanitize,
+        [
+          harden,
+          {
+            allowedProtocols: [
+              'http',
+              'https',
+              'mailto',
+            ],
+          },
+        ],
+      ]}
+    >
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+<Callout type="warning">
+  When overriding `rehypePlugins`, always include `defaultRehypePlugins.sanitize` to preserve XSS protection. The `rehypePlugins` prop **replaces** the entire default array — it does not merge.
+</Callout>
+
+This is useful for security-sensitive applications where you want to prevent custom protocol schemes like `javascript:`, `data:`, or desktop app protocols.
+
+### Custom Protocol Schemes
+
+To enable custom protocol schemes like `postman://` or `vscode://`, include them in the `allowedProtocols` array:
+
+```tsx
+{
+  allowedProtocols: [
+    'http',
+    'https',
+    'postman',
+    'vscode',
+  ],
+}
+```
+
+## Restricting Links
+
+Limit which domains users can link to:
+
+```tsx
+import { Streamdown, defaultRehypePlugins } from 'streamdown';
+import { harden } from 'rehype-harden';
+
+export default function Page() {
+  return (
+    <Streamdown
+      rehypePlugins={[
+        defaultRehypePlugins.raw,
+        defaultRehypePlugins.sanitize,
+        [
+          harden,
+          {
+            defaultOrigin: 'https://streamdown.ai',
+            allowedLinkPrefixes: [
+              'https://streamdown.ai',
+              'https://github.com',
+              'https://vercel.com',
+            ],
+          },
+        ],
+      ]}
+    >
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+Any links not matching the allowed prefixes will be rewritten to point to the `defaultOrigin`.
+
+### Example
+
+With the above configuration:
+
+```markdown
+[Safe link](https://github.com/vercel/streamdown)
+[Unsafe link](https://malicious-site.com)
+```
+
+Results in:
+
+* Safe link: Works normally
+* Unsafe link: Renders as \[blocked]
+
+## Restricting Images
+
+Similarly, restrict which domains can serve images:
+
+```tsx
+<Streamdown
+  rehypePlugins={[
+    defaultRehypePlugins.raw,
+    defaultRehypePlugins.sanitize,
+    [
+      harden,
+      {
+        allowedImagePrefixes: [
+          'https://your-cdn.com',
+          'https://trusted-images.com',
+        ],
+        allowDataImages: false,  // Disable base64 images
+      },
+    ],
+  ]}
+>
+  {markdown}
+</Streamdown>
+```
+
+### Data Images
+
+Base64-encoded images (`data:image/...`) can be disabled:
+
+```tsx
+allowDataImages: false
+```
+
+This prevents embedding arbitrary image data in Markdown, which could be used for:
+
+* Tracking pixels
+* Large embedded files
+* Malicious payloads
+
+## Protecting Against Prompt Injection
+
+When using AI-generated content, models can be manipulated to include malicious links or content. Here's a production-ready configuration:
+
+```tsx
+import { Streamdown, defaultRehypePlugins } from 'streamdown';
+import { harden } from 'rehype-harden';
+
+export default function ChatMessage({ content, isAIGenerated }) {
+  const securityConfig = isAIGenerated ? {
+    defaultOrigin: 'https://your-app.com',
+    allowedLinkPrefixes: [
+      'https://your-app.com',
+      'https://docs.your-app.com',
+      'https://github.com',
+    ],
+    allowedImagePrefixes: [
+      'https://your-cdn.com',
+    ],
+    allowedProtocols: [
+      'http',
+      'https',
+      'mailto',
+    ],
+    allowDataImages: false,
+  } : {
+    // More permissive for user content
+    allowedLinkPrefixes: ['*'],
+    allowedImagePrefixes: ['*'],
+    allowedProtocols: ['*'],
+  };
+
+  return (
+    <Streamdown
+      rehypePlugins={[
+        defaultRehypePlugins.raw,
+        defaultRehypePlugins.sanitize,
+        [harden, securityConfig],
+      ]}
+    >
+      {content}
+    </Streamdown>
+  );
+}
+```
+
+## Custom HTML Tags
+
+By default, Streamdown's sanitizer strips unknown HTML tags (while preserving their content). If you need to render custom tags like `<ref>` or `<mention>`, use the `allowedTags` prop:
+
+```tsx
+<Streamdown
+  allowedTags={{
+    ref: ["note_id"],      // Allow <ref> with note_id attribute
+    mention: ["user_id"],  // Allow <mention> with user_id attribute
+  }}
+  components={{
+    ref: (props) => <NoteBadge noteId={props.note_id} />,
+    mention: (props) => <UserMention userId={props.user_id} />,
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+Only attributes explicitly listed in `allowedTags` are preserved—all other attributes are stripped for security. See the [Styling documentation](/docs/styling#custom-tags) for more details.
+
+<Callout type="warning">
+  The `allowedTags` prop only works with the default rehype plugins. If you provide custom `rehypePlugins`, you must configure sanitization yourself.
+</Callout>
+
+## HTML Content
+
+Streamdown supports raw HTML through `rehype-raw`. To disable HTML entirely:
+
+```tsx
+import { Streamdown, defaultRehypePlugins } from 'streamdown';
+
+export default function Page() {
+  return (
+    <Streamdown
+      rehypePlugins={[
+        // Omit defaultRehypePlugins.raw to disable HTML
+        defaultRehypePlugins.sanitize,
+        defaultRehypePlugins.harden,
+      ]}
+    >
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+Without `rehype-raw`, HTML tags will be escaped and displayed as text.
+
+## Relative URLs
+
+Control how relative URLs are handled:
+
+```tsx
+{
+  defaultOrigin: 'https://your-app.com'
+}
+```
+
+Relative URLs will be resolved against this origin:
+
+```markdown
+[Relative link](/docs/guide)
+```
+
+Becomes: `https://your-app.com/docs/guide`
+
+## URL Transform
+
+For URL-level control without writing a rehype plugin, use the `urlTransform` prop. This runs on every URL in the rendered Markdown (links, images, etc.) and matches the react-markdown API.
+
+By default, `defaultUrlTransform` is a passthrough — URL security is already handled by `rehype-sanitize` and `rehype-harden`. Use `urlTransform` when you need custom URL rewriting beyond what those plugins provide.
+
+```tsx title="app/page.tsx"
+import { Streamdown, defaultUrlTransform } from 'streamdown';
+
+// Proxy images through your CDN
+<Streamdown
+  urlTransform={(url, key, node) => {
+    if (key === 'src') {
+      return `https://your-cdn.com/proxy?url=${encodeURIComponent(url)}`;
+    }
+    return defaultUrlTransform(url, key, node);
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+## Skipping HTML
+
+To completely ignore raw HTML in Markdown (rather than escaping it), use the `skipHtml` prop:
+
+```tsx title="app/page.tsx"
+<Streamdown skipHtml>
+  {markdown}
+</Streamdown>
+```
+
+## Advanced URL Handling
+
+For advanced URL handling beyond what `urlTransform` and `rehype-harden` provide, you can create a custom rehype plugin. This gives you full control over URL transformation and validation in your markdown content.
+---
+title: Unterminated Block Parsing
+description: Learn how Streamdown handles incomplete Markdown syntax during AI streaming with remend.
+type: conceptual
+summary: Graceful handling of unterminated code fences, lists, and other incomplete Markdown during streaming.
+related:
+  - /docs/animation
+  - /docs/carets
+---
+
+# Unterminated Block Parsing
+
+
+
+One of Streamdown's most powerful features is its ability to intelligently parse and style incomplete Markdown blocks using the [remend](https://www.npmjs.com/package/remend) package. This feature, called **unterminated block parsing**, ensures that your streaming content looks polished even before the AI finishes its response.
+
+## About Remend
+
+Remend is a lightweight, standalone preprocessor that completes incomplete Markdown syntax. Streamdown integrates remend by default, but you can also use it independently in your own projects. See the [remend documentation](https://www.npmjs.com/package/remend) for standalone usage.
+
+## The Challenge
+
+When AI models stream Markdown content token-by-token, the content often arrives incomplete:
+
+```
+**This is bold text
+```
+
+Without proper handling, this would either:
+
+* Not render any formatting at all
+* Display the raw Markdown syntax
+* Break the layout
+
+Streamdown solves this by detecting incomplete patterns and intelligently completing them for rendering purposes.
+
+## How It Works
+
+Remend (Streamdown's preprocessing layer) analyzes the incoming Markdown and identifies common patterns that might be incomplete. When detected, it automatically adds the closing syntax so the content renders correctly, then seamlessly updates when the actual closing syntax arrives.
+
+The preprocessing happens before the markdown is passed into the unified/remark pipeline, operating on the raw string level for maximum performance.
+
+### Supported Incomplete Patterns
+
+#### Bold Text (`**text`)
+
+```markdown
+**This is bold text that hasn't been closed yet
+```
+
+The parser detects the opening `**` and adds a closing `**` to ensure the text renders as bold.
+
+#### Italic Text (`*text` or `_text`)
+
+```markdown
+*This is italic text
+_This is also italic
+```
+
+Single asterisks or underscores are completed automatically.
+
+#### Bold Italic (`***text`)
+
+```markdown
+***This is bold and italic
+```
+
+Triple asterisks for combined formatting are handled.
+
+#### Inline Code (`` `code ``)
+
+```markdown
+`const foo = "bar
+```
+
+Incomplete inline code blocks are closed with a backtick.
+
+#### Strikethrough (`~~text`)
+
+```markdown
+~~This text is being crossed out
+```
+
+Strikethrough formatting is completed automatically.
+
+#### Links (`[text](url)`)
+
+Streamdown handles several link scenarios:
+
+**Incomplete link text:**
+
+```markdown
+[Click here
+```
+
+Completes to: `[Click here](streamdown:incomplete-link)`
+
+**Incomplete URL:**
+
+```markdown
+[Click here](https://exampl
+```
+
+Completes to: `[Click here](streamdown:incomplete-link)`
+
+The special `streamdown:incomplete-link` URL ensures the link renders visually but doesn't navigate anywhere.
+
+**Text-only mode:**
+
+If you prefer to display just the link text without any link markup during streaming (for better compatibility with other markdown renderers like `react-markdown`), use the `linkMode` option:
+
+```tsx
+<Streamdown remend={{ linkMode: 'text-only' }}>
+  {markdown}
+</Streamdown>
+```
+
+With `linkMode: 'text-only'`:
+
+* `[Click here` → `Click here` (plain text)
+* `[Click here](https://exampl` → `Click here` (plain text)
+
+The link renders as a proper link once complete.
+
+**Custom component override:**
+
+For full control over how incomplete links render, you can override the `a` component. This approach lets you customize styling, add loading indicators, or implement custom behavior:
+
+```tsx
+<Streamdown
+  components={{
+    a: ({ href, children, ...props }) => {
+      const isIncomplete = href === 'streamdown:incomplete-link';
+
+      if (isIncomplete) {
+        // Render as plain text with custom styling
+        return <span className="text-muted-foreground">{children}</span>;
+      }
+
+      return (
+        <a href={href} target="_blank" rel="noreferrer" {...props}>
+          {children}
+        </a>
+      );
+    },
+  }}
+>
+  {markdown}
+</Streamdown>
+```
+
+For `react-markdown` users consuming the `remend` package directly:
+
+```tsx
+import ReactMarkdown from 'react-markdown';
+import remend from 'remend';
+
+<ReactMarkdown
+  components={{
+    a: ({ href, children, ...props }) => {
+      if (href === 'streamdown:incomplete-link') {
+        return <>{children}</>;
+      }
+      return <a href={href} {...props}>{children}</a>;
+    },
+  }}
+>
+  {remend(streamingText)}
+</ReactMarkdown>
+```
+
+#### Images
+
+For incomplete images, Streamdown removes them entirely rather than showing broken image placeholders:
+
+```markdown
+![Alt text that's incomplete
+```
+
+This prevents visual clutter during streaming.
+
+#### Mathematical Expressions
+
+Block-level KaTeX expressions are completed:
+
+```markdown
+$$
+E = mc^2
+```
+
+The parser adds the closing `$$` to ensure proper math rendering.
+
+## Configuration
+
+### Within Streamdown
+
+Unterminated block parsing is enabled by default in Streamdown. You can disable the remend preprocessor if needed:
+
+```tsx
+import { Streamdown } from 'streamdown';
+
+export default function Page() {
+  return (
+    <Streamdown parseIncompleteMarkdown={false}>
+      {markdown}
+    </Streamdown>
+  );
+}
+```
+
+However, disabling this feature will result in incomplete Markdown syntax being displayed literally, which is generally not desirable for user-facing applications.
+
+### Using Remend Standalone
+
+You can use remend independently in your own markdown rendering pipeline:
+
+```typescript
+import remend from 'remend';
+
+const partialMarkdown = "This is **incomplete bold";
+const completed = remend(partialMarkdown);
+// Result: "This is **incomplete bold**"
+```
+
+For links, you can use the `linkMode` option to control how incomplete links are handled:
+
+```typescript
+import remend from 'remend';
+
+// Default behavior: use placeholder URL
+remend("[Click here](http://exampl");
+// Result: "[Click here](streamdown:incomplete-link)"
+
+// Text-only mode: display plain text
+remend("[Click here](http://exampl", { linkMode: 'text-only' });
+// Result: "Click here"
+```
+
+See the [remend package](https://www.npmjs.com/package/remend) for more details on standalone usage.
+
+### Custom Handlers
+
+You can extend remend with custom handlers to complete your own markers during streaming. This is useful for domain-specific syntax like custom tags or markers that your AI might output.
+
+```typescript
+import remend, { type RemendHandler } from 'remend';
+
+const jokeHandler: RemendHandler = {
+  name: 'joke',
+  handle: (text) => {
+    // Complete <<<JOKE>>> marks that aren't closed
+    const match = text.match(/<<<JOKE>>>([^<]*)$/);
+    if (match && !text.endsWith('<<</JOKE>>>')) {
+      return `${text}<<</JOKE>>>`;
+    }
+    return text;
+  },
+  priority: 80, // Runs after most built-ins (-10 to 70)
+};
+
+const result = remend(content, { handlers: [jokeHandler] });
+```
+
+#### Handler Interface
+
+Each handler has three properties:
+
+* `name` - Unique identifier for the handler
+* `handle` - Transform function that receives text and returns modified text
+* `priority` - Optional execution order (lower runs first, default: 100)
+
+#### Execution Order
+
+Built-in handlers use priorities -10 to 70:
+
+| Handler               | Priority |
+| --------------------- | -------- |
+| `comparisonOperators` | -10      |
+| `htmlTags`            | -5       |
+| `setextHeadings`      | 0        |
+| `links`               | 10       |
+| `boldItalic`          | 20       |
+| `bold`                | 30       |
+| `italic`              | 40-42    |
+| `inlineCode`          | 50       |
+| `strikethrough`       | 60       |
+| `katex`               | 70       |
+
+Custom handlers default to priority 100, running after all built-ins. Set a lower priority to run before specific built-ins.
+
+**Example: Running Before Bold Handling**
+
+To process content before bold formatting is completed (priority 30), set a lower priority:
+
+```typescript
+const preprocessHandler: RemendHandler = {
+  name: 'preprocess',
+  handle: (text) => {
+    // Transform content before bold is completed
+    return text.replace(/\{\{highlight\}\}/g, '**');
+  },
+  priority: 25, // Runs before bold (30) and after links (10)
+};
+```
+
+**Example: Running After All Built-ins**
+
+For post-processing, use the default priority or higher:
+
+```typescript
+const postprocessHandler: RemendHandler = {
+  name: 'postprocess',
+  handle: (text) => {
+    // Clean up after all built-in handlers
+    return text.trim();
+  },
+  priority: 150, // Runs after all built-ins
+};
+```
+
+#### Context Utilities
+
+Remend exports utilities to help custom handlers detect context:
+
+```typescript
+import {
+  isWithinCodeBlock,
+  isWithinMathBlock,
+  isWithinLinkOrImageUrl,
+  isWordChar,
+} from 'remend';
+
+const handler: RemendHandler = {
+  name: 'custom',
+  handle: (text) => {
+    // Skip processing inside code blocks
+    if (isWithinCodeBlock(text, text.length - 1)) {
+      return text;
+    }
+    // Your completion logic here
+    return text;
+  },
+};
+```
+
+## Smart Behavior
+
+Remend includes intelligent rules to avoid false positives:
+
+### List Item Detection
+
+The parser won't close formatting markers that appear at the start of list items:
+
+```markdown
+- **
+- Item with bold marker only
+```
+
+This prevents prematurely closing bold formatting that might be intentional list structure.
+
+### Code Block Awareness
+
+Formatting within complete code blocks is left untouched:
+
+````markdown
+```python
+def foo():
+    # This **won't** be treated as incomplete bold
+    return "bar"
+```
+````
+
+### Math Block Protection
+
+Underscores within math blocks are not treated as italic markers:
+
+```markdown
+$$
+E = m \times c^2
+x_i = y_j
+$$
+```
+
+### Word-Internal Characters
+
+Asterisks and underscores within words (like variable names or between alphanumeric characters) are preserved:
+
+```markdown
+const user_name = "john_doe";
+234234*123
+hello*world
+```
+
+This ensures that text like product codes or mathematical expressions with asterisks are not mistakenly interpreted as italic formatting.
+
+## Performance Considerations
+
+Remend is highly optimized for streaming scenarios:
+
+* **Direct string iteration** - Avoids regex splits and allocations
+* **ASCII fast-path** - Optimized character checking for common cases
+* **Early returns** - Stops processing when conditions aren't met
+* **Zero dependencies** - Pure TypeScript implementation
+* **Block-Level Processing** - Streamdown splits content into blocks for parallel processing
+
+## Examples
+
+### Bold Text Streaming
+
+As content streams in:
+
+1. `**This` → Renders nothing (too short)
+2. `**This is bol` → Renders as **This is bol**
+3. `**This is bold**` → Renders as **This is bold**
+
+### Link Streaming
+
+With default `linkMode: 'protocol'`:
+
+1. `[Cli` → Renders nothing
+2. `[Click here` → Renders as [Click here](streamdown:incomplete-link)
+3. `[Click here](https://` → Renders as [Click here](streamdown:incomplete-link)
+4. `[Click here](https://example.com)` → Renders as [Click here](https://example.com)
+
+With `linkMode: 'text-only'`:
+
+1. `[Cli` → Renders nothing
+2. `[Click here` → Renders as plain text: Click here
+3. `[Click here](https://` → Renders as plain text: Click here
+4. `[Click here](https://example.com)` → Renders as [Click here](https://example.com)
+
+### Code Streaming
+
+1. `` `const `` → Renders as `const`
+2. `` `const foo = `` → Renders as `const foo =`
+3. `` `const foo = "bar"` `` → Renders as `const foo = "bar"`
+---
+title: Typography
+description: Explore Streamdown's built-in Tailwind typography styles for beautiful Markdown rendering.
+type: reference
+summary: Pre-built Tailwind CSS typography styles that match common design systems.
+prerequisites:
+  - /docs/styling
+related:
+  - /docs/styling
+  - /docs/plugins/cjk
+---
+
+# Typography
+
+
+
+Streamdown comes with beautiful, built-in typography styles powered by Tailwind CSS. All standard Markdown elements are styled out of the box, ensuring your content looks polished without additional configuration.
+
+## Headings
+
+Streamdown supports all six levels of Markdown headings with responsive sizing and proper spacing:
+
+```markdown
+# Heading 1
+## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+###### Heading 6
+```
+
+Headings automatically include:
+
+* Responsive font sizes that scale appropriately
+* Proper font weights (semibold by default)
+* Optimal line heights for readability
+* Consistent vertical spacing
+
+## Text Formatting
+
+### Bold and Italic
+
+Use standard Markdown syntax for emphasis:
+
+```markdown
+**Bold text** or __also bold__
+*Italic text* or _also italic_
+***Bold and italic***
+```
+
+### Strikethrough
+
+GitHub Flavored Markdown strikethrough is fully supported:
+
+```markdown
+~~Crossed out text~~
+```
+
+### Inline Code
+
+Inline code is styled with a subtle background and monospace font:
+
+```markdown
+Use the `Streamdown` component in your app.
+```
+
+## Links
+
+Links are styled with underlines and appropriate colors:
+
+```markdown
+[Visit our website](https://streamdown.ai)
+```
+
+Features include:
+
+* Distinct styling for regular links
+* Proper hover and focus states
+* Accessible color contrast
+* Smooth transitions
+
+## Lists
+
+### Unordered Lists
+
+```markdown
+- First item
+- Second item
+  - Nested item
+  - Another nested item
+- Third item
+```
+
+### Ordered Lists
+
+```markdown
+1. First step
+2. Second step
+   1. Sub-step A
+   2. Sub-step B
+3. Third step
+```
+
+Lists include:
+
+* Proper indentation for nested levels
+* Consistent spacing between items
+* Clear visual hierarchy
+* Appropriate markers (bullets/numbers)
+
+## Blockquotes
+
+Blockquotes are styled with a left border and subtle background:
+
+```markdown
+> "The development of full artificial intelligence could spell the end of the human race."
+> — Stephen Hawking
+```
+
+Features:
+
+* Left accent border
+* Subtle background color
+* Proper padding and margin
+* Italic text styling
+
+## Code Blocks
+
+Code blocks receive syntax highlighting via Shiki:
+
+````markdown
+```javascript
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+```
+````
+
+See the [Code Blocks](/docs/code-blocks) documentation for detailed configuration options.
+
+## Images
+
+Images are responsive and properly contained:
+
+```markdown
+![Alt text](https://example.com/image.jpg)
+```
+
+Features:
+
+* Responsive sizing
+* Proper aspect ratio preservation
+* Loading states
+* Alt text for accessibility
+* Broken image fallback with "Image not available" text
+
+## Tables
+
+Tables are fully styled with borders and hover states:
+
+```markdown
+| Feature | Supported |
+|---------|-----------|
+| Markdown | ✓ |
+| Streaming | ✓ |
+| Math | ✓ |
+```
+
+See the [GitHub Flavored Markdown](/docs/gfm) documentation for more table features.
+
+## Horizontal Rules
+
+Create visual separators:
+
+```markdown
+---
+```
+
+## Paragraphs
+
+Paragraphs receive proper spacing and line height for optimal readability:
+
+```markdown
+This is a paragraph with normal text flow. It automatically wraps and includes proper spacing between adjacent paragraphs.
+
+This is a second paragraph with appropriate margin top spacing.
+```
