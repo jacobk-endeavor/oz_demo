@@ -6,3 +6,8 @@ dist/
 .DS_Store
 lumberyard-calls/audio/
 lumberyard-calls/tools/temp-*/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
