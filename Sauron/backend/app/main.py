@@ -21,7 +21,6 @@ from app.routers import (
     leads,
     meetings,
     meeting_recordings,
-    oz_chat,
     positions,
     sales_reps,
     webhooks,
@@ -153,7 +152,6 @@ app.include_router(donations.router)
 app.include_router(meetings.router)
 app.include_router(gmail.router)
 app.include_router(meeting_recordings.router)
-app.include_router(oz_chat.router)
 app.include_router(leads.router)
 app.include_router(lead_actions.router)
 app.include_router(lead_contacts.router)
