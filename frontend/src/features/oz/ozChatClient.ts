@@ -6,10 +6,19 @@ export type OzChatClientRequest = {
   text: string
   context: OzChatTurnContext
   ragScope?: string
+  traceId?: string
 }
 
 export type OzChatClientResponse = {
   reply: string
+  traceId: string
+  telemetry: {
+    policyPath?: string
+    runtimeLatencyMs?: number
+    toolCalls: number
+    toolFailures: number
+    toolLatencies: Array<{ tool: string; latencyMs: number }>
+  }
 }
 
 function extractReplyFromJson(payload: unknown): string | null {
@@ -21,7 +30,14 @@ function extractReplyFromJson(payload: unknown): string | null {
   return null
 }
 
-function parseSseDataLine(dataLine: string): { token?: string; doneReply?: string } {
+function createTraceId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return `oz-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+type ParsedSseLine = { token?: string; doneReply?: string; event?: Record<string, unknown> }
+
+function parseSseDataLine(dataLine: string): ParsedSseLine {
   const trimmed = dataLine.trim()
   if (!trimmed) return {}
   if (trimmed === '[DONE]') return {}
@@ -37,7 +53,7 @@ function parseSseDataLine(dataLine: string): { token?: string; doneReply?: strin
             : typeof parsed.delta === 'string'
               ? parsed.delta
               : ''
-      return token ? { token } : {}
+      return token ? { token, event: parsed } : { event: parsed }
     }
     if (type === 'done') {
       const doneReply =
@@ -45,22 +61,33 @@ function parseSseDataLine(dataLine: string): { token?: string; doneReply?: strin
           ? parsed.reply
           : typeof parsed.text === 'string'
             ? parsed.text
+            : typeof parsed.message === 'string'
+              ? parsed.message
             : undefined
-      return doneReply && doneReply.trim() ? { doneReply: doneReply.trim() } : {}
+      return doneReply && doneReply.trim() ? { doneReply: doneReply.trim(), event: parsed } : { event: parsed }
     }
-    if (typeof parsed.token === 'string' && parsed.token) return { token: parsed.token }
-    return {}
+    if (typeof parsed.token === 'string' && parsed.token) return { token: parsed.token, event: parsed }
+    return { event: parsed }
   } catch {
     return { token: trimmed }
   }
 }
 
-async function readSseReply(stream: ReadableStream<Uint8Array>): Promise<string> {
+async function readSseReply(
+  stream: ReadableStream<Uint8Array>,
+): Promise<{ reply: string; traceId?: string; telemetry: OzChatClientResponse['telemetry'] }> {
   const reader = stream.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
   let tokenText = ''
   let doneReply: string | null = null
+  let traceId: string | undefined
+  const pendingToolCalls = new Map<string, { name: string; startedAt: number }>()
+  const telemetry: OzChatClientResponse['telemetry'] = {
+    toolCalls: 0,
+    toolFailures: 0,
+    toolLatencies: [],
+  }
 
   while (true) {
     const { value, done } = await reader.read()
@@ -80,25 +107,66 @@ async function readSseReply(stream: ReadableStream<Uint8Array>): Promise<string>
         const parsed = parseSseDataLine(dataLine)
         if (parsed.token) tokenText += parsed.token
         if (parsed.doneReply) doneReply = parsed.doneReply
+        const event = parsed.event
+        if (!event) continue
+        if (typeof event.trace_id === 'string' && event.trace_id.trim()) traceId = event.trace_id.trim()
+        if (event.type === 'tool_call' && typeof event.tool_call_id === 'string' && typeof event.name === 'string') {
+          telemetry.toolCalls += 1
+          pendingToolCalls.set(event.tool_call_id, { name: event.name, startedAt: performance.now() })
+          continue
+        }
+        if (event.type === 'tool_result') {
+          const ok = event.ok !== false
+          if (!ok) telemetry.toolFailures += 1
+          if (typeof event.tool_call_id === 'string') {
+            const started = pendingToolCalls.get(event.tool_call_id)
+            if (started) {
+              telemetry.toolLatencies.push({
+                tool: started.name,
+                latencyMs: Math.max(0, performance.now() - started.startedAt),
+              })
+              pendingToolCalls.delete(event.tool_call_id)
+            }
+          }
+          continue
+        }
+        if (event.type === 'trace' && event.stage === 'policy_gate' && typeof event.decision === 'string') {
+          telemetry.policyPath = event.decision
+          continue
+        }
+        if (
+          event.type === 'trace' &&
+          event.stage === 'runtime_summary' &&
+          event.details &&
+          typeof event.details === 'object' &&
+          typeof (event.details as Record<string, unknown>).latency_ms === 'number'
+        ) {
+          telemetry.runtimeLatencyMs = (event.details as Record<string, number>).latency_ms
+        }
       }
     }
   }
 
-  const finalReply = (doneReply ?? tokenText).trim()
-  if (!finalReply) throw new Error('Unified chat stream ended without reply text')
-  return finalReply
+  const reply = (doneReply ?? tokenText).trim()
+  if (!reply) throw new Error('Unified chat stream ended without reply text')
+  return { reply, traceId, telemetry }
 }
 
 export async function postOzChat(request: OzChatClientRequest): Promise<OzChatClientResponse> {
+  const traceId = request.traceId?.trim() || createTraceId()
   const response = await fetch(OZ_CHAT_PATH, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-oz-trace-id': traceId,
+    },
     body: JSON.stringify({
       message: request.text,
       context: request.context,
       ragScope: request.ragScope,
+      trace_id: traceId,
       stream: true,
-      contractVersion: '2026-04-oz-chat-v1',
+      contract_version: '2026-04-oz-chat-v1',
     }),
   })
 
@@ -110,12 +178,20 @@ export async function postOzChat(request: OzChatClientRequest): Promise<OzChatCl
   const contentType = response.headers.get('content-type') ?? ''
   if (contentType.includes('text/event-stream')) {
     if (!response.body) throw new Error('Unified chat stream missing response body')
-    const reply = await readSseReply(response.body)
-    return { reply }
+    const parsed = await readSseReply(response.body)
+    return {
+      reply: parsed.reply,
+      traceId: parsed.traceId ?? response.headers.get('x-oz-trace-id') ?? traceId,
+      telemetry: parsed.telemetry,
+    }
   }
 
   const payload = (await response.json()) as unknown
   const reply = extractReplyFromJson(payload)
   if (!reply) throw new Error('Unified chat returned unexpected JSON shape')
-  return { reply }
+  return {
+    reply,
+    traceId,
+    telemetry: { toolCalls: 0, toolFailures: 0, toolLatencies: [] },
+  }
 }

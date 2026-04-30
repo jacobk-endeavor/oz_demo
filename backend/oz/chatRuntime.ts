@@ -99,6 +99,10 @@ export type OzToolSurface = {
   read_transcript: (request: { call_id: string; scope?: string; max_chunks?: number }) => Promise<TranscriptReadResult>
 }
 
+function nowMs(now: () => Date): number {
+  return now().getTime()
+}
+
 function defaultScopeFor(request: OzChatRequest): string | undefined {
   return request.ragScope?.trim() || undefined
 }
@@ -160,10 +164,13 @@ export async function* runOzChatLoop(
   deps: RuntimeDependencies = {},
 ): AsyncGenerator<OzChatStreamEvent> {
   const now = deps.now ?? (() => new Date())
+  const runtimeStartedMs = nowMs(now)
   const contractVersion = request.contract_version || OZ_CHAT_CONTRACT_VERSION
   const message = String(request.message ?? '').trim()
   const policyPath = choosePolicyPath(request)
   let sequence = 0
+  let toolFailureCount = 0
+  let toolSuccessCount = 0
 
   const base = () => ({
     contract_version: contractVersion,
@@ -172,6 +179,7 @@ export async function* runOzChatLoop(
     trace_id: request.trace_id,
     conversation_id: request.conversation_id,
   })
+  const makeLatency = (startedMs: number) => Math.max(0, nowMs(now) - startedMs)
 
   yield {
     ...base(),
@@ -185,6 +193,18 @@ export async function* runOzChatLoop(
 
   if (policyPath === 'hardcoded') {
     const reply = hardcodedReplyFor(message)
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'runtime_summary',
+      decision: 'complete',
+      details: {
+        policy_path: policyPath,
+        latency_ms: makeLatency(runtimeStartedMs),
+        tools_ok: toolSuccessCount,
+        tools_failed: toolFailureCount,
+      },
+    }
     yield { ...base(), type: 'token', delta: reply }
     yield { ...base(), type: 'done', message: reply, finish_reason: 'stop' }
     return
@@ -302,8 +322,10 @@ export async function* runOzChatLoop(
   }
 
   let searchResult: TranscriptSearchResult | null = null
+  const searchStartedMs = nowMs(now)
   try {
     searchResult = await toolSurface.search_transcripts(searchArgs)
+    toolSuccessCount += 1
     yield {
       ...base(),
       type: 'tool_result',
@@ -317,7 +339,18 @@ export async function* runOzChatLoop(
         citations: searchResult.citations,
       },
     }
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'tool_latency',
+      decision: 'ok',
+      details: {
+        tool_name: 'search_transcripts',
+        latency_ms: makeLatency(searchStartedMs),
+      },
+    }
   } catch (error) {
+    toolFailureCount += 1
     yield {
       ...base(),
       type: 'tool_result',
@@ -326,6 +359,17 @@ export async function* runOzChatLoop(
       ok: false,
       summary: error instanceof Error ? error.message : String(error),
     }
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'tool_latency',
+      decision: 'error',
+      details: {
+        tool_name: 'search_transcripts',
+        latency_ms: makeLatency(searchStartedMs),
+        message: error instanceof Error ? error.message : String(error),
+      },
+    }
   }
 
   let readResult: TranscriptReadResult | null = null
@@ -333,6 +377,7 @@ export async function* runOzChatLoop(
     const topHit = searchResult.hits[0]
     const readToolCallId = `tool-read-transcript-${sequence}`
     const readArgs = { call_id: topHit.call_id, scope: searchResult.scope, max_chunks: 6 }
+    const readStartedMs = nowMs(now)
     yield {
       ...base(),
       type: 'tool_call',
@@ -342,6 +387,7 @@ export async function* runOzChatLoop(
     }
     try {
       readResult = await toolSurface.read_transcript(readArgs)
+      toolSuccessCount += 1
       yield {
         ...base(),
         type: 'tool_result',
@@ -355,7 +401,18 @@ export async function* runOzChatLoop(
           citations: readResult.citations,
         },
       }
+      yield {
+        ...base(),
+        type: 'trace',
+        stage: 'tool_latency',
+        decision: 'ok',
+        details: {
+          tool_name: 'read_transcript',
+          latency_ms: makeLatency(readStartedMs),
+        },
+      }
     } catch (error) {
+      toolFailureCount += 1
       yield {
         ...base(),
         type: 'tool_result',
@@ -363,6 +420,17 @@ export async function* runOzChatLoop(
         name: 'read_transcript',
         ok: false,
         summary: error instanceof Error ? error.message : String(error),
+      }
+      yield {
+        ...base(),
+        type: 'trace',
+        stage: 'tool_latency',
+        decision: 'error',
+        details: {
+          tool_name: 'read_transcript',
+          latency_ms: makeLatency(readStartedMs),
+          message: error instanceof Error ? error.message : String(error),
+        },
       }
     }
   }
@@ -375,6 +443,18 @@ export async function* runOzChatLoop(
     ? ` Top transcript evidence: ${topHit.call_id} chunk ${topHit.chunk_index} (rep ${topHit.owner_user_id}).`
     : ' Transcript evidence lookup returned no hits for this scope.'
   const agentReply = `Oz runtime executed transcript tools.${recallSuffix}${transcriptSuffix}`
+  yield {
+    ...base(),
+    type: 'trace',
+    stage: 'runtime_summary',
+    decision: 'complete',
+    details: {
+      policy_path: policyPath,
+      latency_ms: makeLatency(runtimeStartedMs),
+      tools_ok: toolSuccessCount,
+      tools_failed: toolFailureCount,
+    },
+  }
   yield { ...base(), type: 'token', delta: agentReply }
   yield {
     ...base(),

@@ -61,4 +61,66 @@ describe('postOzChat SSE stream parsing', () => {
 
     expect(result.reply).toBe('Oz runtime token stream')
   })
+
+  it('propagates trace id and parses runtime telemetry from SSE events', async () => {
+    const traceId = 'trace-client-test-01'
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const headers = new Headers(init?.headers)
+      expect(headers.get('x-oz-trace-id')).toBe(traceId)
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>
+      expect(body.trace_id).toBe(traceId)
+      expect(body.contract_version).toBe('2026-04-oz-chat-v1')
+
+      return new Response(
+        createSseBody([
+          `data: ${JSON.stringify({ type: 'trace', stage: 'policy_gate', decision: 'agent', trace_id: traceId })}\n\n`,
+          `data: ${JSON.stringify({
+            type: 'tool_call',
+            tool_call_id: 'tool-1',
+            name: 'search_transcripts',
+            trace_id: traceId,
+          })}\n\n`,
+          `data: ${JSON.stringify({
+            type: 'tool_result',
+            tool_call_id: 'tool-1',
+            name: 'search_transcripts',
+            ok: false,
+            trace_id: traceId,
+          })}\n\n`,
+          `data: ${JSON.stringify({
+            type: 'trace',
+            stage: 'runtime_summary',
+            decision: 'complete',
+            details: { latency_ms: 87 },
+            trace_id: traceId,
+          })}\n\n`,
+          `data: ${JSON.stringify({ type: 'done', message: 'ok', trace_id: traceId })}\n\n`,
+        ]),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'text/event-stream',
+            'x-oz-trace-id': traceId,
+          },
+        },
+      )
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await postOzChat({
+      text: 'hello',
+      context: { priorUserMessages: [], priorExchanges: [] },
+      ragScope: 'Jacob',
+      traceId,
+    })
+
+    expect(result.reply).toBe('ok')
+    expect(result.traceId).toBe(traceId)
+    expect(result.telemetry.policyPath).toBe('agent')
+    expect(result.telemetry.runtimeLatencyMs).toBe(87)
+    expect(result.telemetry.toolCalls).toBe(1)
+    expect(result.telemetry.toolFailures).toBe(1)
+    expect(result.telemetry.toolLatencies.length).toBe(1)
+  })
 })

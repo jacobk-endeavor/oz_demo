@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
@@ -45,6 +46,21 @@ function writeSseDone(res: ServerResponse, message: string): void {
     finish_reason: 'error',
   }
   writeSseFrame(res, doneEvent)
+}
+
+function normalizedTraceId(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed || undefined
+}
+
+function resolveTraceId(req: IncomingMessage, parsed: OzChatRequest): string {
+  return (
+    normalizedTraceId(parsed.trace_id) ||
+    normalizedTraceId(req.headers['x-oz-trace-id']) ||
+    normalizedTraceId(req.headers['x-trace-id']) ||
+    randomUUID()
+  )
 }
 
 function readEnv(): Record<string, string> {
@@ -101,6 +117,7 @@ export function ozChatApiPlugin() {
       ...parsed,
       message,
       contract_version: contractVersion,
+      trace_id: resolveTraceId(req, parsed),
     }
 
     res.statusCode = 200
@@ -108,6 +125,7 @@ export function ozChatApiPlugin() {
     res.setHeader('Connection', 'keep-alive')
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
     res.setHeader('x-oz-chat-contract-version', contractVersion)
+    res.setHeader('x-oz-trace-id', request.trace_id ?? '')
 
     try {
       const db = getPool()
