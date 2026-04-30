@@ -61,6 +61,15 @@ Oz then **polishes** replies using the table snapshot + distributor context (`bu
 
 ## Chat — `#/oz`
 
+### Runtime graph adapters (stubbed)
+
+- Oz runtime now exposes a tool surface with `graph_search` and `graph_neighbors` adapter boundaries under `backend/oz`.
+- Traversal requests are capped before adapter execution:
+  - `depth` is clamped to configured `maxDepth`.
+  - `size` is clamped to `maxResultSize` (`graph_search`) or `maxNeighborsPerNode` (`graph_neighbors`).
+  - `scope` is constrained to configured `allowedScopes` (falls back to request `ragScope`, then first allowed scope).
+- Current adapters are stubs that return empty graph payloads plus limit metadata, so downstream orchestration can integrate safely without opening unrestricted traversals.
+
 1. **You type:** *what have my customers been requesting*
    **Oz says:** *The call log is open on the right. Set `OPENAI_API_KEY` in your `.env` to ask about products, revenue mix (synthetic), and competitor listings on the web (when a search key is set).*
 
