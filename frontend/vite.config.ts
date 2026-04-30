@@ -8,6 +8,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { ozLumberyardApiPlugin } from './vite.ozLumberyardApi'
 import { ozEmailApiPlugin } from './vite.ozEmailApi'
 import { ozRagCallsApiPlugin } from './vite.ozRagCallsApi'
+import { ozChatApiPlugin } from '../backend/oz/viteOzChatApi'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 /** Monorepo / demo: keep `.env` in the repo root (same folder as this file’s parent). */
@@ -240,6 +241,7 @@ export default defineConfig(({ mode }) => ({
   /** One pdfjs build for `react-pdf` main thread + our worker `?url` import. */
   resolve: { dedupe: ['pdfjs-dist'] },
   plugins: [
+    ozChatApiPlugin(),
     ozRagCallsApiPlugin(mode),
     react(),
     tailwindcss(),
