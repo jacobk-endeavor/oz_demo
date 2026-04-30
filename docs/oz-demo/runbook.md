@@ -1,26 +1,82 @@
 # Oz demo runbook (Q&A only)
 
+## Prompt cookbook — what the system answers well
+
+Routes are decided in order (special intents first, then lead-table interpretation, then transcript RAG on conversational fallback). See `docs/chat-routing-oz-demo-and-sauron.md` for detail.
+
+### A — Transcript **RAG** (Russin call excerpts, pgvector)
+
+**When it runs:** `#/oz`, OpenAI + DB configured, your line does **not** match lumberyard / Milwaukee / competitor / dashboards / background-agent intents, and the lead-table interpreter treats the turn as generic (`usedConversationalFallback`).
+
+**Use the scope control** next to the logo: **Admin** = all reps in retrieval; a **name** = only that rep’s chunks (don’t ask to compare to another rep unless scope matches).
+
+**Strong prompts (stay concrete; avoid “customer demand dashboard” phrasing):**
+
+| Scope | Example prompts |
+|-------|-----------------|
+| **Rep** | “Where did **freight** or **trucking** constraints come up?” · “What **cedar** or **fir** lines showed up in these calls?” · “Any mentions of **written quote** vs verbal?” · “Did buyers ask for **rush** or **same-week** timing?” · “What **substitutions** were discussed?” |
+| **Admin** | “Which **call_id** excerpts mention **lead times** for siding?” · “Where do conversations mention **credit** or **terms**?” · “Give two examples of **delivery windows** from different reps’ excerpts in this batch.” |
+
+**Weaker / wrong tool:** Broad “lead list,” “Milwaukee distributors,” or “what my customers are requesting” patterns are routed to **activity / lead / CRM demos**, not RAG.
+
+---
+
+### B — **Lumberyard** call mining (full file corpus + optional web)
+
+**When it runs:** Phrases that match **customer activity** / **call mining** intents (e.g. products + calls/transcripts/competitors/revenue mix — see `frontend/src/features/lumberyard/lumberyardIntents.ts`), not RAG-only.
+
+**Strong prompts:** Product and outcome questions tied to **your customer activity** narrative in the runbook below (e.g. *what have my customers been requesting* opens the panel; follow-ups about products, revenue mix, competitors once the grid is in context).
+
+---
+
+### C — **Competitor web → likely buyers** (two-step)
+
+1. *Who else sells these products — search the web for the top 5* (needs activity rows).
+2. *If I stock up on those, who is likely to buy?* (uses product lines from the prior competitor run.)
+
+---
+
+### D — **Milwaukee distributor lead grid** + natural-language **table** commands
+
+**Open grid:** *Give me Milwaukee distributors* (and close variants — see `leadGenTableModel`).
+
+**Strong table prompts:** *Sort by location* · *Only people we’ve met* · *Find more leads* · *Source: Apollo* · *Employees > 1000* · *Only in pharma* · *Help* (lists commands).
+
+Oz then **polishes** replies using the table snapshot + distributor context (`buildOzGptSystemPrompt`).
+
+---
+
+### E — **Customer demand / P&L** panels
+
+- *Build a dashboard of the products customers are requesting*
+- *Add a chart for profit by product* (opens demand + synthetic P&L)
+
+---
+
+### F — **Background agents**
+
+- *Create a background agent to email me a weekly summary … every Monday at 9am* (and similar; completes via heuristics + optional LLM).
+
+---
+
 ## Chat — `#/oz`
 
-1. **You type:** *give me Milwaukee distributors*
-   **Oz says:** *Pulling the Milwaukee distributor grid — I'm phasing it in on the right. Ask to narrow, sort, or sub-sort (e.g. by source, then by industry or location).*
-
-2. **You type:** *what have my customers been requesting*
+1. **You type:** *what have my customers been requesting*
    **Oz says:** *The call log is open on the right. Set `OPENAI_API_KEY` in your `.env` to ask about products, revenue mix (synthetic), and competitor listings on the web (when a search key is set).*
 
-3. **You type:** *who else sells these products — search the web for the top 5*
+2. **You type:** *who else sells these products — search the web for the top 5*
    **Oz says:** *Here's a competitor × product board from the top five activity rows. Click any row to open links. Next: ask who is likely to buy if you stock those lines.*
 
-4. **You type:** *if I stock up on those, who is likely to buy?*
+3. **You type:** *if I stock up on those, who is likely to buy?*
    **Oz says:** *Opened likely buyers on the right: engaged accounts whose company blurbs match [product needle], using product lines from your last competitor run. This is a buyer lens—tighten with sort, the source column, or clear filters in chat.*
 
-5. **You type:** *build a dashboard of the products customers are requesting*
+4. **You type:** *build a dashboard of the products customers are requesting*
    **Oz says:** *Opened Customer demand beside the chat: Products requested (demand index).*
 
-6. **You type:** *add a chart for profit by product*
+5. **You type:** *add a chart for profit by product*
    **Oz says:** *Opened Customer demand and P&L beside the chat: Products requested (demand index) plus a synthetic P&L table and realized profit bars.*
 
-7. **You type:** *create a background agent to email me a weekly summary of new competitor offers every Monday at 9am*
+6. **You type:** *create a background agent to email me a weekly summary of new competitor offers every Monday at 9am*
    **Oz says:** *[Task title] is saved. Schedule: weekly, Mondays 9 am. Outcome: emailed competitor-offer summary. Open Workflows → Background agents to see the full card, Connections logos, and schedule details.*
 
 ## Voice — `#/field-app`
