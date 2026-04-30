@@ -6,6 +6,7 @@ Related docs:
 - [`docs/repo-cleanup-and-breakup-task-plan.md`](./repo-cleanup-and-breakup-task-plan.md)
 - [`docs/beads-cleanup-task-outline.md`](./beads-cleanup-task-outline.md)
 - [`docs/chat-routing-oz-demo-and-sauron.md`](./chat-routing-oz-demo-and-sauron.md)
+- [`docs/naming-conventions.md`](./naming-conventions.md)
 
 ## Purpose
 
@@ -94,7 +95,7 @@ This keeps policy and orchestration decisions centralized and auditable.
 
 - Migrate remaining non-hardcoded prompt branches out of frontend modules into backend runtime/prompt modules.
 - Move retrieval logic (transcript RAG first, then memory/graph adapters) under backend tool registry.
-- Add CI guardrails to block frontend direct model calls and regressions into mixed ownership.
+- Expand CI guardrails as migration debt retires; baseline guardrails are now documented in [`docs/oz-demo/ci-guardrails.md`](./oz-demo/ci-guardrails.md).
 
 ### Transitional guidance
 

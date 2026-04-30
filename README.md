@@ -21,12 +21,14 @@ http://localhost:5173
 ```bash
 npm run build
 npm run preview
+npm run guardrails:arch
 npm run validate
 ```
 
 - `npm run build` checks TypeScript and creates a production build.
 - `npm run preview` serves the production build locally.
-- `npm run validate` runs typecheck, lint, tests, and build.
+- `npm run guardrails:arch` enforces Oz architecture boundaries (see `docs/oz-demo/ci-guardrails.md`).
+- `npm run validate` runs architecture guardrails, typecheck, lint, tests, and build.
 
 ## DigitalOcean Prep
 
