@@ -1,3 +1,29 @@
+import {
+  applyGraphNeighborLimits,
+  applyGraphSearchLimits,
+  createGraphNeighborsStubAdapter,
+  createGraphSearchStubAdapter,
+  resolveGraphTraversalLimits,
+  type EnforcedGraphNeighborRequest,
+  type EnforcedGraphSearchRequest,
+  type GraphNeighborResult,
+  type GraphNeighborsAdapter,
+  type GraphSearchAdapter,
+  type GraphSearchResult,
+  type GraphTraversalLimits,
+} from './graphAdapters'
+import {
+  DEFAULT_MEMORY_TTL_SECONDS,
+  evaluateMemoryWritePolicy,
+  noopMemoryRecall,
+  noopMemoryWrite,
+  sanitizeMemoryItem,
+  sanitizeMemoryWrite,
+  type MemoryRecallAdapter,
+  type MemoryWriteAdapter,
+} from './memoryAdapters'
+import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
+
 export const OZ_CHAT_CONTRACT_VERSION = '2026-04-oz-chat-v1' as const
 
 export type OzPolicyPath = 'hardcoded' | 'agent'
@@ -23,10 +49,95 @@ type OzChatBaseEvent = {
 export type OzChatStreamEvent =
   | (OzChatBaseEvent & { type: 'trace'; stage: string; decision: string; details?: Record<string, unknown> })
   | (OzChatBaseEvent & { type: 'token'; delta: string })
-  | (OzChatBaseEvent & { type: 'done'; message: string; finish_reason: string })
+  | (OzChatBaseEvent & { type: 'tool_call'; tool_call_id: string; name: string; arguments: Record<string, unknown> })
+  | (OzChatBaseEvent & {
+      type: 'tool_result'
+      tool_call_id: string
+      name: string
+      ok: boolean
+      summary?: string
+      result_meta?: Record<string, unknown>
+    })
+  | (OzChatBaseEvent & {
+      type: 'done'
+      message: string
+      finish_reason: string
+      citations?: Array<{ kind: string; id: string; label?: string }>
+    })
 
 export type RuntimeDependencies = {
   now?: () => Date
+  graph?: {
+    limits?: Partial<GraphTraversalLimits>
+    searchAdapter?: GraphSearchAdapter
+    neighborsAdapter?: GraphNeighborsAdapter
+  }
+  memory?: {
+    recallAdapter?: MemoryRecallAdapter
+    writeAdapter?: MemoryWriteAdapter
+  }
+  transcripts?: {
+    registry?: {
+      search_transcripts: (request: { query: string; scope?: string; top_k?: number }) => Promise<TranscriptSearchResult>
+      read_transcript: (request: { call_id: string; scope?: string; max_chunks?: number }) => Promise<TranscriptReadResult>
+    }
+    dbQuery?: <T>(sql: string, params: unknown[]) => Promise<{ rows: T[] }>
+    openAiApiKey?: string
+    embeddingModel?: string
+  }
+}
+
+export type OzToolSurface = {
+  graph_search: (request: { query: string; depth?: number; size?: number; scope?: string }) => Promise<GraphSearchResult>
+  graph_neighbors: (request: {
+    nodeId: string
+    depth?: number
+    size?: number
+    scope?: string
+  }) => Promise<GraphNeighborResult>
+  search_transcripts: (request: { query: string; scope?: string; top_k?: number }) => Promise<TranscriptSearchResult>
+  read_transcript: (request: { call_id: string; scope?: string; max_chunks?: number }) => Promise<TranscriptReadResult>
+}
+
+function defaultScopeFor(request: OzChatRequest): string | undefined {
+  return request.ragScope?.trim() || undefined
+}
+
+export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDependencies = {}): OzToolSurface {
+  const limits = resolveGraphTraversalLimits(deps.graph?.limits)
+  const searchAdapter = deps.graph?.searchAdapter ?? createGraphSearchStubAdapter()
+  const neighborsAdapter = deps.graph?.neighborsAdapter ?? createGraphNeighborsStubAdapter()
+  const transcriptRegistry =
+    deps.transcripts?.registry ??
+    createTranscriptToolRegistry({
+      dbQuery: deps.transcripts?.dbQuery,
+      openAiApiKey: deps.transcripts?.openAiApiKey,
+      embeddingModel: deps.transcripts?.embeddingModel,
+    })
+  const requestScope = defaultScopeFor(request)
+
+  return {
+    async graph_search(payload): Promise<GraphSearchResult> {
+      const bounded: EnforcedGraphSearchRequest = applyGraphSearchLimits(
+        { ...payload, scope: payload.scope ?? requestScope },
+        limits,
+      )
+      return searchAdapter.search(bounded)
+    },
+    async graph_neighbors(payload): Promise<GraphNeighborResult> {
+      const bounded: EnforcedGraphNeighborRequest = applyGraphNeighborLimits(
+        { ...payload, scope: payload.scope ?? requestScope },
+        limits,
+      )
+      return neighborsAdapter.neighbors(bounded)
+    },
+    async search_transcripts(payload): Promise<TranscriptSearchResult> {
+      return transcriptRegistry.search_transcripts({ ...payload, scope: payload.scope ?? requestScope })
+    },
+    async read_transcript(payload): Promise<TranscriptReadResult> {
+      return transcriptRegistry.read_transcript({ ...payload, scope: payload.scope ?? requestScope })
+    },
+  }
 }
 
 export function choosePolicyPath(request: OzChatRequest): OzPolicyPath {
@@ -79,17 +190,197 @@ export async function* runOzChatLoop(
     return
   }
 
-  // Runtime loop scaffold: keep shape stable for tool orchestration work in follow-up issues.
+  const graphLimits = resolveGraphTraversalLimits(deps.graph?.limits)
+  const toolSurface = createOzToolSurface(request, deps)
+  const recallAdapter = deps.memory?.recallAdapter ?? noopMemoryRecall
+  const writeAdapter = deps.memory?.writeAdapter ?? noopMemoryWrite
+
+  // Runtime loop scaffold with tool registry wiring.
   yield {
     ...base(),
     type: 'trace',
     stage: 'runtime_loop',
     decision: 'agent_stub',
-    details: { step: 'plan', tools_enabled: false },
+    details: {
+      step: 'plan_and_tools',
+      tools_enabled: true,
+      tools: Object.keys(toolSurface),
+      graph_limits: graphLimits,
+    },
   }
 
-  const agentReply =
-    'Agent runtime path is scaffolded. Tool execution and model orchestration are not enabled yet.'
+  let recalledCount = 0
+  let recalledProvenance: string | undefined
+  try {
+    const recalledItems = await recallAdapter({
+      query: message,
+      conversation_id: request.conversation_id,
+      trace_id: request.trace_id,
+      rag_scope: defaultScopeFor(request),
+    })
+    const sanitized = recalledItems.map(sanitizeMemoryItem).filter((item) => item.content.length > 0)
+    recalledCount = sanitized.length
+    recalledProvenance = sanitized[0]?.provenance
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'memory_recall',
+      decision: 'ok',
+      details: {
+        items: recalledCount,
+        provenance: recalledProvenance,
+      },
+    }
+  } catch (error) {
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'memory_recall',
+      decision: 'error',
+      details: {
+        message: error instanceof Error ? error.message : String(error),
+      },
+    }
+  }
+
+  const writeInput = sanitizeMemoryWrite({
+    content: message,
+    confidence: 0.85,
+    provenance: 'oz-chat-user-input',
+    ttl_seconds: DEFAULT_MEMORY_TTL_SECONDS,
+    conversation_id: request.conversation_id,
+    trace_id: request.trace_id,
+  })
+  const writePolicy = evaluateMemoryWritePolicy(writeInput)
+  yield {
+    ...base(),
+    type: 'trace',
+    stage: 'memory_write_policy',
+    decision: writePolicy.allowed ? 'allow' : 'deny',
+    details: {
+      confidence: writeInput.confidence,
+      provenance: writeInput.provenance,
+      ttl_seconds: writeInput.ttl_seconds,
+      reasons: writePolicy.reasons,
+    },
+  }
+  if (writePolicy.allowed) {
+    try {
+      const writeResult = await writeAdapter(writeInput)
+      yield {
+        ...base(),
+        type: 'trace',
+        stage: 'memory_write',
+        decision: writeResult.accepted ? 'accepted' : 'rejected',
+        details: { reason: writeResult.reason },
+      }
+    } catch (error) {
+      yield {
+        ...base(),
+        type: 'trace',
+        stage: 'memory_write',
+        decision: 'error',
+        details: {
+          message: error instanceof Error ? error.message : String(error),
+        },
+      }
+    }
+  }
+
+  const searchToolCallId = `tool-search-transcripts-${sequence}`
+  const searchArgs = {
+    query: message,
+    scope: defaultScopeFor(request),
+    top_k: 8,
+  }
+  yield {
+    ...base(),
+    type: 'tool_call',
+    tool_call_id: searchToolCallId,
+    name: 'search_transcripts',
+    arguments: searchArgs,
+  }
+
+  let searchResult: TranscriptSearchResult | null = null
+  try {
+    searchResult = await toolSurface.search_transcripts(searchArgs)
+    yield {
+      ...base(),
+      type: 'tool_result',
+      tool_call_id: searchToolCallId,
+      name: 'search_transcripts',
+      ok: true,
+      summary: `Retrieved ${searchResult.hits.length} transcript chunks`,
+      result_meta: {
+        scope: searchResult.scope,
+        provenance: searchResult.provenance,
+        citations: searchResult.citations,
+      },
+    }
+  } catch (error) {
+    yield {
+      ...base(),
+      type: 'tool_result',
+      tool_call_id: searchToolCallId,
+      name: 'search_transcripts',
+      ok: false,
+      summary: error instanceof Error ? error.message : String(error),
+    }
+  }
+
+  let readResult: TranscriptReadResult | null = null
+  if (searchResult?.hits.length) {
+    const topHit = searchResult.hits[0]
+    const readToolCallId = `tool-read-transcript-${sequence}`
+    const readArgs = { call_id: topHit.call_id, scope: searchResult.scope, max_chunks: 6 }
+    yield {
+      ...base(),
+      type: 'tool_call',
+      tool_call_id: readToolCallId,
+      name: 'read_transcript',
+      arguments: readArgs,
+    }
+    try {
+      readResult = await toolSurface.read_transcript(readArgs)
+      yield {
+        ...base(),
+        type: 'tool_result',
+        tool_call_id: readToolCallId,
+        name: 'read_transcript',
+        ok: true,
+        summary: `Loaded ${readResult.chunks.length} chunks from ${readResult.call_id}`,
+        result_meta: {
+          call_id: readResult.call_id,
+          provenance: readResult.provenance,
+          citations: readResult.citations,
+        },
+      }
+    } catch (error) {
+      yield {
+        ...base(),
+        type: 'tool_result',
+        tool_call_id: readToolCallId,
+        name: 'read_transcript',
+        ok: false,
+        summary: error instanceof Error ? error.message : String(error),
+      }
+    }
+  }
+
+  const recallSuffix = recalledCount
+    ? ` Loaded ${recalledCount} memory item(s)${recalledProvenance ? ` from ${recalledProvenance}` : ''}.`
+    : ''
+  const topHit = searchResult?.hits[0]
+  const transcriptSuffix = topHit
+    ? ` Top transcript evidence: ${topHit.call_id} chunk ${topHit.chunk_index} (rep ${topHit.owner_user_id}).`
+    : ' Transcript evidence lookup returned no hits for this scope.'
+  const agentReply = `Oz runtime executed transcript tools.${recallSuffix}${transcriptSuffix}`
   yield { ...base(), type: 'token', delta: agentReply }
-  yield { ...base(), type: 'done', message: agentReply, finish_reason: 'stop' }
+  yield {
+    ...base(),
+    type: 'done',
+    message: agentReply,
+    finish_reason: 'stop',
+    citations: searchResult?.citations?.length ? searchResult.citations : readResult?.citations,
+  }
 }

@@ -1,11 +1,33 @@
 .env
+.env.*
+!.env.example
 .venv/
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 node_modules/
 dist/
+.cache/
+coverage/
+*.log
 .DS_Store
 lumberyard-calls/audio/
 lumberyard-calls/tools/temp-*/
+
+# Oz frontend build artifacts
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+frontend/playwright-report/
+frontend/test-results/
+
+# Oz backend runtime artifacts
+backend/.venv/
+backend/__pycache__/
 
 # Beads / Dolt files (added by bd init)
 .dolt/
