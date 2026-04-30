@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     company_key_facts_backfill_interval_seconds: int = 60
     turbopuffer_api_key: str = ""
     parallel_api_key: str = ""
+    graph_tools_enabled: bool = True
+    graph_default_traversal_depth: int = 1
+    graph_max_traversal_depth: int = 2
+    graph_default_result_size: int = 10
+    graph_max_result_size: int = 25
+    graph_allowed_scopes: list[str] = ["all", "current"]
     enable_enrich_traces: bool = False
     turbopuffer_region: str = "gcp-us-central1"
     twilio_account_sid: str = ""
