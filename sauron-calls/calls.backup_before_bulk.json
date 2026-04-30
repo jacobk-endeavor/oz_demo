@@ -1,0 +1,2191 @@
+{
+  "schema_version": "1.0",
+  "call_count": 48,
+  "calls": [
+    {
+      "call_id": "call_russin_0001",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:22Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "ac_dutton_co",
+      "customer": {
+        "company_name": "A.C. DUTTON CO.",
+        "contact_name": "Jordan Meyers"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "RUSH_JOB",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "abx_capboard",
+        "cedar_bevel",
+        "cedar_siding",
+        "cedar_lmd",
+        "doug_fir",
+        "furu_pres_treated",
+        "fur_trim",
+        "ijoist_ewp_lvl"
+      ],
+      "metadata": {
+        "generation_seed": "555d3fa147c0c59a",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Jordan Meyers placed a rush order for cedar siding and ABX capboard.",
+        "products_mentioned": [
+          "CEDAR SIDING",
+          "ABX CAPBOARD"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.\nBuyer: Jordan Meyers from A.C. DUTTON CO.\nRussin: Hi Jordan, how can I assist you today?\nBuyer: We're in a bit of a rush for some materials. I need to place an order for cedar siding and some trim.\nRussin: Sure, I can help with that. Are you looking for CEDAR SIDING or CEDAR BEVEL?\nBuyer: We need CEDAR SIDING for a project, preferably in 1x6 and 1x8 dimensions.\nRussin: Great choice! We have it available, with a lead time of about 7 to 14 days. How many square feet are you looking to order?\nBuyer: We need around 1,500 square feet.\nRussin: Got it. Regarding trim, do you want to go with the ABX CAPBOARD or something else?\nBuyer: Let's go with the ABX CAPBOARD for the exterior. We need about 200 pieces.\nRussin: Noted. The ABX CAPBOARD typically has a lead time of 5 to 10 days. I'll make sure to get that sorted for you.\nBuyer: Sounds good. Can you confirm the usual terms for this order?\nRussin: Yes, as an established account, the written quote will confirm the numbers and terms we discuss, but I can't provide open-ended guarantees.\nBuyer: Understood. Can we also expedite the shipping?\nRussin: I can mark this as a rush job for you. We can consider truck delivery, depending on availability.\nBuyer: Perfect, we really need this to go out as soon as possible.\nRussin: I'll prioritize this order, Jordan. You should expect a follow-up confirmation shortly.\nBuyer: Thank you, Jacob. I really appreciate the quick response.\nRussin: No problem at all! I\u2019ll ensure everything is processed quickly. Anything else you need today?\nBuyer: That covers it for now. Looking forward to your quote.\nRussin: I\u2019ll send that over as soon as possible. Thank you for your business, Jordan.\nBuyer: Thanks, Jacob. Talk soon!"
+    },
+    {
+      "call_id": "call_russin_0002",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:19Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "ad_moyer_road_supply",
+      "customer": {
+        "company_name": "A.D.MOYER ROAD SUPPLY",
+        "contact_name": "Rita Lund"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "SPEC_SUBSTITUTION",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "cedar_bevel",
+        "eastern_wht_pin_ac",
+        "frp",
+        "ijoist_ewp_lvl",
+        "syp_hf_2",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "4c827755c413364d",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Sami helps Rita place an order for lumber and siding, confirming details for a quote.",
+        "products_mentioned": [
+          "CEDAR BEVEL",
+          "EASTERN WHT PIN AC",
+          "FRP"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami. How can I help you today?\nBuyer: Hi, this is Rita Lund from A.D.MOYER ROAD SUPPLY.\nRussin: Great to hear from you, Rita! What can I assist you with today?\nBuyer: We're looking to replenish some stock, specifically cedar siding and some dimensional lumber.\nRussin: Sure, I can help with that. Are you looking at the CEDAR BEVEL for the siding?\nBuyer: Yes, that\u2019s correct. I need about 1,500 square feet of CEDAR BEVEL.\nRussin: Perfect, we typically have a lead time of 7 to 14 days for that. Would you like me to check availability?\nBuyer: Yes, please do. Also, we need some eastern white pine.\nRussin: For that, are you thinking about the EASTERN WHT PIN AC? It\u2019s kiln dried and available in various board foot quantities.\nBuyer: Yes, we would like 3,000 board feet of that.\nRussin: Got it. The lead time is between 5 to 12 days for the EASTERN WHT PIN AC. Is there anything else you need?\nBuyer: I also need some fiberglass reinforced panels for our commercial kitchen. How's your supply on FRP?\nRussin: We can certainly provide FRP panels. The lead time is usually around 3 to 10 days. How many sheets do you need?\nBuyer: We\u2019ll take 20 sheets of FRP.\nRussin: Noted. I\u2019ll compile a quote for the CEDAR BEVEL, EASTERN WHT PIN AC, and FRP. Since we have an established account, I\u2019ll include our usual terms in the written quote to confirm numbers and terms.\nBuyer: That sounds good, Sami. Can you also include the lead times in the quote?\nRussin: Absolutely, I\u2019ll make sure to specify the lead times for each product as well. Is there anything else before I send this over?\nBuyer: No, that should cover it. Thank you!\nRussin: Thank you, Rita! I\u2019ll get that quote prepared and follow up shortly.\nBuyer: Looking forward to it!\nRussin: Have a great day!"
+    },
+    {
+      "call_id": "call_russin_0003",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:18Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "aj_blosenski_services_inc",
+      "customer": {
+        "company_name": "A. J. BLOSENSKI SERVICES INC",
+        "contact_name": "Derek Hayes"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FREIGHT_CONSTRAINED",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "fur_trim"
+      ],
+      "metadata": {
+        "generation_seed": "e28ec2a08c3ca9c1",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "XS",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Scheduled a follow-up call for a quote on FURU-TRIM.",
+        "products_mentioned": [
+          "FURU-TRIM"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan.\nBuyer: Derek Hayes from A. J. Blosenski Services Inc.\nRussin: Hi Derek, how can I assist you today?\nBuyer: I'm looking to check on some FURU-TRIM for a project we're starting soon.\nRussin: Sure, I can help with that. How much are you looking to order?\nBuyer: We need about 250 linear feet.\nRussin: Great, we typically have a lead time of about 3 to 7 days on FURU-TRIM. Are you looking for any specific grades or finishes?\nBuyer: Just the standard interior packs will work for us.\nRussin: Got it. I\u2019ll make sure to get you a quote on that. Also, just to confirm, are you aware of our payment terms?\nBuyer: Yes, I understand it needs to be on the formal quote.\nRussin: Exactly, the written quote will govern, and our credit team may need to confirm anything new for you.\nBuyer: That sounds good. When can I expect the quote?\nRussin: I can have that ready for you by tomorrow morning. Would you like to schedule a follow-up call then?\nBuyer: Yes, that works for me.\nRussin: Perfect, how does 10 AM sound?\nBuyer: 10 AM is great.\nRussin: Awesome, I\u2019ll set that up. Is there anything else you need in the meantime?\nBuyer: No, that covers it for now.\nRussin: Alright, Derek, I\u2019ll talk to you tomorrow at 10 AM. Thanks for your call!\nBuyer: Thank you, Ryan."
+    },
+    {
+      "call_id": "call_russin_0004",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:23Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "abc_supply_profile_a",
+      "customer": {
+        "company_name": "ABC SUPPLY",
+        "contact_name": "Amanda Dubois"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FIRST_TIME_BUYER",
+      "outcome_target": "NURTURE_STALL",
+      "primary_product_ids": [
+        "abx_capboard",
+        "cedar_siding",
+        "cedar_lmd",
+        "fur_trim",
+        "mcl",
+        "ponderosa_pine",
+        "syp_hf_2",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "7d6741cfe45aad70",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "L",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna discussed product options with Amanda, who is considering cedar siding and trim for a new project.",
+        "products_mentioned": [
+          "CEDAR SIDING",
+          "FURU-TRIM",
+          "ABX CAPBOARD"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna. How can I assist you today?\nBuyer: Hi Joanna, this is Amanda Dubois from ABC SUPPLY.\nRussin: Hi Amanda! Great to connect with you. What can I help you find today?\nBuyer: I'm looking to get some quotes for a few products, particularly cedar siding and trim options.\nRussin: Sure, I can help with that. For cedar siding, we have a variety of options. Our CEDAR SIDING typically has a lead time of about 7 to 14 days. How much square footage are you looking for?\nBuyer: We're estimating around 2,000 square feet for a new project.\nRussin: Perfect, I can get a quote prepared for that. Do you have a preference on the grade or any specific dimensions?\nBuyer: We're looking for something standard, nothing too specific on the grade.\nRussin: Understood. And for trim, we also have options like the FURU-TRIM, which is great for interior applications. It generally has a lead time of 3 to 7 days. How much linear footage do you need for that?\nBuyer: Around 500 linear feet should work.\nRussin: Got it. I will prepare a quote for both the CEDAR SIDING and the FURU-TRIM. Is there anything else you might need?\nBuyer: I might also be interested in some ABX CAPBOARD for exterior trim, but I'm not sure on the quantities yet.\nRussin: No problem, I can include that as well. The ABX CAPBOARD typically has a lead time of 5 to 10 days. Once you finalize the quantities, just let me know.\nBuyer: That sounds good. What are your usual terms for these orders?\nRussin: Since you\u2019re setting up an account, I\u2019ll send a written quote that confirms all the numbers and terms. It\u2019s always best to have everything in writing.\nBuyer: That makes sense. I'll review what you send over.\nRussin: Great! I can follow up with you in a few days to check in. Would that work for you?\nBuyer: Yes, that would be helpful. Thank you, Joanna.\nRussin: Thank you, Amanda! I appreciate your time today. Talk soon.\nBuyer: Talk soon."
+    },
+    {
+      "call_id": "call_russin_0005",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:19Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "abc_supply_profile_b",
+      "customer": {
+        "company_name": "ABC SUPPLY",
+        "contact_name": "Marcus Martinez"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "PRICE_PUSHBACK",
+      "outcome_target": "NOT_A_FIT",
+      "primary_product_ids": [
+        "abx_capboard",
+        "cedar_bevel",
+        "cedar_siding",
+        "cedar_lmd",
+        "furu_pres_treated",
+        "mcl",
+        "perm",
+        "ponderosa_pine"
+      ],
+      "metadata": {
+        "generation_seed": "f06e5ebc50a10dea",
+        "priority": "high",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "XL",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Buyer is concerned about pricing and may not proceed with the order.",
+        "products_mentioned": [
+          "CEDAR SIDING",
+          "ABX CAPBOARD"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.\nBuyer: Marcus Martinez from ABC SUPPLY.\nRussin: Hi Marcus, how can I assist you today?\nBuyer: I'm looking to get some pricing on Cedar siding and possibly some ABX capboards.\nRussin: Sure, we have a variety of Cedar siding options available, typically in 7 to 14 days lead time. How much square footage are you looking to order?\nBuyer: We're thinking about around 2,000 square feet of Cedar siding. What are your current prices?\nRussin: I can get you a quote on that. For ABX capboards, how many pieces are you considering?\nBuyer: We need about 500 pieces of ABX capboard as well.\nRussin: Great! I'll prepare a quote for both items. Just to confirm, do you have a specific grade in mind for the Cedar siding?\nBuyer: We're looking for exterior spec grades, but we have to keep an eye on pricing.\nRussin: Understood. I\u2019ll make sure to include those specifications in the quote. Just so you know, the written quote will confirm the numbers and terms since we have an established account.\nBuyer: Okay, but I\u2019ve noticed that your prices have been a bit higher lately compared to some of your competitors.\nRussin: I understand that pricing is a concern. The quality of our products does reflect in the pricing, but I\u2019ll see what I can do to provide some competitive options. Would you be open to considering some alternatives?\nBuyer: Possibly, but I really need to stick to a budget, and I've seen lower prices for similar items elsewhere.\nRussin: I appreciate that, Marcus. Let me work on this and see if we can find some more budget-friendly options. I\u2019ll follow up with a detailed quote shortly.\nBuyer: Sounds good, but I'm not sure if I can go through with this if the prices don\u2019t come down.\nRussin: I completely understand your position. I\u2019ll do my best to offer you the best possible solutions and pricing. Thank you for your time, and I\u2019ll be in touch soon.\nBuyer: Thank you, Jacob.\nRussin: Thank you, Marcus. Talk to you soon."
+    },
+    {
+      "call_id": "call_russin_0006",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:17Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "ace_hardware",
+      "customer": {
+        "company_name": "ACE HARDWARE",
+        "contact_name": "Sofia Obeng"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "STOCK_CHECK",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "syp_hf_2"
+      ],
+      "metadata": {
+        "generation_seed": "187273c2fec4c711",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Sofia Obeng confirms a 1,000 board feet order for SYP/HF 2 lumber and requests a quote.",
+        "products_mentioned": [
+          "SYP/HF 2"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.\nBuyer: Hi Sami, this is Sofia Obeng from ACE HARDWARE.\nRussin: Hi Sofia, how can I assist you today?\nBuyer: I'm checking stock on some of your SYP/HF 2 lumber. Do you have that available?\nRussin: Let me pull that up for you. We typically have SYP/HF 2 in stock, but let me confirm the current availability.\nBuyer: Great, I need to know if you can ship it out soon.\nRussin: Our lead time for SYP/HF 2 is usually between 2 to 7 days. Let me check our inventory levels.\nBuyer: That sounds good. I'm looking for around 1,000 board feet.\nRussin: We have enough to cover that order. Would you like me to prepare a quote for you?\nBuyer: Yes, please. Also, can you confirm the pricing?\nRussin: I\u2019ll include the pricing details in the quote. Just a reminder, our usual terms apply, and the written quote will confirm all numbers and terms.\nBuyer: Understood. I appreciate that.\nRussin: Is there anything else you need along with the SYP/HF 2?\nBuyer: Not at the moment, but I might need some other products soon.\nRussin: Sounds good! I\u2019ll get that quote sent over for the SYP/HF 2. Expect it shortly.\nBuyer: Thank you, Sami. I look forward to it.\nRussin: You're welcome, Sofia! Talk soon."
+    },
+    {
+      "call_id": "call_russin_0007",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:18Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "ace_hardware_platt",
+      "customer": {
+        "company_name": "ACE HARDWARE/PLATT",
+        "contact_name": "Devon Bauer"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "MULTI_LINE_JOB_QUOTE",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "4a63d264ff01ac9b",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Ryan and Devon discuss a quote for WESTERN RED CEDAR siding materials.",
+        "products_mentioned": [
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan. How can I help you today?\nBuyer: Hi Ryan, this is Devon Bauer from ACE HARDWARE/PLATT.\nRussin: Great to connect, Devon! What can I assist you with?\nBuyer: We're looking to get a quote for some siding materials, particularly WESTERN RED CEDAR.\nRussin: Sure, I can help with that. How much are you looking to order?\nBuyer: We're considering around 1,500 board feet.\nRussin: That sounds good. Just to confirm, you need bevel and clear grades?\nBuyer: Yes, that's correct.\nRussin: Perfect. The lead time for the WESTERN RED CEDAR is typically between 7 to 14 days. Does that work for your timeline?\nBuyer: Yes, that should be fine.\nRussin: Great! I\u2019ll prepare a quote for 1,500 board feet of WESTERN RED CEDAR and send it over.\nBuyer: That sounds good. Can you also let me know about payment terms?\nRussin: Of course! Payment and terms will be whatever is on the formal quote and your approved account file. We'll need credit confirmation for anything new, and the written quote governs.\nBuyer: Understood, thanks for clarifying that.\nRussin: No problem at all! I\u2019ll ensure the quote includes all necessary details.\nBuyer: Thanks, Ryan. I appreciate your help with this.\nRussin: You're welcome, Devon! I'll have that quote ready shortly and follow up with you.\nBuyer: Sounds good. Talk soon!\nRussin: Talk to you soon, Devon!"
+    },
+    {
+      "call_id": "call_russin_0008",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:22Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "ace_hardware_wharnton",
+      "customer": {
+        "company_name": "ACE HARDWARE/WHARTON",
+        "contact_name": "Claire Costa"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "ADD_ON_REORDER",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "abx_capboard",
+        "cedar_siding",
+        "eastern_wht_pin_ac",
+        "ijoist_ewp_lvl",
+        "mcl",
+        "western_red_cedar",
+        "syp_hf_2",
+        "yellow_pine"
+      ],
+      "metadata": {
+        "generation_seed": "2188bfcbab740623",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna confirms a reorder of CEDAR SIDING and ABX CAPBOARD with Claire, scheduling a follow-up call.",
+        "products_mentioned": [
+          "CEDAR SIDING",
+          "ABX CAPBOARD"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Hi Joanna, this is Claire Costa from ACE HARDWARE/WHARTON.\nRussin: Hi Claire, how can I assist you today?\nBuyer: I'm looking to reorder some lumber and trim products we typically use.\nRussin: Absolutely! What specific items do you need this time?\nBuyer: We need more CEDAR SIDING and some ABX CAPBOARD for our upcoming projects.\nRussin: Great choices! We can get you some CEDAR SIDING in the usual job-lot sizes. What dimensions were you thinking?\nBuyer: We usually go with the standard 1x8 for the siding.\nRussin: Got it, and how many square feet are you looking to order?\nBuyer: Around 2,500 square feet should do.\nRussin: For the ABX CAPBOARD, do you want the standard lengths as usual?\nBuyer: Yes, please. We'll go with 16-foot lengths like before.\nRussin: Sounds good! I can check the availability and lead times for those.\nBuyer: That would be great.\nRussin: CEDAR SIDING generally has a lead time of 7 to 14 days, and the ABX CAPBOARD is around 5 to 10 days. Does that work for your schedule?\nBuyer: Yes, that timeline works. Let's proceed with that.\nRussin: I\u2019ll prepare a quote for the total quantities and send it over. As always, our usual terms will apply, and the written quote will confirm the final numbers.\nBuyer: Perfect, let me know when you have that ready.\nRussin: I will follow up with you shortly. Can we schedule a time for a quick call to discuss any adjustments?\nBuyer: Sure, how about tomorrow at 2 PM?\nRussin: Tomorrow at 2 PM works for me. I\u2019ll call you then!\nBuyer: Great, thanks Joanna.\nRussin: Thank you, Claire. Talk to you soon!"
+    },
+    {
+      "call_id": "call_russin_0009",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:18Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "ace_lumber",
+      "customer": {
+        "company_name": "ACE LUMBER",
+        "contact_name": "Hassan Curtis"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "RUSH_JOB",
+      "outcome_target": "NURTURE_STALL",
+      "primary_product_ids": [
+        "cedar_lmd",
+        "doug_fir",
+        "eastern_wht_pin_ac",
+        "ijoist_ewp_lvl",
+        "syp_hf_2",
+        "mcl",
+        "perm",
+        "red_red_fir"
+      ],
+      "metadata": {
+        "generation_seed": "340ee4db307bc15d",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Jacob assisted Hassan with a rush order for lumber, confirming availability and preparing a quote.",
+        "products_mentioned": [
+          "CEDAR LMD",
+          "DOUG FIR"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.\nBuyer: Hassan Curtis from ACE LUMBER.\nRussin: Hi Hassan, how can I assist you today?\nBuyer: We're in a bit of a rush for some lumber for a project. What do you have available?\nRussin: I can help with that! Are you looking for any specific types of lumber?\nBuyer: Yes, I'm interested in CEDAR LMD and DOUG FIR if you have them in stock.\nRussin: We do have CEDAR LMD available, typically in a lead time of about 5 to 12 days. DOUG FIR is also in stock, with a lead time of around 3 to 10 days.\nBuyer: Great, what dimensions do you have for those?\nRussin: For CEDAR LMD, we have various nominal sizes, and for DOUG FIR, we can provide studs and boards in standard dimensions.\nBuyer: Can you give me a quote on a truckload of both?\nRussin: Absolutely, I can get that prepared for you. Just to confirm, you\u2019re looking for a truckload of each?\nBuyer: Yes, please.\nRussin: I\u2019ll need to check the availability and get back to you with a quote. Just a reminder, written quotes will confirm numbers and terms.\nBuyer: Understood, I appreciate that.\nRussin: Is there anything else you need while I get this quote ready?\nBuyer: Not at the moment, just the lumber.\nRussin: Alright, I\u2019ll follow up with the quote shortly. Thank you, Hassan.\nBuyer: Thank you, Jacob."
+    },
+    {
+      "call_id": "call_russin_0010",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:11:19Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "aew_building_materials_inc",
+      "customer": {
+        "company_name": "A.E.W BUILDING MATERIALS INC",
+        "contact_name": "Renee Patel"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "SPEC_SUBSTITUTION",
+      "outcome_target": "NOT_A_FIT",
+      "primary_product_ids": [
+        "frp",
+        "fur_trim"
+      ],
+      "metadata": {
+        "generation_seed": "f266a9b2ed16c16a",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Renee was seeking information for panels and trim but decided it wasn't a fit for their project needs.",
+        "products_mentioned": [
+          "FRP",
+          "FURU-TRIM"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.  \nBuyer: Hi Sami, this is Renee Patel from A.E.W BUILDING MATERIALS INC.  \nRussin: Hi Renee, how can I assist you today?  \nBuyer: I'm looking for some information on panels and trim for a project we have coming up.  \nRussin: Sure, we have FRP, which are fiberglass reinforced wall panels great for commercial kitchens and restrooms. Would you be interested in that?  \nBuyer: Yes, I\u2019ve used FRP before. What's the typical lead time?  \nRussin: The lead time is generally between 3 to 10 days. How many sheets are you looking for?  \nBuyer: I need about 50 sheets.  \nRussin: Got it. And what about trim? We have FURU-TRIM, which are furring and trim strips available in contractor packs.  \nBuyer: That sounds good too. What\u2019s the lead time for the FURU-TRIM?  \nRussin: That would be around 3 to 7 days. Would you need linear feet or specific packs?  \nBuyer: Probably around 200 linear feet for the trim.  \nRussin: Alright, I can prepare a quote for both the FRP and the FURU-TRIM. Just to confirm, are you already set up with us for credit?  \nBuyer: We have an account, but we might need to check on the limits.  \nRussin: Payment and terms are whatever is on the formal quote and your approved account file. If there\u2019s anything new, we might need a credit review, and the written quote will govern.  \nBuyer: Understood. I have a couple of other suppliers I\u2019m considering, so I\u2019ll need to see how your prices stack up.  \nRussin: That makes sense. If there are substitutions needed, I can help with that as well.  \nBuyer: I appreciate that, but I think we might be looking for something a bit different for this project.  \nRussin: No problem at all. If you need anything else or decide to revisit this, feel free to reach out.  \nBuyer: Thank you, Sami.  \nRussin: Thank you, Renee. Have a great day."
+    },
+    {
+      "call_id": "call_russin_0011",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "agway_lumber",
+      "customer": {
+        "company_name": "AGWAY LUMBER",
+        "contact_name": "Owen Frost"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FREIGHT_CONSTRAINED",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "292eac7b7a550a2e",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Ryan confirms availability and prepares a quote for Owen's order of WESTERN RED CEDAR.",
+        "products_mentioned": [
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan.\nBuyer: Owen Frost from AGWAY LUMBER.\nRussin: Hi Owen, how can I assist you today?\nBuyer: I'm looking to check on our usual order of WESTERN RED CEDAR. Are you able to provide an update?\nRussin: Certainly! We usually keep a good stock of WESTERN RED CEDAR. Are you looking for a specific quantity?\nBuyer: Yes, we typically order around 5,000 board feet.\nRussin: Great, I can check on that quantity for you. Just a moment while I pull up the details.\nRussin: Given the current freight constraints, we might need to adjust the delivery timeline. The usual lead time is around 7 to 14 days.\nBuyer: That sounds reasonable. How's availability looking right now?\nRussin: Let me confirm our stock levels. It appears we have enough available to fulfill your order, but it's best to lock it in soon due to demand.\nBuyer: I understand. What do you need from me to secure that?\nRussin: If you could confirm the quantity, I\u2019ll prepare a quote for you. As an established account, we can proceed with our usual terms, but remember that the written quote will confirm all numbers and terms.\nBuyer: Yes, let\u2019s go with the 5,000 board feet.\nRussin: Perfect, I\u2019ll get that quote prepared and sent over. Would you like it delivered as usual to Ithaca?\nBuyer: Yes, please. Make sure to include the freight details.\nRussin: Absolutely, I\u2019ll include that in the quote. Expect it in your inbox shortly.\nBuyer: Thank you, Ryan. I'll look out for it.\nRussin: Thank you, Owen! I appreciate your business. Let me know if you need anything else in the meantime.\nBuyer: Will do. Talk soon!\nRussin: Talk soon! Bye now."
+    },
+    {
+      "call_id": "call_russin_0012",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:28Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "alcoa_gw_millwork_lumber",
+      "customer": {
+        "company_name": "ALCOA/G&W MILLWORK & LUMBER",
+        "contact_name": "Priya Nowak"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FIRST_TIME_BUYER",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "red_red_fir",
+        "t_groove"
+      ],
+      "metadata": {
+        "generation_seed": "bbcc740c3fa21f09",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna discussed pricing and availability of RED RED FIR and T-GROOVE with Priya.",
+        "products_mentioned": [
+          "RED RED FIR",
+          "T-GROOVE"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Hi Joanna, this is Priya Nowak from ALCOA/G&W MILLWORK & LUMBER.\nRussin: Nice to meet you, Priya! How can I assist you today?\nBuyer: I\u2019m looking to get some pricing and availability on RED RED FIR and T-GROOVE for an upcoming project.\nRussin: Sure! For the RED RED FIR, we typically have lead times of 7 to 14 days. How many board feet are you considering?\nBuyer: We\u2019re looking at around 5,000 board feet for that.\nRussin: I can check that for you. And how about the T-GROOVE? What\u2019s your square footage requirement?\nBuyer: We need about 2,500 square feet of T-GROOVE.\nRussin: Great. T-GROOVE also has a lead time of 5 to 14 days. I\u2019ll include that in the quote. Are there any specific grades you\u2019re interested in for the lumber?\nBuyer: We usually go for the appearance grades for both products, if that\u2019s available.\nRussin: Absolutely, I\u2019ll note that down. Just to confirm, I\u2019ll compile all this into a quote for you. Our usual terms apply, and the quote will confirm the numbers and terms.\nBuyer: Sounds good! When can I expect to receive the quote?\nRussin: You should have the quote in your inbox within 24 hours. Is there anything else you\u2019d like to discuss in the meantime?\nBuyer: No, that covers everything for now. Thank you, Joanna!\nRussin: You\u2019re welcome, Priya! I appreciate your business and look forward to working together. Talk soon!\nBuyer: Bye!"
+    },
+    {
+      "call_id": "call_russin_0013",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "alderfer_lumber_co_inc",
+      "customer": {
+        "company_name": "ALDERFER LUMBER CO INC",
+        "contact_name": "Tyler Novak"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "PRICE_PUSHBACK",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "doug_fir",
+        "perm",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "c09a609b062a19d7",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Jacob scheduled a callback with Tyler for a quote on DOUG FIR and PERM.",
+        "products_mentioned": [
+          "DOUG FIR",
+          "PERM"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.  \nBuyer: Tyler Novak from Alderfer Lumber Co Inc.  \nRussin: Great to connect, Tyler! How can I assist you today?  \nBuyer: I'm looking to get some pricing on a few items we need to restock.  \nRussin: Sure thing! What specific products do you have in mind?  \nBuyer: We need some DOUG FIR for framing and a bit of PERM for our moulding.  \nRussin: We can definitely help with that. For DOUG FIR, we typically have it available in various dimensions. What size are you looking for?  \nBuyer: We're looking at 2x4s primarily.  \nRussin: Got it! Our DOUG FIR 2x4s are a popular choice. Typically, we can have those shipped in about 3 to 10 days.  \nBuyer: That sounds good. Now for the PERM, what are the lead times?  \nRussin: The PERM usually takes about 5 to 12 days for delivery. How many linear feet do you need?  \nBuyer: We're thinking around 800 linear feet for this order.  \nRussin: Great, I can get you a quote on that. However, I want to let you know that I will need to confirm pricing since we\u2019re experiencing some fluctuations lately.  \nBuyer: I understand. Last time I ordered, the prices were a bit higher than expected.  \nRussin: Yes, pricing can vary based on market conditions. I assure you that once I pull together the written quote, it will reflect our best pricing. Would that work for you?  \nBuyer: Sure, I just want to ensure we\u2019re getting the best deal.  \nRussin: Absolutely, I\u2019ll do my best to accommodate that. When would you like me to follow up with the quote?  \nBuyer: Could you call me back tomorrow?  \nRussin: Sure, I can call you back tomorrow with the details and pricing. Would the same time work for you?  \nBuyer: Yes, that works well for me.  \nRussin: Perfect, I\u2019ll schedule that. Talk to you tomorrow, Tyler!  \nBuyer: Thanks, Jacob. Talk soon."
+    },
+    {
+      "call_id": "call_russin_0014",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:23Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "am_lumber",
+      "customer": {
+        "company_name": "AM LUMBER",
+        "contact_name": "Elena Khan"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "STOCK_CHECK",
+      "outcome_target": "NURTURE_STALL",
+      "primary_product_ids": [
+        "syp_hf_2"
+      ],
+      "metadata": {
+        "generation_seed": "94cd7b35f57cb0aa",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "XS",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Buyer is interested in SYP/HF 2 but wants to wait for a quote before committing.",
+        "products_mentioned": [
+          "SYP/HF 2"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.\nBuyer: Elena Khan from AM LUMBER.\nRussin: Hi, Elena! How can I assist you today?\nBuyer: I wanted to check on the availability of SYP/HF 2.\nRussin: Sure! We usually have SYP/HF 2 available with a lead time of about 2 to 7 days. Are you looking for a specific quantity?\nBuyer: Yes, I'm considering around 5,000 board feet.\nRussin: That sounds good. Let me confirm our stock levels right now for you.\nBuyer: Okay, thanks!\nRussin: It looks like we currently have sufficient stock of SYP/HF 2 to fulfill your order. Would you need delivery, or will you pick it up?\nBuyer: We\u2019ll likely need delivery to New Haven.\nRussin: Great! Just to confirm, delivery is available, and we can schedule that once you decide on the order.\nBuyer: Sounds good. What about payment terms?\nRussin: Payment and terms are whatever is on the formal quote and your approved account file\u2014credit may need to confirm anything new, and the written quote governs.\nBuyer: Understood, I\u2019ll need to see the quote.\nRussin: Absolutely, I can send that over once we finalize the details.\nBuyer: Perfect, I\u2019ll hold off on the order until I get that.\nRussin: No problem, I can follow up with you early next week to see if you have any questions.\nBuyer: Sounds like a plan, Sami. Thank you!\nRussin: Thank you, Elena! Talk to you soon."
+    },
+    {
+      "call_id": "call_russin_0015",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:26Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "american_builders_contractor_supply",
+      "customer": {
+        "company_name": "AMERICAN BUILDERS & CONTRACTOR SUPPLY",
+        "contact_name": "Javier Okafor"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "MULTI_LINE_JOB_QUOTE",
+      "outcome_target": "NOT_A_FIT",
+      "primary_product_ids": [
+        "ijoist_ewp_lvl",
+        "select_tie_pine",
+        "syp_hf_2",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "d0fee32a44f0addf",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "L",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Russin and Javier discuss product availability, but ultimately determine Russin may not be the best fit for the project.",
+        "products_mentioned": [
+          "I-JOIST/EWP/LVL",
+          "SELECT TIE PINE",
+          "SYP/HF 2"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan.\nBuyer: Javier Okafor from AMERICAN BUILDERS & CONTRACTOR SUPPLY.\nRussin: Hi Javier, how can I assist you today?\nBuyer: I'm looking for a quote on some I-JOIST/EWP/LVL and SELECT TIE PINE for an upcoming project.\nRussin: Sure, I can help with that. Can you provide the quantities and any specific dimensions you need?\nBuyer: We need about 500 pieces of the I-JOIST/EWP/LVL and 1,200 board feet of SELECT TIE PINE.\nRussin: Got it. For the I-JOIST/EWP/LVL, we typically have a lead time of 10 to 21 days. And for SELECT TIE PINE, it ranges from 5 to 12 days.\nBuyer: That sounds good. Can you also let me know about SYP/HF 2? I might need that as well.\nRussin: Sure, SYP/HF 2 has a lead time of about 2 to 7 days. How much are you considering?\nBuyer: I might need another 800 board feet of that.\nRussin: Great, I\u2019ll include that in the quote. Just to confirm, our usual terms apply, and I'll file this under your account. The written quote will govern all numbers and terms.\nBuyer: Understood. I appreciate that. However, I\u2019m also looking at some other suppliers and trying to get the best pricing.\nRussin: I completely understand. If you find better pricing, feel free to share that with me, and I\u2019ll see what we can do. However, I want to ensure you're aware of our lead times as well.\nBuyer: Yes, I appreciate that. But I need to be mindful of my budget constraints.\nRussin: Absolutely, I\u2019ll have the quote ready soon. However, based on current pricing and lead times, we may not be the best fit for your needs.\nBuyer: I see what you mean. I\u2019ll look over everything once you send it and weigh my options.\nRussin: That sounds fair. I\u2019ll follow up with the details soon, but it looks like we might not align this time.\nBuyer: Thank you, Ryan. I\u2019ll keep an eye out for your quote.\nRussin: Thank you for your understanding, Javier. Have a great day!"
+    },
+    {
+      "call_id": "call_russin_0016",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:24Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "andrews",
+      "customer": {
+        "company_name": "ANDREWS",
+        "contact_name": "Naomi Olsen"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "ADD_ON_REORDER",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "mcl",
+        "perm"
+      ],
+      "metadata": {
+        "generation_seed": "057439fbf2027791",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna assists Naomi with an add-on reorder for lumber and moulding.",
+        "products_mentioned": [
+          "MCL",
+          "PERM"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Naomi Olsen from ANDREWS.\nRussin: Hi Naomi, how can I assist you today?\nBuyer: I'm looking to place an add-on reorder for some materials we recently used up.\nRussin: Absolutely, what products are you looking to reorder?\nBuyer: We need more of the MCL. We used quite a bit on our last project.\nRussin: Great choice! How much are you thinking? We typically handle it by the board foot.\nBuyer: We had ordered about 2,500 board feet last time. I think we need a similar amount again.\nRussin: Let me check our availability for you. We usually have MCL in stock, and lead time is around 3 to 10 days.\nBuyer: That works for us. We also need some of the PERM for our moulding needs.\nRussin: Sure! The PERM typically comes in linear feet, and we can usually get that to you in about 5 to 12 days.\nBuyer: Perfect. Can you give me an estimate on the quantities for both?\nRussin: For the MCL, we can do 2,500 board feet, and for the PERM, how about 1,000 linear feet? Does that sound good?\nBuyer: Yes, that sounds about right.\nRussin: Excellent! Now, just a reminder, payment and terms are whatever is on the formal quote and your approved account file.\nBuyer: Understood, I\u2019ll make sure to have the formal quote ready.\nRussin: Great! I\u2019ll prepare the quote and send it over for your confirmation. Is there anything else I can help you with?\nBuyer: No, that should be all for now. Thank you, Joanna.\nRussin: Thank you, Naomi! I\u2019ll follow up shortly with the quote."
+    },
+    {
+      "call_id": "call_russin_0017",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:27Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "anthony_forest_products_co",
+      "customer": {
+        "company_name": "ANTHONY FOREST PRODUCTS CO",
+        "contact_name": "Kyle Romano"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "RUSH_JOB",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "ponderosa_pine"
+      ],
+      "metadata": {
+        "generation_seed": "292338f12956e829",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Kyle Romano from ANTHONY FOREST PRODUCTS CO requests a quote for PONDEROSA PINE for a rush job.",
+        "products_mentioned": [
+          "PONDEROSA PINE"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.\nBuyer: Hi Jacob, this is Kyle Romano from ANTHONY FOREST PRODUCTS CO.\nRussin: Hi Kyle! How can I assist you today?\nBuyer: We're in need of some PONDEROSA PINE for a rush job. Can you check availability?\nRussin: Sure, I can help with that. What dimensions and quantities are you looking for?\nBuyer: We're looking for 2x6 boards, around 2,000 board feet if possible.\nRussin: Let me check that for you.\nRussin: We do have PONDEROSA PINE in stock, and I can get those dimensions for you. The lead time is typically between 5 to 14 days.\nBuyer: That fits our timeline. Can you give me a quote on that?\nRussin: Absolutely, I\u2019ll prepare a written quote for the 2x6 PONDEROSA PINE. Just to confirm, that\u2019s 2,000 board feet, correct?\nBuyer: Yes, that\u2019s correct.\nRussin: Great! I\u2019ll also include our usual terms in the quote, but just to note, it will confirm all numbers and terms in writing as usual.\nBuyer: Sounds good, I appreciate that.\nRussin: I\u2019ll get that sent over to you shortly. Anything else you need while I have you?\nBuyer: No, that should be it for now. Thanks for the quick response!\nRussin: You\u2019re welcome, Kyle! Talk soon.\nBuyer: Bye, Jacob."
+    },
+    {
+      "call_id": "call_russin_0018",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "arizona_lumber_supply",
+      "customer": {
+        "company_name": "ARIZONA LUMBER & SUPPLY",
+        "contact_name": "Anika Li"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "SPEC_SUBSTITUTION",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "cedar_bevel",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "0598c44dd9d3df17",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Sami from Russin Lumber scheduled a follow-up call with Anika Li to discuss quotes for siding products.",
+        "products_mentioned": [
+          "CEDAR BEVEL",
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.\nBuyer: Anika Li from ARIZONA LUMBER & SUPPLY.\nRussin: Hi Anika, how can I assist you today?\nBuyer: I\u2019m looking to check on some siding options. We\u2019re running low on stock.\nRussin: Sure, we have CEDAR BEVEL and WESTERN RED CEDAR available, both are popular with our customers. What dimensions are you considering?\nBuyer: I need to restock on CEDAR BEVEL, probably around 1,500 square feet. What\u2019s the lead time?\nRussin: For CEDAR BEVEL, we typically see a lead time of about 7 to 14 days. Would you like a quote for that quantity?\nBuyer: Yes, please. And I\u2019m also interested in the WESTERN RED CEDAR. How does that compare?\nRussin: The WESTERN RED CEDAR is available in board feet and has similar lead times. It\u2019s a high rotation SKU, so we can fulfill your order quickly. How much do you need of that?\nBuyer: I think about 1,000 board feet should do it. Can you also include pricing for that?\nRussin: Absolutely, I\u2019ll get you a quote for both products. Just to confirm, our usual terms apply, and I\u2019ll make sure the written quote includes all numbers and terms.\nBuyer: Sounds good. Can you also check if there are any substitutions available for the CEDAR BEVEL? Sometimes we run into stock issues with that.\nRussin: I can check that for you. There are occasional substitutions we can offer if necessary. I\u2019ll include that information in the quote as well.\nBuyer: Great, I\u2019ll wait for your email then. Can we schedule a follow-up call to discuss further?\nRussin: Of course! How does Thursday at 10 AM sound?\nBuyer: That works for me. Thank you, Sami!\nRussin: Thank you, Anika. I look forward to our call on Thursday."
+    },
+    {
+      "call_id": "call_russin_0019",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:28Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "aston_lumber",
+      "customer": {
+        "company_name": "ASTON LUMBER",
+        "contact_name": "Rob Washington"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FREIGHT_CONSTRAINED",
+      "outcome_target": "NURTURE_STALL",
+      "primary_product_ids": [
+        "cedar_lmd",
+        "t_groove",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "5c425261ec5ee77e",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Ryan and Rob discussed availability of CEDAR LMD and WESTERN RED CEDAR due to freight constraints.",
+        "products_mentioned": [
+          "CEDAR LMD",
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan. How can I help you today?\nBuyer: Hi Ryan, this is Rob Washington from Aston Lumber.\nRussin: Hi Rob! What can I assist you with?\nBuyer: I'm looking to check availability on some cedar products, specifically CEDAR LMD and WESTERN RED CEDAR.\nRussin: Sure, I can help with that. For the CEDAR LMD, we've got typical lead times around 5 to 12 days. How much board footage are you looking for?\nBuyer: I think we need around 2,000 board feet of CEDAR LMD. What about the WESTERN RED CEDAR?\nRussin: The WESTERN RED CEDAR usually has a lead time of 7 to 14 days. How much are you considering for that?\nBuyer: We're looking for about 1,500 board feet of the WESTERN RED CEDAR.\nRussin: Great choices! Just to confirm, both products are available, but I recommend placing the order soon due to freight constraints we\u2019ve been experiencing.\nBuyer: Yeah, I've noticed some delays lately. What are the typical terms for these orders?\nRussin: Since you have an established account with us, we can proceed with the usual terms, but I will need to send you a written quote to confirm the numbers and terms. Just to note, our freight options may vary based on availability.\nBuyer: That sounds good. Can you send over that quote? I want to make sure everything aligns before we proceed.\nRussin: Absolutely, Rob. I\u2019ll prepare that quote and send it over shortly. Is there anything else I can assist you with today?\nBuyer: No, that covers everything for now. Thanks, Ryan.\nRussin: Thank you, Rob! I\u2019ll be in touch soon with that quote.\nBuyer: Looking forward to it. Bye.\nRussin: Bye."
+    },
+    {
+      "call_id": "call_russin_0020",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bh_smith_profile_a",
+      "customer": {
+        "company_name": "B.H. SMITH",
+        "contact_name": "Melissa Chen"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FIRST_TIME_BUYER",
+      "outcome_target": "NOT_A_FIT",
+      "primary_product_ids": [
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "cfc7d14ebacc3e7a",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "XS",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Buyer is looking for WESTERN RED CEDAR but may seek other suppliers due to stock issues.",
+        "products_mentioned": [
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Melissa Chen from B.H. Smith.\nRussin: Hi Melissa, how can I assist you today?\nBuyer: I'm looking for some siding options for a project we have coming up.\nRussin: Great! We have a variety of products. Are you interested in specific types of siding?\nBuyer: Yes, I'm particularly interested in WESTERN RED CEDAR.\nRussin: We have WESTERN RED CEDAR available. It typically comes in board feet and has a lead time of about 7 to 14 days. How much are you considering?\nBuyer: We're looking at around 2,000 board feet.\nRussin: That\u2019s a solid quantity. Just to let you know, the payment and terms would be whatever is on the formal quote and your approved account file. We would need to confirm with our credit department for anything new.\nBuyer: I understand. We haven't worked with you before, so that makes sense.\nRussin: Absolutely, and since it\u2019s your first order, we just want to ensure everything is in place. Would you need any samples?\nBuyer: I think we might want to see some samples before placing an order.\nRussin: That\u2019s a good approach. Unfortunately, it looks like right now, we might not have the quantities you need in stock. Would you like me to check on any alternatives?\nBuyer: Yes, please. But if we can't get the WESTERN RED CEDAR, I might need to explore other suppliers.\nRussin: Understood. I can look into other options for you, but if WESTERN RED CEDAR is a must, it might be a challenge at this time.\nBuyer: That's alright. I appreciate your help, Joanna.\nRussin: No problem, Melissa. If you\u2019d like, I can follow up with you later when we have more information.\nBuyer: That sounds good, but I may just have to look elsewhere for this project.\nRussin: I completely understand. Thank you for considering us, and feel free to reach out anytime.\nBuyer: Will do. Thanks again! Bye.\nRussin: Bye!"
+    },
+    {
+      "call_id": "call_russin_0021",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:24Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bh_smith_profile_b",
+      "customer": {
+        "company_name": "B.H. SMITH",
+        "contact_name": "Vincent Singh"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "PRICE_PUSHBACK",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "ijoist_ewp_lvl",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "79bf786ffde24676",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Jacob provided Vincent with a quote for I-JOIST/EWP/LVL and WESTERN RED CEDAR, addressing pricing concerns.",
+        "products_mentioned": [
+          "I-JOIST/EWP/LVL",
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.\nBuyer: Hello Jacob, this is Vincent Singh from B.H. SMITH.\nRussin: Hi Vincent, how can I assist you today?\nBuyer: I wanted to check on pricing for some I-JOIST/EWP/LVL and WESTERN RED CEDAR we need for an upcoming project.\nRussin: Sure, I can help with that. What dimensions and quantities are you looking for?\nBuyer: We're going to need about 200 pieces of the I-JOIST/EWP/LVL and 1,500 board feet of the WESTERN RED CEDAR.\nRussin: Got it. Our I-JOIST/EWP/LVL has a lead time of about 10 to 21 days, and the WESTERN RED CEDAR typically ships in 7 to 14 days. Are you looking for any specific grades or treatments on those?\nBuyer: No special treatments, just standard grades for both. But I'm concerned about the pricing; we've seen higher quotes lately.\nRussin: I understand that. Our prices are competitive, but I'll make sure to provide you with the best possible quote. Let's get that figured out for you.\nBuyer: That would be great, but I need to be sure we're getting a good deal. Can you do better than what I\u2019ve been quoted?\nRussin: I can look into our current rates and see if we can offer a more favorable price. Just to confirm, our regular terms would apply, so I\u2019ll send you a written quote that reflects all the details.\nBuyer: Yes, that's important. The last supplier couldn't keep their promises on pricing.\nRussin: Absolutely, we pride ourselves on transparency. I\u2019ll ensure the quote matches your expectations. I\u2019ll send that over today, and we can finalize the order once you review it.\nBuyer: Sounds good. I appreciate your help with this, Jacob.\nRussin: No problem, Vincent. I\u2019ll get on this right away and follow up shortly. Thank you for reaching out!\nBuyer: Thank you, Jacob. Talk soon."
+    },
+    {
+      "call_id": "call_russin_0022",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:23Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "babcock_lumber",
+      "customer": {
+        "company_name": "BABCOCK LUMBER",
+        "contact_name": "Tara Doyle"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "STOCK_CHECK",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "abx_capboard",
+        "mcl"
+      ],
+      "metadata": {
+        "generation_seed": "0c14a81a19b75027",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Tara Doyle checks stock for ABX Capboard and MCL, requesting a quote.",
+        "products_mentioned": [
+          "ABX CAPBOARD",
+          "MCL"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.\nBuyer: Tara Doyle from Babcock Lumber.\nRussin: Hi Tara, how can I assist you today?\nBuyer: I'm checking on some stock for our upcoming projects. Do you have ABX Capboard available?\nRussin: Let me check that for you. The ABX Capboard typically has a lead time of about 5 to 10 days. What quantity are you looking for?\nBuyer: We're considering about 200 pieces.\nRussin: Great. I can confirm that we have enough in stock for that amount. Would you also need any other materials?\nBuyer: Yes, I might also need some MCL. Can you give me an update on that?\nRussin: The MCL usually has a lead time of 3 to 10 days as well. How many board feet are you thinking?\nBuyer: We generally use around 1,500 board feet.\nRussin: Perfect. I can include that in the quote. Just to confirm, you have an established account with us, so the usual terms will apply, but the written quote will confirm all numbers and terms.\nBuyer: That works for me. Can you send over a quote with those details?\nRussin: Absolutely, Tara. I\u2019ll prepare that and send it over shortly.\nBuyer: Thank you, Sami. I appreciate your help today.\nRussin: No problem at all! I\u2019ll be in touch soon with the quote."
+    },
+    {
+      "call_id": "call_russin_0023",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:28Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bah_lumber_profile_a",
+      "customer": {
+        "company_name": "B.A.H. LUMBER",
+        "contact_name": "Neil Nguyen"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "MULTI_LINE_JOB_QUOTE",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "ijoist_ewp_lvl",
+        "ponderosa_pine"
+      ],
+      "metadata": {
+        "generation_seed": "d1ecf8525dc9a825",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Ryan from Russin scheduled a follow-up call with Neil for a quote on I-JOIST/EWP/LVL and PONDEROSA PINE.",
+        "products_mentioned": [
+          "I-JOIST/EWP/LVL",
+          "PONDEROSA PINE"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan.\nBuyer: Hi Ryan, this is Neil Nguyen from B.A.H. LUMBER.\nRussin: Hi Neil, how can I assist you today?\nBuyer: I'm looking to get a quote for some I-JOIST/EWP/LVL and PONDEROSA PINE for an upcoming project.\nRussin: Great, I can help you with that. How many pieces of I-JOIST/EWP/LVL are you looking at?\nBuyer: We're estimating around 50 pieces.\nRussin: And for the PONDEROSA PINE, how many board feet do you need?\nBuyer: Approximately 1,000 board feet should cover it.\nRussin: Alright, so for the I-JOIST/EWP/LVL, we can typically deliver in about 10 to 21 days, and the PONDEROSA PINE has a lead time of 5 to 14 days. Does that work for your timeline?\nBuyer: Yes, that timeframe looks good. Could you send over the quote with the specifics?\nRussin: Absolutely. Just to confirm, our usual terms will apply, and I'll make sure the written quote outlines all the numbers and terms clearly.\nBuyer: Sounds good. I appreciate that.\nRussin: Do you have a preferred email for the quote?\nBuyer: Yes, please send it to neil@bahlumber.com.\nRussin: Got it, I'll send that over shortly. Would you like to schedule a follow-up call to discuss any questions or adjustments?\nBuyer: Yes, let's schedule a call for next Tuesday at 10 AM.\nRussin: Perfect, I've noted that down. I\u2019ll call you then to go over the quote and any details.\nBuyer: Thanks, Ryan. Talk to you then.\nRussin: Talk to you next week, Neil."
+    },
+    {
+      "call_id": "call_russin_0024",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:24Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bah_lumber_profile_b",
+      "customer": {
+        "company_name": "B.A.H. LUMBER",
+        "contact_name": "Yuki Diallo"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "ADD_ON_REORDER",
+      "outcome_target": "NURTURE_STALL",
+      "primary_product_ids": [
+        "cedar_bevel",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "355b93c5bc5de5fb",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna assists Yuki with a reorder of siding materials, confirming terms and preparing a quote.",
+        "products_mentioned": [
+          "CEDAR BEVEL",
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Yuki Diallo from B.A.H. LUMBER.\nRussin: Hi Yuki, how are you today?\nBuyer: I'm doing well, thank you. Just checking in on some supplies we need.\nRussin: Great to hear! What can I help you with?\nBuyer: We're looking to reorder some siding, specifically CEDAR BEVEL and WESTERN RED CEDAR.\nRussin: Sure, I can help with that. Do you have specific quantities in mind for each?\nBuyer: Yes, we're looking for about 1,500 square feet of CEDAR BEVEL and 1,200 board feet of WESTERN RED CEDAR.\nRussin: Perfect, typically for CEDAR BEVEL, we have a lead time of about 7 to 14 days. The same goes for the WESTERN RED CEDAR. Does that work for your timeline?\nBuyer: Yes, that should be fine. Can you confirm the pricing and availability?\nRussin: Absolutely, I'll prepare a written quote that confirms the numbers and terms. Since you're an established account, we can proceed with our usual terms as well.\nBuyer: Sounds good. I appreciate that. \nRussin: Of course! I\u2019ll send the quote over shortly. Is there anything else you need in the meantime?\nBuyer: Not right now, just the quote will do.\nRussin: Alright, I\u2019ll get that ready for you. Thank you for your business, Yuki.\nBuyer: Thank you, Joanna. Talk soon."
+    },
+    {
+      "call_id": "call_russin_0025",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "baker_lumber",
+      "customer": {
+        "company_name": "BAKER LUMBER",
+        "contact_name": "Calvin Park"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "RUSH_JOB",
+      "outcome_target": "NOT_A_FIT",
+      "primary_product_ids": [
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "20e40550a5162e0b",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Calvin Park from BAKER LUMBER needs WESTERN RED CEDAR urgently but is informed of lead times that don't fit his schedule.",
+        "products_mentioned": [
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob. How can I assist you today?\nBuyer: Hi Jacob, this is Calvin Park from BAKER LUMBER.\nRussin: Nice to speak with you, Calvin. How can I help with your lumber needs?\nBuyer: We're in a bit of a rush for a project, and I need to know if you have any WESTERN RED CEDAR in stock.\nRussin: I can check that for you. What dimensions are you looking for?\nBuyer: We're looking for bevel boards, ideally in lengths around 12 feet, if you have them.\nRussin: Let me pull up our inventory. We typically have those in stock. Just a moment. \nBuyer: Sure, no problem.\nRussin: It looks like we can get you the WESTERN RED CEDAR boards, but lead times are about 7 to 14 days for delivery. Is that acceptable?\nBuyer: That's longer than I was hoping for. We need them quicker for our project. \nRussin: I understand the urgency. Unfortunately, this is our standard lead time for that product. Would you be interested in any alternatives that we might have available sooner?\nBuyer: Do you have any other types of siding that could be available more quickly?\nRussin: We do have some other siding options, but they won't be the same as the WESTERN RED CEDAR. Would you like me to look into those options?\nBuyer: Yes, please. I need to make a decision fast.\nRussin: Alright, I\u2019ll see what I can find. Just to confirm, payment and terms will be based on the formal quote and your approved account file. We might need to verify credit for anything new. \nBuyer: Understood. Just let me know what you find.\nRussin: I\u2019ll follow up with you shortly once I check our other siding options. Thank you for your patience, Calvin.\nBuyer: Thanks, Jacob. Talk soon."
+    },
+    {
+      "call_id": "call_russin_0026",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:26Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "baker_plumbing_supply",
+      "customer": {
+        "company_name": "BAKER PLUMBING SUPPLY",
+        "contact_name": "Gabriela Fernandez"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "SPEC_SUBSTITUTION",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "t_groove"
+      ],
+      "metadata": {
+        "generation_seed": "8af9986d9780204d",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "XS",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Sami discussed T-GROOVE paneling options with Gabriela and confirmed a quote will be sent for an order.",
+        "products_mentioned": [
+          "T-GROOVE"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.\nBuyer: Hello, Sami. This is Gabriela Fernandez from BAKER PLUMBING SUPPLY.\nRussin: Hi, Gabriela! How can I assist you today?\nBuyer: I'm looking to discuss some paneling options we need for a couple of upcoming projects.\nRussin: Sure, we have several products that might work. Are you looking for something specific?\nBuyer: Yes, I'm particularly interested in T-GROOVE paneling.\nRussin: Great choice! The T-GROOVE is ideal for both paneling and porch ceiling applications. We typically have a lead time of about 5 to 14 days for that.\nBuyer: That sounds good. What dimensions do you usually carry for the T-GROOVE?\nRussin: We usually stock it in various thicknesses, but the most common is a 1x6 and 1x8 profile. How much square footage are you looking to order?\nBuyer: We're looking at about 800 square feet for this project.\nRussin: Alright, I can check our inventory for that quantity. We can also discuss pricing options. Do you have a specific budget in mind?\nBuyer: Not necessarily, but I need to ensure we get a good deal. Also, are there any substitutions if you\u2019re out of stock?\nRussin: If we run low on T-GROOVE, we can offer similar paneling options, but I would need to confirm with you first. Would that be acceptable?\nBuyer: Yes, as long as they are comparable in quality.\nRussin: Understood. I will make a note of that. Just to clarify, payment and terms will follow what\u2019s on the formal quote and your approved account file. We may need to confirm anything new with credit, and the written quote will govern.\nBuyer: That makes sense. Can you go ahead and provide a quote for the 800 square feet of T-GROOVE?\nRussin: Absolutely, I\u2019ll prepare that for you. Expect it in your email within the next hour. Would you like to proceed with this order once the quote is received?\nBuyer: Yes, let\u2019s do that. I\u2019m looking forward to your quote.\nRussin: Perfect! I will send that over shortly, and we\u2019ll get started on your order. Thank you, Gabriela!\nBuyer: Thank you, Sami. Talk soon!"
+    },
+    {
+      "call_id": "call_russin_0027",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:29Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "barbara_building_products",
+      "customer": {
+        "company_name": "BARBARA BUILDING PRODUCTS",
+        "contact_name": "Steve Schmidt"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FREIGHT_CONSTRAINED",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "ijoist_ewp_lvl",
+        "mcl",
+        "t_groove"
+      ],
+      "metadata": {
+        "generation_seed": "1054ed4ab40d5746",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "L",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Ryan from Russin Lumber confirms product details and will send a quote to Steve at Barbara Building Products.",
+        "products_mentioned": [
+          "I-JOIST/EWP/LVL",
+          "T-GROOVE",
+          "MCL"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan.  \nBuyer: Steve Schmidt from Barbara Building Products.  \nRussin: Hi Steve, how's it going today?  \nBuyer: Doing well, thanks! We're looking to get a quote for some products.  \nRussin: Sure thing, what products are you interested in?  \nBuyer: I need some I-JOIST/EWP/LVL and T-GROOVE paneling.  \nRussin: Got it. For the I-JOIST/EWP/LVL, what dimensions and quantities are you looking for?  \nBuyer: We're considering about 50 pieces, with depths of 9.5 inches.  \nRussin: Great. Those usually have a lead time of around 10 to 21 days.  \nBuyer: That works for us. And for the T-GROOVE, I need about 100 square feet.  \nRussin: The T-GROOVE typically has a lead time of 5 to 14 days. Do you have a specific finish in mind for that?  \nBuyer: No specific finish, just the standard option.  \nRussin: Perfect. I\u2019ll include that in the quote. Are there any other products you need?  \nBuyer: I might also need some MCL, probably around 500 board feet.  \nRussin: Good choice! MCL usually has a lead time of 3 to 10 days.  \nBuyer: Excellent. Can you send me a quote for all these items?  \nRussin: Absolutely, I\u2019ll prepare a written quote with all the details and terms. Just to remind you, our usual terms apply, and the written quote will confirm those numbers.  \nBuyer: Sounds good. Let me know if you need anything else from my side.  \nRussin: Will do, Steve. I\u2019ll have that quote sent over shortly.  \nBuyer: Thanks, Ryan.  \nRussin: Thank you, Steve. Talk soon."
+    },
+    {
+      "call_id": "call_russin_0028",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:30Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "barkley_lumber",
+      "customer": {
+        "company_name": "BARKLEY LUMBER",
+        "contact_name": "Monica Briggs"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FIRST_TIME_BUYER",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "7fa36dc5e70e1630",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna from Russin Lumber discusses siding options and schedules a follow-up call with Monica from Barkley Lumber.",
+        "products_mentioned": [
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna. How can I help you today?\nBuyer: Hi Joanna, this is Monica Briggs from Barkley Lumber.\nRussin: Nice to meet you, Monica! How can I assist you with your lumber needs today?\nBuyer: I'm looking for some siding options. What do you have available?\nRussin: We have a great selection of siding materials. One of our top products is WESTERN RED CEDAR, which is popular for its durability and aesthetic appeal. Would you be interested in that?\nBuyer: Yes, I\u2019ve heard good things about WESTERN RED CEDAR. What are the lead times on that?\nRussin: The lead time for WESTERN RED CEDAR typically ranges from 7 to 14 days, depending on the quantity you need. How much are you considering?\nBuyer: I might need around 1,000 board feet to start with. Can you provide a quote?\nRussin: Absolutely, I can prepare a quote for that. Just to clarify, it will be based on our formal quote and your approved account file. We might need to confirm your credit for any new orders.\nBuyer: That makes sense. Can you send that quote over to me?\nRussin: Yes, I can do that. What\u2019s the best email address for you?\nBuyer: Please send it to monica@barkleylumber.com.\nRussin: Great, I\u2019ll get that quote sent out today. Would you like to schedule a follow-up call to discuss it?\nBuyer: Yes, let\u2019s do that. How about Thursday at 2 PM?\nRussin: Thursday at 2 PM works for me. I\u2019ll call you then to go over the details.\nBuyer: Perfect, I appreciate your help, Joanna.\nRussin: Thank you, Monica! Looking forward to our call on Thursday. Have a great day!"
+    },
+    {
+      "call_id": "call_russin_0029",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bes_lumber_profile_a",
+      "customer": {
+        "company_name": "B.E.S. LUMBER",
+        "contact_name": "Brett Esposito"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "PRICE_PUSHBACK",
+      "outcome_target": "NURTURE_STALL",
+      "primary_product_ids": [
+        "cedar_bevel",
+        "cedar_lmd",
+        "ijoist_ewp_lvl",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "594177e204225c11",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Buyer is seeking competitive pricing for CEDAR BEVEL, CEDAR LMD, and I-JOIST/EWP/LVL but may shop around.",
+        "products_mentioned": [
+          "CEDAR BEVEL",
+          "CEDAR LMD",
+          "I-JOIST/EWP/LVL"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.\nBuyer: Brett Esposito from B.E.S. LUMBER.\nRussin: Hi Brett, how can I assist you today?\nBuyer: I'm looking to get some pricing on CEDAR BEVEL and CEDAR LMD for a project coming up.\nRussin: Sure, I can help with that. What quantities are you considering for each?\nBuyer: We're thinking about 1,500 square feet of CEDAR BEVEL and around 2,000 board feet of CEDAR LMD.\nRussin: Got it. The CEDAR BEVEL typically has a lead time of around 7 to 14 days, and the CEDAR LMD is about 5 to 12 days. Would you like me to check current pricing for you?\nBuyer: Yes, please do. But I need to keep my costs down, so I'm hoping for a competitive quote.\nRussin: Absolutely, I understand. I\u2019ll make sure to provide a quote that reflects our usual pricing for your account. Just to remind you, the written quote will confirm all pricing and terms.\nBuyer: Right, I appreciate that. I\u2019ve been getting some quotes lately that are a bit higher than I expected.\nRussin: I can understand how that can be frustrating. We aim to offer competitive rates, especially for established partners like B.E.S. LUMBER.\nBuyer: Yes, definitely. Can you also let me know about the I-JOIST/EWP/LVL availability?\nRussin: Sure! The I-JOIST/EWP/LVL typically has a lead time of 10 to 21 days. Are you considering that for the same project?\nBuyer: Yes, but I need to evaluate all options before I make a decision. I might have to shop around a bit more.\nRussin: That\u2019s completely fair, Brett. I can send you the quote with all options, and we can discuss it further when you're ready.\nBuyer: Sounds good. I\u2019ll look out for your email.\nRussin: Great! I\u2019ll get that together and send it over shortly. If you have any other questions in the meantime, feel free to reach out.\nBuyer: Will do, thanks, Jacob.\nRussin: Thank you, Brett. Talk to you soon."
+    },
+    {
+      "call_id": "call_russin_0030",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bes_lumber_profile_b",
+      "customer": {
+        "company_name": "B.E.S. LUMBER",
+        "contact_name": "Layla Abbott"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "STOCK_CHECK",
+      "outcome_target": "NOT_A_FIT",
+      "primary_product_ids": [
+        "abx_capboard",
+        "cedar_lmd",
+        "ijoist_ewp_lvl",
+        "mcl",
+        "ponderosa_pine",
+        "syp_hf_2",
+        "yellow_pine"
+      ],
+      "metadata": {
+        "generation_seed": "1461a110e37a3b7f",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "L",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Sami checked stock for Layla but determined Russin may not fit her urgent needs.",
+        "products_mentioned": [
+          "CEDAR LMD",
+          "I-JOIST/EWP/LVL",
+          "ABX CAPBOARD"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.\nBuyer: Layla Abbott from B.E.S. LUMBER.\nRussin: Hi Layla, how can I assist you today?\nBuyer: I'm checking stock on some of our usual items, specifically dimensional lumber and engineered wood.\nRussin: Sure, I can help with that. Are you looking for specific dimensions or grades?\nBuyer: Yes, I'm particularly interested in CEDAR LMD and I-JOIST/EWP/LVL.\nRussin: For CEDAR LMD, we typically have various nominal sizes available. Our lead time is around 5 to 12 days. How much do you need?\nBuyer: We usually take about 1,500 board feet.\nRussin: Great, and for the I-JOIST/EWP/LVL, those usually have a lead time of 10 to 21 days. How many pieces are you interested in?\nBuyer: We're looking at around 100 pieces.\nRussin: Perfect. I can check the availability for you. However, I should mention that our stock may vary, and I can provide a written quote to confirm numbers and terms once I have the details.\nBuyer: I understand, but I need these materials quite urgently.\nRussin: I completely get that, and I\u2019ll do my best to find out current stock levels. Just to clarify, do you also require any other items?\nBuyer: I might need some ABX CAPBOARD as well, but just as a backup.\nRussin: The ABX CAPBOARD typically has a lead time of 5 to 10 days. How many pieces would you need?\nBuyer: Maybe 50 pieces, but it depends on what I find for the other items first.\nRussin: Understood. I\u2019ll prioritize checking the CEDAR LMD and I-JOIST/EWP/LVL. I will get back to you shortly.\nBuyer: Thank you, Sami. I appreciate it.\nRussin: You're welcome, Layla. However, if our stock doesn\u2019t align with your needs, we may not be a fit this time around.\nBuyer: Yes, I get that. Let\u2019s see what you find.\nRussin: Absolutely, I\u2019ll follow up soon with the information. Have a great day!\nBuyer: You too! Bye.\nRussin: Bye."
+    },
+    {
+      "call_id": "call_russin_0031",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:23Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bellet_lumber",
+      "customer": {
+        "company_name": "BELLET LUMBER",
+        "contact_name": "Will Perez"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "MULTI_LINE_JOB_QUOTE",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "24c09fa3ec7fdc4a",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Ryan provided a quote for WESTERN RED CEDAR to Will Perez with delivery options discussed.",
+        "products_mentioned": [
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan. How can I help you today?\nBuyer: Hi Ryan, this is Will Perez from BELLET LUMBER. \nRussin: Nice to meet you, Will! What can I assist you with today?\nBuyer: I'm looking to get a quote for some WESTERN RED CEDAR for a multi-line job we have coming up.\nRussin: Sure, I can help with that. How much are you looking to order, and do you have specific dimensions in mind?\nBuyer: We're thinking about around 2,500 board feet. Mostly 1x6 and 1x8, clear grade. \nRussin: Got it. The typical lead time for WESTERN RED CEDAR is about 7 to 14 days. Does that work for your project timeline?\nBuyer: Yes, that should be fine. What about delivery options?\nRussin: We can arrange for LTL shipping directly to Bethlehem. Would you need it to be scheduled for a specific date?\nBuyer: Ideally, we would like it delivered within two weeks. \nRussin: No problem. I\u2019ll include that in the quote. As for payment and terms, it will be governed by what's on the formal quote and your approved account file. We may need to confirm any new credit requests, though. \nBuyer: That sounds good. When can I expect the quote?\nRussin: I can have that prepared and sent to you by the end of the day. \nBuyer: Great, thank you. I appreciate your help with this.\nRussin: Absolutely, Will! I\u2019ll make sure everything is detailed in the quote, and we\u2019ll get it over to you shortly.\nBuyer: Looking forward to it, Ryan. \nRussin: Thank you, Will! Talk soon!"
+    },
+    {
+      "call_id": "call_russin_0032",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:24Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "benchmark_lumber",
+      "customer": {
+        "company_name": "BENCHMARK LUMBER",
+        "contact_name": "Kim Hernandez"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "ADD_ON_REORDER",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "ijoist_ewp_lvl",
+        "fur_trim",
+        "red_red_fir",
+        "western_red_cedar",
+        "yellow_pine"
+      ],
+      "metadata": {
+        "generation_seed": "a6766a52db543661",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "L",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna assists Kim with a reorder of materials and confirms usual terms for the quote.",
+        "products_mentioned": [
+          "I-JOIST/EWP/LVL",
+          "FURU-TRIM",
+          "RED RED FIR"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Kim Hernandez from Benchmark Lumber.\nRussin: Hi Kim, how can I assist you today?\nBuyer: We're looking to place a reorder for some materials. Do you have stock on I-JOIST/EWP/LVL and FURU-TRIM?\nRussin: Yes, we have I-JOIST/EWP/LVL available with a lead time of about 10 to 21 days. The FURU-TRIM can be delivered in about 3 to 7 days.\nBuyer: Great! Can you also check on RED RED FIR? We need that too.\nRussin: Sure, the RED RED FIR is in stock, with a lead time of 7 to 14 days.\nBuyer: Perfect, we\u2019ll need about 500 board feet of the RED RED FIR, 200 pieces of I-JOIST/EWP/LVL, and 800 linear feet of FURU-TRIM.\nRussin: I can put together a quote for that. Just to confirm, you\u2019re okay with the usual terms we have on file?\nBuyer: Yes, that sounds good.\nRussin: Alright, I\u2019ll prepare the quote and email it over. The written quote will confirm the numbers and terms as usual.\nBuyer: Thank you, Joanna. I appreciate your help.\nRussin: No problem, Kim. I\u2019ll get that to you shortly.\nBuyer: Looking forward to it.\nRussin: Have a great day!"
+    },
+    {
+      "call_id": "call_russin_0033",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "benchmark_building_supply",
+      "customer": {
+        "company_name": "BENCHMARK BUILDING SUPPLY",
+        "contact_name": "Nick Morales"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "RUSH_JOB",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "607c4ce2c63ad0e7",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Jacob confirmed availability of WESTERN RED CEDAR and scheduled a follow-up call with Nick.",
+        "products_mentioned": [
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.\nBuyer: Hi Jacob, this is Nick Morales from Benchmark Building Supply.\nRussin: Hi Nick, how can I assist you today?\nBuyer: We're in need of some WESTERN RED CEDAR for a rush job we have coming up. Can you check availability?\nRussin: Absolutely! Let me pull up our inventory for WESTERN RED CEDAR. We typically have a lead time of about 7 to 14 days. How much are you looking to order?\nBuyer: We're thinking about 2,000 board feet for this project.\nRussin: Got it, 2,000 board feet. That should be manageable. I\u2019ll need to confirm stock levels, but we can usually fulfill that quickly. Do you have a specific grade or finish in mind?\nBuyer: We usually go for the clear grade, if available.\nRussin: Perfect, I\u2019ll check if we have the clear grade in stock. Also, since this is a rush job, I suggest we expedite shipping. Would that work for you?\nBuyer: Yes, we need it delivered as soon as possible.\nRussin: Alright, I'll make a note of that. Just to remind you, our usual terms will apply, and I'll send over a written quote that confirms all the details and terms. When do you need the lumber by?\nBuyer: Ideally, we need it within the next week.\nRussin: I\u2019ll push for that timeline. Let me verify the stock and get back to you shortly. Can we schedule a follow-up call for later today?\nBuyer: Yes, that sounds good. How about 3 PM?\nRussin: 3 PM works for me. I\u2019ll have the information ready by then. Thank you for calling, Nick!\nBuyer: Thanks, Jacob. Talk to you later."
+    },
+    {
+      "call_id": "call_russin_0034",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "berry",
+      "customer": {
+        "company_name": "BERRY",
+        "contact_name": "Louisa Walsh"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "SPEC_SUBSTITUTION",
+      "outcome_target": "NURTURE_STALL",
+      "primary_product_ids": [
+        "cedar_bevel",
+        "cedar_lmd",
+        "fur_trim",
+        "western_red_cedar",
+        "yellow_pine"
+      ],
+      "metadata": {
+        "generation_seed": "63b282218d3555d5",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Sami provided information on siding and lumber options to Louisa, who plans to consult her team.",
+        "products_mentioned": [
+          "CEDAR BEVEL",
+          "WESTERN RED CEDAR",
+          "CEDAR LMD",
+          "YELLOW PINE"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.  \nBuyer: Louisa Walsh from BERRY.  \nRussin: Hi Louisa, how can I assist you today?  \nBuyer: I'm looking for some siding options for our upcoming project.  \nRussin: Sure! We have a few different options available. Are you considering CEDAR BEVEL or WESTERN RED CEDAR?  \nBuyer: I've heard good things about both. Can you tell me more about their lead times?  \nRussin: Absolutely. CEDAR BEVEL typically has a lead time of 7 to 14 days, while WESTERN RED CEDAR also falls within a similar range.  \nBuyer: Great, and what about pricing?  \nRussin: I can provide you with a quote. Just to remind you, our usual terms apply, but a written quote will confirm the numbers and terms we agree on today.  \nBuyer: Understood. I'm also interested in some dimensional lumber. What do you have available?  \nRussin: We have CEDAR LMD and YELLOW PINE in various sizes. CEDAR LMD generally has a lead time of 5 to 12 days, while YELLOW PINE can be ready in about 3 to 10 days.  \nBuyer: I see. We're focusing on sustainability, so what would you recommend?  \nRussin: CEDAR materials are often preferred for eco-friendly projects. If you\u2019re considering substitutions, we could look at other options too.  \nBuyer: I\u2019ll need to check back with my team on that.  \nRussin: Sounds good, Louisa. Feel free to reach out anytime if you have more questions or want to discuss specifics.  \nBuyer: Will do, thanks!  \nRussin: Thank you! Talk soon."
+    },
+    {
+      "call_id": "call_russin_0035",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:25Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "blackmon_building_supply",
+      "customer": {
+        "company_name": "BLACKMON BUILDING SUPPLY",
+        "contact_name": "Frank Adebayo"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FREIGHT_CONSTRAINED",
+      "outcome_target": "NOT_A_FIT",
+      "primary_product_ids": [
+        "mcl",
+        "syp_hf_2",
+        "yellow_pine"
+      ],
+      "metadata": {
+        "generation_seed": "0a60d87310878f5f",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "The call ended with the buyer unable to proceed due to freight constraints.",
+        "products_mentioned": [
+          "MCL",
+          "SYP/HF 2",
+          "YELLOW PINE"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan.\nBuyer: Frank Adebayo from BLACKMON BUILDING SUPPLY.\nRussin: Hi Frank! How can I assist you today?\nBuyer: I'm looking to check on some lumber availability for a project we have coming up.\nRussin: Sure! What specific products are you interested in?\nBuyer: I need some MCL and SYP/HF 2 for framing, and possibly some yellow pine as well.\nRussin: We have MCL in stock typically ready to ship in about 3 to 10 days. For SYP/HF 2, the lead time is usually 2 to 7 days. How much are you thinking of ordering?\nBuyer: Probably around 5,000 board feet of each.\nRussin: That sounds good. Just to confirm, we can get that out to you, but since you're in Greenville, let\u2019s discuss the freight. Are you facing any freight constraints at the moment?\nBuyer: Yes, our freight has been pretty tight lately, and we\u2019ve been having issues with timely deliveries.\nRussin: I understand that can be challenging. Unfortunately, with our current freight arrangements, I can\u2019t guarantee prompt delivery to your area right now. \nBuyer: That\u2019s a concern for us. What do you suggest?\nRussin: We could look at alternative options or perhaps adjust the quantities if that helps, but I can\u2019t make any commitments on delivery times at this moment.\nBuyer: I appreciate the honesty, but we really need reliable shipping. I may need to look elsewhere for now.\nRussin: Understood, Frank. If anything changes or if you would like a quote for when you\u2019re ready, feel free to reach out. Just a reminder that our usual terms would apply, but the written quote will confirm all details.\nBuyer: Thank you, Ryan. I will keep that in mind.\nRussin: Thank you for your time, Frank. Have a great day!\nBuyer: You too, Ryan!"
+    },
+    {
+      "call_id": "call_russin_0036",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:29Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "boardman_inc",
+      "customer": {
+        "company_name": "BOARDMAN INC",
+        "contact_name": "Dina Sokolov"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FIRST_TIME_BUYER",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "ijoist_ewp_lvl",
+        "furu_pres_treated",
+        "perm",
+        "t_groove",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "b9658c2de7f748f7",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "L",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna assists Dina in sourcing lumber and building materials, confirms order details, and promises a quote.",
+        "products_mentioned": [
+          "I-JOIST/EWP/LVL",
+          "FURU PRES TREATED",
+          "PERM"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Hi Joanna, this is Dina Sokolov from BOARDMAN INC.\nRussin: Hi Dina, how can I assist you today?\nBuyer: I'm looking to source some lumber and building materials for an upcoming project.\nRussin: Sure! We have a range of products available. What specific items are you interested in?\nBuyer: I'm particularly looking for I-JOIST/EWP/LVL and some treated lumber.\nRussin: Great choice! We have I-JOIST/EWP/LVL, which are engineered floor and header members. They typically have a lead time of about 10 to 21 days. How much do you need?\nBuyer: I\u2019d need around 150 pieces.\nRussin: Perfect, I can get that quoted for you. And for the treated lumber, are you thinking of FURU PRES TREATED?\nBuyer: Yes, that would work.\nRussin: FURU PRES TREATED has a lead time of 3 to 7 days. How many pieces do you require?\nBuyer: Let's say 200 pieces of that.\nRussin: Noted! I will include 200 pieces of FURU PRES TREATED in your quote. Is there anything else you need?\nBuyer: I\u2019m also interested in trim moulding, maybe some PERM.\nRussin: Sure, PERM is a pre-matched primed SPF moulding. It typically has a lead time of 5 to 12 days. How many linear feet are you looking for?\nBuyer: About 100 linear feet should be sufficient.\nRussin: I\u2019ll add that to your order. So, to summarize, we have 150 pieces of I-JOIST/EWP/LVL, 200 pieces of FURU PRES TREATED, and 100 linear feet of PERM. I can prepare a quote for you.\nBuyer: Yes, that sounds great. Can you send that over?\nRussin: Absolutely, I'll send you a written quote confirming the numbers and terms. Just to confirm, payment terms will be based on our usual account setup, and we can review credit if needed.\nBuyer: That works for me. I look forward to receiving the quote.\nRussin: Thank you, Dina! I\u2019ll get that quote sent out shortly.\nBuyer: Thanks, Joanna. Talk soon!\nRussin: Talk soon! Bye!"
+    },
+    {
+      "call_id": "call_russin_0037",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:28Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bohemia_building_materials",
+      "customer": {
+        "company_name": "BOHEMIA BUILDING MATERIALS",
+        "contact_name": "Ed Reyes"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "PRICE_PUSHBACK",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "abx_capboard",
+        "doug_fir",
+        "frp",
+        "ijoist_ewp_lvl",
+        "syp_hf_2"
+      ],
+      "metadata": {
+        "generation_seed": "ea263aa6cfe76ee8",
+        "priority": "high",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "XL",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Jacob discussed product availability and pricing with Ed Reyes, leading to a quote follow-up.",
+        "products_mentioned": [
+          "DOUG FIR",
+          "SYP/HF 2",
+          "ABX CAPBOARD",
+          "FRP"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.  \nBuyer: Ed Reyes from Bohemia Building Materials.  \nRussin: Hi Ed, I hope you're doing well today. I wanted to touch base regarding some lumber and building materials you might need.  \nBuyer: Yes, we're looking to restock some items. What do you have available?  \nRussin: We have a good selection of products like DOUG FIR for framing, SYP/HF 2 for dimensional lumber, and even some ABX CAPBOARD for your exterior trim needs.  \nBuyer: I see. Do you have pricing on those?  \nRussin: Absolutely! For DOUG FIR, we typically have it in stock with a lead time of about 3 to 10 days. As for SYP/HF 2, it\u2019s a similar timeline. The ABX CAPBOARD usually takes about 5 to 10 days. I can prepare a detailed quote for you.  \nBuyer: That sounds good, but I'm hoping we can negotiate a better price than last time.  \nRussin: I understand, Ed. I\u2019ll make sure to look into that for you. However, just to clarify, our written quote will confirm the numbers and terms.  \nBuyer: Fair enough. Can you also check if you have FRP in stock?  \nRussin: Yes, we do have FRP available, with a lead time of 3 to 10 days as well. I can include that in the quote.  \nBuyer: Great! Please send over the details, and I\u2019ll review them for our next order.  \nRussin: I\u2019ll get that quote over to you shortly, Ed. Thank you for your time!  \nBuyer: Thank you, Jacob."
+    },
+    {
+      "call_id": "call_russin_0038",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:33Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "borth_lumber_company_inc",
+      "customer": {
+        "company_name": "BORTH LUMBER COMPANY INC",
+        "contact_name": "Helena Ibrahim"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "STOCK_CHECK",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "abx_capboard",
+        "cedar_bevel",
+        "cedar_lmd",
+        "furu_pres_treated",
+        "mcl",
+        "perm",
+        "ponderosa_pine",
+        "red_red_fir"
+      ],
+      "metadata": {
+        "generation_seed": "9684dea4fc28ec9f",
+        "priority": "high",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "XL",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Sami and Helena discussed stock levels and scheduled a quote follow-up.",
+        "products_mentioned": [
+          "CEDAR LMD",
+          "WESTERN RED CEDAR",
+          "ABX CAPBOARD"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.\nBuyer: Helena Ibrahim from BORTH LUMBER COMPANY INC.\nRussin: Hi Helena, how can I assist you today?\nBuyer: I'm checking on the stock levels for some products.\nRussin: Sure, what specific products are you interested in?\nBuyer: I need to know about CEDAR LMD and WESTERN RED CEDAR.\nRussin: For CEDAR LMD, we typically have a variety of nominal sizes available. Our lead time is about 5 to 12 days. Do you have specific dimensions in mind?\nBuyer: Yes, I'm looking for 2x4 and 2x6 sizes.\nRussin: Great! We should have those in stock. As for WESTERN RED CEDAR, we have bevel and clear grades, with a similar lead time of 7 to 14 days.\nBuyer: That sounds good. Can you confirm the availability for a truckload?\nRussin: Let me check that for you. We usually can accommodate truckloads, depending on the specific quantities needed. Would you like me to send a quote once I have confirmation?\nBuyer: Yes, that would be helpful. Also, do you have any current stock on ABX CAPBOARD?\nRussin: Yes, we do have ABX CAPBOARD in stock. It's a popular item for trim applications. I can include that in the quote as well.\nBuyer: Perfect. Let's schedule a follow-up for the quote details later this week.\nRussin: Sounds good. How does Thursday at 10 AM work for you?\nBuyer: That works for me. Thank you, Sami.\nRussin: You're welcome, Helena! I'll send you an email with the details and follow up on Thursday. Talk to you then!\nBuyer: Bye!\nRussin: Bye!"
+    },
+    {
+      "call_id": "call_russin_0039",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:29Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "boss_lumber_co_inc",
+      "customer": {
+        "company_name": "BOSS LUMBER CO INC",
+        "contact_name": "Pat Keller"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "MULTI_LINE_JOB_QUOTE",
+      "outcome_target": "NURTURE_STALL",
+      "primary_product_ids": [
+        "abx_capboard",
+        "t_groove"
+      ],
+      "metadata": {
+        "generation_seed": "6df7cdf77c22e072",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Ryan discussed trim and paneling needs with Pat and agreed to send a quote.",
+        "products_mentioned": [
+          "ABX CAPBOARD",
+          "T-GROOVE"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan.  \nBuyer: Pat Keller from BOSS LUMBER CO INC.  \nRussin: Hi Pat, how's it going?  \nBuyer: Doing well, thanks. Just busy with some upcoming projects.  \nRussin: I hear you. I wanted to check in and see if you need any quotes for your current jobs.  \nBuyer: Yes, actually. We're looking at some trim and paneling options.  \nRussin: Perfect! We have the ABX CAPBOARD available for exterior trim. It typically ships in 5 to 10 days. Would that work for you?  \nBuyer: Yes, that sounds good. We're also interested in some T-GROOVE for our paneling needs.  \nRussin: Great choice! The T-GROOVE has a lead time of 5 to 14 days. How much square footage are you looking for?  \nBuyer: We're estimating about 1,000 square feet.  \nRussin: I can prepare a quote for that. Just to confirm, you would need it shipped to Altoona, PA?  \nBuyer: Yes, that's correct.  \nRussin: And regarding payment terms, we typically follow our standard procedures. The written quote will confirm all numbers and terms.  \nBuyer: That works for us. We're an established account, so I assume the usual terms apply?  \nRussin: Exactly, Pat. I appreciate your business. I'll get that quote prepared and sent your way shortly.  \nBuyer: Sounds good, Ryan.  \nRussin: If anything changes or if you need additional products, feel free to reach out.  \nBuyer: Will do, thanks!  \nRussin: Have a great day, Pat!  \nBuyer: You too, bye!"
+    },
+    {
+      "call_id": "call_russin_0040",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:28Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "boston_lumber_co_inc",
+      "customer": {
+        "company_name": "BOSTON LUMBER CO INC",
+        "contact_name": "Angela O'Brien"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "ADD_ON_REORDER",
+      "outcome_target": "NOT_A_FIT",
+      "primary_product_ids": [
+        "ijoist_ewp_lvl"
+      ],
+      "metadata": {
+        "generation_seed": "4fe6956fef27e68b",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "The buyer decided not to proceed with the order due to budget concerns.",
+        "products_mentioned": [
+          "I-JOIST/EWP/LVL"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Hi Joanna, this is Angela O'Brien with Boston Lumber Co Inc.\nRussin: Hi Angela, how can I assist you today?\nBuyer: I'm looking to place an order for some I-JOIST/EWP/LVL. We need a few pieces to finish up a project.\nRussin: Sure, I can help with that. Do you have specific dimensions or quantities in mind?\nBuyer: Yes, we're looking for 20 pieces at your usual specs. What's the lead time looking like?\nRussin: For I-JOIST/EWP/LVL, the typical lead time is around 10 to 21 days. Would you like a quote based on that?\nBuyer: Yes, please. Also, can you confirm the pricing? I want to ensure it aligns with our usual terms.\nRussin: Absolutely, I\u2019ll prepare a written quote for you. Our usual terms apply, but everything will be confirmed in the written documentation.\nBuyer: That sounds good, but I\u2019ve noticed prices have been fluctuating lately. Are there any possible substitutions for that product?\nRussin: At the moment, we don't have any direct substitutions for I-JOIST/EWP/LVL that meet the same specifications. I recommend sticking with what you\u2019ve ordered before.\nBuyer: Understood. I appreciate that. However, I\u2019m not sure this will fit within our current budget constraints.\nRussin: I get that, Angela. If you need to adjust the order or explore alternatives, just let me know.\nBuyer: I will definitely think it over. Thanks for your help, Joanna.\nRussin: You\u2019re welcome! Feel free to reach out if you want to discuss further options. Have a great day!\nBuyer: You too, thanks!"
+    },
+    {
+      "call_id": "call_russin_0041",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:28Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "brandt_lumber_products",
+      "customer": {
+        "company_name": "BRANDT LUMBER PRODUCTS",
+        "contact_name": "Chris Yamamoto"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "RUSH_JOB",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "cedar_bevel",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "0d5043010ff11695",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Chris Yamamoto places a rush order for siding materials with Jacob from Russin Lumber.",
+        "products_mentioned": [
+          "CEDAR BEVEL",
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.\nBuyer: Hi Jacob, this is Chris Yamamoto from BRANDT LUMBER PRODUCTS.\nRussin: Great to connect, Chris! How can I assist you today?\nBuyer: We're looking to place a rush order for some siding materials.\nRussin: Sure thing! What specific products are you interested in?\nBuyer: I need a quantity of CEDAR BEVEL and WESTERN RED CEDAR.\nRussin: Got it. For CEDAR BEVEL, how much square footage are you looking for?\nBuyer: We need about 2,000 square feet of CEDAR BEVEL.\nRussin: And for the WESTERN RED CEDAR, how many board feet do you need?\nBuyer: We\u2019re looking at around 1,500 board feet.\nRussin: I can check availability for that. Typical lead time is about 7 to 14 days for both products. Is that acceptable?\nBuyer: Yes, we need it as soon as possible, so let\u2019s prioritize this order.\nRussin: Absolutely. I\u2019ll make it a priority. Just to confirm, you\u2019d like the order shipped to Madison, WI, correct?\nBuyer: Yes, that\u2019s right.\nRussin: I\u2019ll prepare a quote for the CEDAR BEVEL and WESTERN RED CEDAR, and I\u2019ll include the usual terms in writing. The written quote will confirm numbers and terms.\nBuyer: Sounds good! Can you send that over as soon as possible?\nRussin: I\u2019ll get that prepared for you right away, Chris. You can expect it shortly. Anything else you need while I have you?\nBuyer: No, that covers it for now. Thank you, Jacob.\nRussin: Thank you, Chris! I appreciate your business, and I\u2019ll be in touch soon with the quote.\nBuyer: Thank you. Talk soon!\nRussin: Talk soon!"
+    },
+    {
+      "call_id": "call_russin_0042",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:29Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bs_lumber_supply",
+      "customer": {
+        "company_name": "B.S. LUMBER & SUPPLY",
+        "contact_name": "Maria Kravitz"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "SPEC_SUBSTITUTION",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "cedar_bevel",
+        "cedar_siding",
+        "cedar_lmd",
+        "eastern_wht_pin_ac",
+        "ijoist_ewp_lvl",
+        "mcl",
+        "red_red_fir",
+        "syp_hf_2"
+      ],
+      "metadata": {
+        "generation_seed": "35730599aefe7b7f",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "L",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Sami from Russin Lumber discussed pricing and availability for cedar products with Maria from B.S. LUMBER & SUPPLY.",
+        "products_mentioned": [
+          "CEDAR SIDING",
+          "CEDAR LMD",
+          "EASTERN WHT PIN AC",
+          "MCL"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami.\nBuyer: Maria Kravitz from B.S. LUMBER & SUPPLY.\nRussin: Hi Maria, how can I assist you today?\nBuyer: I'm looking to get some pricing on cedar siding and some dimensional lumber.\nRussin: Sure! We have both CEDAR SIDING and CEDAR LMD available. What quantities are you considering?\nBuyer: I need about 1,500 square feet of CEDAR SIDING and around 2,000 board feet of CEDAR LMD.\nRussin: That sounds great. For the CEDAR SIDING, we can usually deliver in about 7 to 14 days. And the CEDAR LMD typically has a lead time of 5 to 12 days. Are you looking for specific dimensions?\nBuyer: Yes, for the CEDAR LMD, I need a mix of 2x4 and 2x6.\nRussin: Got it. I can get you a quote for those sizes. Would you also be interested in any substitution, like EASTERN WHT PIN AC, if we have any stock issues?\nBuyer: Yes, that would be good to know as well.\nRussin: Perfect. I\u2019ll include that in the quote. We can also look into some MCL for any miscellaneous needs you might have. How does that sound?\nBuyer: That sounds like a plan. Please include that too.\nRussin: Great! I\u2019ll prepare the quote and confirm everything in writing. Just to remind you, our usual terms apply, but the written quote will govern the specifics.\nBuyer: Understood, thanks Sami.\nRussin: You're welcome, Maria! I'll get that quote sent over shortly.\nBuyer: Looking forward to it. Thanks again!\nRussin: Thank you! Talk to you soon."
+    },
+    {
+      "call_id": "call_russin_0043",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:28Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "boardman_beams",
+      "customer": {
+        "company_name": "BOARDMAN BEAMS",
+        "contact_name": "Dan Hughes"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FREIGHT_CONSTRAINED",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "c371b937fad33117",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "S",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Ryan scheduled a callback with Dan to discuss a quote for WESTERN RED CEDAR.",
+        "products_mentioned": [
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan.  \nBuyer: Dan Hughes from BOARDMAN BEAMS.  \nRussin: Hi Dan, how can I assist you today?  \nBuyer: I wanted to check on some availability for WESTERN RED CEDAR for an upcoming project.  \nRussin: Sure, I can help with that. What dimensions and volume are you looking for?  \nBuyer: We're considering about 1,000 board feet in 1x6 dimensions.  \nRussin: We typically have a lead time of about 7 to 14 days for WESTERN RED CEDAR. Is that timeframe acceptable for you?  \nBuyer: Yes, that works. Are there any freight constraints I should be aware of?  \nRussin: Currently, we are facing some freight constraints, so I recommend placing your order soon to ensure timely delivery.  \nBuyer: Understood. Can you send me a formal quote for the cedar?  \nRussin: Absolutely, I\u2019ll prepare that right away. Just to confirm, the payment and terms will follow what's on the quote and your approved account file. We may need to confirm anything new with credit.  \nBuyer: That sounds good. Can you also include any options for substitutions in the quote?  \nRussin: Of course, I can add notes on potential substitutions if needed. Would you like me to schedule a call next week to discuss further?  \nBuyer: Yes, let\u2019s do that.  \nRussin: Great! How about I reach out on Tuesday at 10 AM?  \nBuyer: That works for me.  \nRussin: Perfect, I\u2019ll call you then.  \nBuyer: Thanks, Ryan. Looking forward to it.  \nRussin: Thank you, Dan. Talk soon!"
+    },
+    {
+      "call_id": "call_russin_0044",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:35Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "bottrell_lumber_co_inc",
+      "customer": {
+        "company_name": "BOTTRELL LUMBER CO INC",
+        "contact_name": "Gina Bennett"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "FIRST_TIME_BUYER",
+      "outcome_target": "NURTURE_STALL",
+      "primary_product_ids": [
+        "frp",
+        "ijoist_ewp_lvl",
+        "furu_pres_treated",
+        "mcl",
+        "perm"
+      ],
+      "metadata": {
+        "generation_seed": "8bedae80ac31738b",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "L",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna provided Gina with information on products and lead times, preparing to send a quote.",
+        "products_mentioned": [
+          "I-JOIST/EWP/LVL",
+          "FRP",
+          "MCL"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Hi Joanna, this is Gina Bennett from Bottrell Lumber Co Inc.\nRussin: Hi Gina, how can I assist you today?\nBuyer: I'm looking for some materials for an upcoming project. What do you have in stock?\nRussin: We have a variety of products available, including I-JOIST/EWP/LVL for engineered wood applications, FRP panels for commercial kitchens, and FURU PRES TREATED lumber for outdoor use. What specific materials are you interested in?\nBuyer: I need I-JOIST for flooring and some FRP for bathroom renovations. Can you give me lead times on those?\nRussin: Sure! The I-JOIST typically has a lead time of about 10 to 21 days, while the FRP panels can be ready in around 3 to 10 days. Are you looking for specific quantities?\nBuyer: Yes, I'll need about 50 pieces of the I-JOIST and around 30 sheets of FRP.\nRussin: Okay, I can prepare a quote for that. Just to confirm, are you okay with the usual terms? The written quote will confirm all numbers and terms.\nBuyer: Yes, that works for me. Just want to make sure everything is in order.\nRussin: Absolutely, I\u2019ll send over the quote as soon as I have the details. Is there anything else you might need?\nBuyer: I might also be interested in some MCL for other projects, but I need to check my inventory first.\nRussin: I can help with that too when you're ready. The MCL is a great option for a mixed softwood line. Let me know when you want to discuss that.\nBuyer: Sure, I\u2019ll reach back out once I check. Thanks for your help!\nRussin: No problem at all, Gina. I look forward to hearing from you soon.\nBuyer: Bye!\nRussin: Bye!"
+    },
+    {
+      "call_id": "call_russin_0045",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:29Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "brainerd_building_products",
+      "customer": {
+        "company_name": "BRAINERD BUILDING PRODUCTS",
+        "contact_name": "Alex Kowalski"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "PRICE_PUSHBACK",
+      "outcome_target": "NOT_A_FIT",
+      "primary_product_ids": [
+        "abx_capboard",
+        "western_red_cedar",
+        "mcl"
+      ],
+      "metadata": {
+        "generation_seed": "aba09308aa77d229",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "M",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Buyer is looking elsewhere due to pricing concerns.",
+        "products_mentioned": [
+          "ABX CAPBOARD",
+          "WESTERN RED CEDAR"
+        ],
+        "russin_rep": "Jacob"
+      },
+      "transcript": "Russin: Russin Lumber, this is Jacob.  \nBuyer: Alex Kowalski from Brainerd Building Products.  \nRussin: Hi Alex, how can I assist you today?  \nBuyer: I'm looking for pricing on a few products we typically use.  \nRussin: Sure, what do you have in mind?  \nBuyer: We're interested in ABX Capboard and some Western Red Cedar.  \nRussin: Great choices. The ABX Capboard usually has a lead time of about 5 to 10 days. How much are you looking to order?  \nBuyer: We typically order around 200 pieces.  \nRussin: Alright, and for the Western Red Cedar, how many board feet do you need?  \nBuyer: We're looking at about 1,000 board feet.  \nRussin: That sounds good. I can get you a quote on those. Just to confirm, we\u2019ve worked together before, right?  \nBuyer: Yes, we have an established account.  \nRussin: Perfect. Just to note, the written quote will confirm all numbers and terms, but typically we handle NET 30 for established accounts.  \nBuyer: I appreciate that, but I was hoping for a better price on those items.  \nRussin: I understand, but our current pricing reflects the market rates.  \nBuyer: I see. I might need to look elsewhere then.  \nRussin: I understand, Alex. If you have any other needs or questions, feel free to reach out.  \nBuyer: Thanks, Jacob."
+    },
+    {
+      "call_id": "call_russin_0046",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:31Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "briere_a_j_lumber",
+      "customer": {
+        "company_name": "BRIERE-A & J LUMBER",
+        "contact_name": "Luisa Kim"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "STOCK_CHECK",
+      "outcome_target": "VERBAL_COMMIT",
+      "primary_product_ids": [
+        "abx_capboard",
+        "doug_fir",
+        "ijoist_ewp_lvl",
+        "furu_pres_treated",
+        "western_red_cedar"
+      ],
+      "metadata": {
+        "generation_seed": "f858c295fa6fe64c",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "L",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Sami confirmed availability for DOUG FIR, ABX CAPBOARD, and FURU PRES TREATED for Luisa's project.",
+        "products_mentioned": [
+          "DOUG FIR",
+          "ABX CAPBOARD",
+          "FURU PRES TREATED"
+        ],
+        "russin_rep": "Sami"
+      },
+      "transcript": "Russin: Russin Lumber, this is Sami. How can I help you today?\nBuyer: Hi Sami, this is Luisa Kim from BRIERE-A & J LUMBER.\nRussin: Hi Luisa! What can I assist you with?\nBuyer: I'm checking on the availability of some materials for a project we have coming up.\nRussin: Sure, what materials are you looking for?\nBuyer: Specifically, I need some DOUG FIR and also a few pieces of ABX CAPBOARD.\nRussin: We can definitely help with that. For the DOUG FIR, what dimensions are you considering?\nBuyer: We're looking for 2x6 and 2x8 options. How soon can you deliver?\nRussin: We usually have a lead time of about 3 to 10 days for DOUG FIR, depending on the specific dimensions and quantities.\nBuyer: Great, and what about the ABX CAPBOARD?\nRussin: The ABX CAPBOARD typically has a lead time of around 5 to 10 days.\nBuyer: That works. Do you have any stock right now?\nRussin: Let me check our inventory. We currently have both DOUG FIR and ABX CAPBOARD in stock, so we can fulfill your order quickly.\nBuyer: Perfect! Can you give me an estimate for 500 board feet of DOUG FIR and 100 pieces of ABX CAPBOARD?\nRussin: I\u2019ll prepare a quote for you. Just to confirm, our usual terms apply, and I\u2019ll send you the written quote to confirm all numbers and terms.\nBuyer: Sounds good! I appreciate that.\nRussin: No problem! Is there anything else you need while I have you on the line?\nBuyer: Yes, could you also let me know about the FURU PRES TREATED? We might need that as well.\nRussin: Sure, we have FURU PRES TREATED available with a lead time of 3 to 7 days. Would you like a quote for that too?\nBuyer: Yes, please include that in your quote as well, maybe 200 pieces.\nRussin: Absolutely! I\u2019ll include that in the estimate. Expect an email from me shortly.\nBuyer: Thank you, Sami. I look forward to your quote!\nRussin: Thank you, Luisa! I\u2019ll make sure to get that to you right away. Have a great day!\nBuyer: You too! Bye."
+    },
+    {
+      "call_id": "call_russin_0047",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:29Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "brooks_lumber",
+      "customer": {
+        "company_name": "BROOKS-LUMBER",
+        "contact_name": "Tom Vasquez"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "MULTI_LINE_JOB_QUOTE",
+      "outcome_target": "QUOTE_FOLLOWUP",
+      "primary_product_ids": [
+        "fur_trim"
+      ],
+      "metadata": {
+        "generation_seed": "1a6c37253d3ebc7a",
+        "priority": "normal",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "XS",
+        "terms_tone": "needs_written_confirmation",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Ryan from Russin Lumber discussed a quote for FURU-TRIM with Tom from BROOKS-LUMBER.",
+        "products_mentioned": [
+          "FURU-TRIM"
+        ],
+        "russin_rep": "Ryan"
+      },
+      "transcript": "Russin: Russin Lumber, this is Ryan.\nBuyer: Tom Vasquez from BROOKS-LUMBER.\nRussin: Hi Tom, how can I assist you today?\nBuyer: I'm looking to get a quote for some trim materials for a project we have coming up.\nRussin: Sure, what specific products are you considering?\nBuyer: We're primarily looking at FURU-TRIM for some interior work.\nRussin: Great choice! We have FURU-TRIM available in linear feet. How much are you thinking of ordering?\nBuyer: I think we need around 500 linear feet.\nRussin: That sounds good. The typical lead time is around 3 to 7 days. Do you need anything else along with that?\nBuyer: That should be it for trim, but I might need some advice on the best way to install it.\nRussin: I can definitely help with that. Our FURU-TRIM is easy to work with, and I can send over some installation tips with the quote.\nBuyer: Perfect! Can you also tell me about pricing?\nRussin: Absolutely, I\u2019ll prepare a formal quote for you. Just a note, payment and terms will be based on what\u2019s in the quote and your approved account file. We might need to confirm anything new with your credit.\nBuyer: Understood. I\u2019ll wait for the quote then.\nRussin: I\u2019ll get that sent out to you shortly, Tom. Is there anything else you need while I have you on the line?\nBuyer: No, that covers it for now. Thanks, Ryan.\nRussin: You're welcome! I'll follow up with the quote soon.\nBuyer: Great, talk to you later.\nRussin: Talk to you soon, Tom."
+    },
+    {
+      "call_id": "call_russin_0048",
+      "schema_version": "1.0",
+      "created_at": "2026-04-29T22:28:23Z",
+      "updated_at": "2026-04-29T23:12:35Z",
+      "supplier": {
+        "name": "Russin Lumber",
+        "party_type": "seller",
+        "default_rep_role": "inside_sales"
+      },
+      "buyer_id": "building_supply_center",
+      "customer": {
+        "company_name": "BUILDING SUPPLY CENTER",
+        "contact_name": "Sarah Santos"
+      },
+      "channel": "phone",
+      "language": "en-US",
+      "scenario_tag": "ADD_ON_REORDER",
+      "outcome_target": "CALLBACK_SCHEDULED",
+      "primary_product_ids": [
+        "abx_capboard",
+        "cedar_bevel",
+        "cedar_siding",
+        "cedar_lmd",
+        "doug_fir",
+        "eastern_wht_pin_ac",
+        "frp",
+        "fur_trim"
+      ],
+      "metadata": {
+        "generation_seed": "7f8ccce8d5fdbaba",
+        "priority": "high",
+        "compliance_flags": [],
+        "transcript_status": "generated",
+        "target_turn_range": [
+          18,
+          40
+        ],
+        "account_tier_volume": "XL",
+        "terms_tone": "established_open_account",
+        "model": "openai/gpt-4o-mini",
+        "llm_summary_one_line": "Joanna scheduled a follow-up call with Sarah to discuss a reorder including cedar siding, ABX capboard, and cedar LMD.",
+        "products_mentioned": [
+          "CEDAR SIDING",
+          "ABX CAPBOARD",
+          "CEDAR LMD"
+        ],
+        "russin_rep": "Joanna"
+      },
+      "transcript": "Russin: Russin Lumber, this is Joanna.\nBuyer: Hello, Joanna. This is Sarah Santos from Building Supply Center.\nRussin: Hi, Sarah! How can I assist you today?\nBuyer: We're looking to reorder some materials. Last time, we ordered a mix of cedar siding and ABX capboard.\nRussin: Great choices! I can help you with that. How much cedar siding do you need this time?\nBuyer: We\u2019ll need about 1,500 square feet of CEDAR SIDING. Also, can we get 500 pieces of ABX CAPBOARD?\nRussin: Sure, I\u2019ll check the availability. The CEDAR SIDING typically has a lead time of 7 to 14 days, and the ABX CAPBOARD is about 5 to 10 days.\nBuyer: That works for us. Can you confirm the pricing for those?\nRussin: I'll put together a quote for you and send it for your review. Just a reminder that our usual terms apply, and the written quote will confirm numbers and terms.\nBuyer: Understood. We\u2019ve been very happy with your service.\nRussin: Thank you! Is there anything else you would like to add to this order?\nBuyer: Yes, do you have any recommendations for siding options that might be available sooner?\nRussin: We do have some CEDAR LMD available with a quicker turnaround of about 5 to 12 days. Would that work for you?\nBuyer: Yes, that could be a good alternative. Let\u2019s include 1,000 board feet of CEDAR LMD in the order.\nRussin: Perfect! I\u2019ll include that in the quote. When would you like to schedule a follow-up to review everything?\nBuyer: How about we touch base next Tuesday?\nRussin: Sounds good! I'll reach out then with the quote and details on the order.\nBuyer: Thank you, Joanna. Looking forward to it!\nRussin: Thank you, Sarah! Talk to you next week."
+    }
+  ]
+}

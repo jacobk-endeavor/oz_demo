@@ -1,0 +1,1351 @@
+{
+  "schema_version": "1.0",
+  "buyers": [
+    {
+      "buyer_id": "ac_dutton_co",
+      "company_name": "A.C. DUTTON CO.",
+      "customer_type": "full_line_lumber_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Reading",
+        "state": "PA"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1000",
+        "given_name": "Jordan",
+        "family_name": "Meyers",
+        "full_name": "Jordan Meyers"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (full line lumber yard).",
+      "product_ids": [
+        "abx_capboard",
+        "cedar_bevel",
+        "cedar_siding",
+        "cedar_lmd",
+        "doug_fir",
+        "furu_pres_treated",
+        "fur_trim",
+        "ijoist_ewp_lvl",
+        "mcl",
+        "perm",
+        "ponderosa_pine",
+        "red_red_fir",
+        "select_tie_pine",
+        "syp_hf_2",
+        "thermally_mod",
+        "t_groove",
+        "western_red_cedar",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "ad_moyer_road_supply",
+      "company_name": "A.D.MOYER ROAD SUPPLY",
+      "customer_type": "regional_lumber_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Pottsville",
+        "state": "PA"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1001",
+        "given_name": "Rita",
+        "family_name": "Lund",
+        "full_name": "Rita Lund"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (regional lumber yard).",
+      "product_ids": [
+        "cedar_bevel",
+        "eastern_wht_pin_ac",
+        "frp",
+        "ijoist_ewp_lvl",
+        "syp_hf_2",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "aj_blosenski_services_inc",
+      "company_name": "A. J. BLOSENSKI SERVICES INC",
+      "customer_type": "contractor_service",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "West Chester",
+        "state": "PA"
+      },
+      "annual_volume_tier": "XS",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1002",
+        "given_name": "Derek",
+        "family_name": "Hayes",
+        "full_name": "Derek Hayes"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (contractor service).",
+      "product_ids": [
+        "fur_trim"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "abc_supply_profile_a",
+      "company_name": "ABC SUPPLY",
+      "customer_type": "national_pro_dealer",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Trenton",
+        "state": "NJ"
+      },
+      "annual_volume_tier": "L",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1003",
+        "given_name": "Amanda",
+        "family_name": "Dubois",
+        "full_name": "Amanda Dubois"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (national pro dealer).",
+      "product_ids": [
+        "abx_capboard",
+        "cedar_siding",
+        "cedar_lmd",
+        "fur_trim",
+        "mcl",
+        "ponderosa_pine",
+        "syp_hf_2",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "abc_supply_profile_b",
+      "company_name": "ABC SUPPLY",
+      "customer_type": "national_pro_dealer",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Rochester",
+        "state": "NY"
+      },
+      "annual_volume_tier": "XL",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1004",
+        "given_name": "Marcus",
+        "family_name": "Martinez",
+        "full_name": "Marcus Martinez"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (national pro dealer).",
+      "product_ids": [
+        "abx_capboard",
+        "cedar_bevel",
+        "cedar_siding",
+        "cedar_lmd",
+        "furu_pres_treated",
+        "mcl",
+        "perm",
+        "ponderosa_pine",
+        "syp_hf_2",
+        "t_groove",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "ace_hardware",
+      "company_name": "ACE HARDWARE",
+      "customer_type": "retail_coop",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Columbus",
+        "state": "OH"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1005",
+        "given_name": "Sofia",
+        "family_name": "Obeng",
+        "full_name": "Sofia Obeng"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (retail coop).",
+      "product_ids": [
+        "syp_hf_2"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "ace_hardware_platt",
+      "company_name": "ACE HARDWARE/PLATT",
+      "customer_type": "retail_coop",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Portland",
+        "state": "OR"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1006",
+        "given_name": "Devon",
+        "family_name": "Bauer",
+        "full_name": "Devon Bauer"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (retail coop).",
+      "product_ids": [
+        "western_red_cedar"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "ace_hardware_wharnton",
+      "company_name": "ACE HARDWARE/WHARTON",
+      "customer_type": "retail_coop",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Wharton",
+        "state": "NJ"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1007",
+        "given_name": "Claire",
+        "family_name": "Costa",
+        "full_name": "Claire Costa"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (retail coop).",
+      "product_ids": [
+        "abx_capboard",
+        "cedar_siding",
+        "eastern_wht_pin_ac",
+        "ijoist_ewp_lvl",
+        "mcl",
+        "western_red_cedar",
+        "syp_hf_2",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "ace_lumber",
+      "company_name": "ACE LUMBER",
+      "customer_type": "independent_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Buffalo",
+        "state": "NY"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1008",
+        "given_name": "Hassan",
+        "family_name": "Curtis",
+        "full_name": "Hassan Curtis"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (independent yard).",
+      "product_ids": [
+        "cedar_lmd",
+        "doug_fir",
+        "eastern_wht_pin_ac",
+        "ijoist_ewp_lvl",
+        "syp_hf_2",
+        "mcl",
+        "perm",
+        "red_red_fir",
+        "western_red_cedar",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "aew_building_materials_inc",
+      "company_name": "A.E.W BUILDING MATERIALS INC",
+      "customer_type": "commercial_subcontractor_supply",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Philadelphia",
+        "state": "PA"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1009",
+        "given_name": "Renee",
+        "family_name": "Patel",
+        "full_name": "Renee Patel"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (commercial subcontractor supply).",
+      "product_ids": [
+        "frp",
+        "fur_trim"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "agway_lumber",
+      "company_name": "AGWAY LUMBER",
+      "customer_type": "ag_coop_style_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Ithaca",
+        "state": "NY"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1010",
+        "given_name": "Owen",
+        "family_name": "Frost",
+        "full_name": "Owen Frost"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (ag coop style yard).",
+      "product_ids": [
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "alcoa_gw_millwork_lumber",
+      "company_name": "ALCOA/G&W MILLWORK & LUMBER",
+      "customer_type": "millwork_distributor",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Knoxville",
+        "state": "TN"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1011",
+        "given_name": "Priya",
+        "family_name": "Nowak",
+        "full_name": "Priya Nowak"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (millwork distributor).",
+      "product_ids": [
+        "red_red_fir",
+        "t_groove"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "alderfer_lumber_co_inc",
+      "company_name": "ALDERFER LUMBER CO INC",
+      "customer_type": "independent_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Telford",
+        "state": "PA"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1012",
+        "given_name": "Tyler",
+        "family_name": "Novak",
+        "full_name": "Tyler Novak"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (independent yard).",
+      "product_ids": [
+        "doug_fir",
+        "perm",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "am_lumber",
+      "company_name": "AM LUMBER",
+      "customer_type": "cash_carry_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "New Haven",
+        "state": "CT"
+      },
+      "annual_volume_tier": "XS",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1013",
+        "given_name": "Elena",
+        "family_name": "Khan",
+        "full_name": "Elena Khan"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (cash carry yard).",
+      "product_ids": [
+        "syp_hf_2"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "american_builders_contractor_supply",
+      "company_name": "AMERICAN BUILDERS & CONTRACTOR SUPPLY",
+      "customer_type": "pro_supply",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Charlotte",
+        "state": "NC"
+      },
+      "annual_volume_tier": "L",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1014",
+        "given_name": "Javier",
+        "family_name": "Okafor",
+        "full_name": "Javier Okafor"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (pro supply).",
+      "product_ids": [
+        "ijoist_ewp_lvl",
+        "select_tie_pine",
+        "syp_hf_2",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "andrews",
+      "company_name": "ANDREWS",
+      "customer_type": "hardware_lumber_combo",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Elmira",
+        "state": "NY"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1015",
+        "given_name": "Naomi",
+        "family_name": "Olsen",
+        "full_name": "Naomi Olsen"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (hardware lumber combo).",
+      "product_ids": [
+        "mcl",
+        "perm"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "anthony_forest_products_co",
+      "company_name": "ANTHONY FOREST PRODUCTS CO",
+      "customer_type": "wood_components_mfg",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "El Dorado",
+        "state": "AR"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1016",
+        "given_name": "Kyle",
+        "family_name": "Romano",
+        "full_name": "Kyle Romano"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (wood components mfg).",
+      "product_ids": [
+        "ponderosa_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "arizona_lumber_supply",
+      "company_name": "ARIZONA LUMBER & SUPPLY",
+      "customer_type": "regional_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Phoenix",
+        "state": "AZ"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1017",
+        "given_name": "Anika",
+        "family_name": "Li",
+        "full_name": "Anika Li"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (regional yard).",
+      "product_ids": [
+        "cedar_bevel",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "aston_lumber",
+      "company_name": "ASTON LUMBER",
+      "customer_type": "independent_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Aston",
+        "state": "PA"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1018",
+        "given_name": "Rob",
+        "family_name": "Washington",
+        "full_name": "Rob Washington"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (independent yard).",
+      "product_ids": [
+        "cedar_lmd",
+        "t_groove",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "bh_smith_profile_a",
+      "company_name": "B.H. SMITH",
+      "customer_type": "legacy_lumber_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Cooperstown",
+        "state": "NY"
+      },
+      "annual_volume_tier": "XS",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1019",
+        "given_name": "Melissa",
+        "family_name": "Chen",
+        "full_name": "Melissa Chen"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (legacy lumber yard).",
+      "product_ids": [
+        "western_red_cedar"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "bh_smith_profile_b",
+      "company_name": "B.H. SMITH",
+      "customer_type": "legacy_lumber_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Oneonta",
+        "state": "NY"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1020",
+        "given_name": "Vincent",
+        "family_name": "Singh",
+        "full_name": "Vincent Singh"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (legacy lumber yard).",
+      "product_ids": [
+        "ijoist_ewp_lvl",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "babcock_lumber",
+      "company_name": "BABCOCK LUMBER",
+      "customer_type": "independent_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Scranton",
+        "state": "PA"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1021",
+        "given_name": "Tara",
+        "family_name": "Doyle",
+        "full_name": "Tara Doyle"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (independent yard).",
+      "product_ids": [
+        "abx_capboard",
+        "mcl"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "bah_lumber_profile_a",
+      "company_name": "B.A.H. LUMBER",
+      "customer_type": "pro_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Richmond",
+        "state": "VA"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1022",
+        "given_name": "Neil",
+        "family_name": "Nguyen",
+        "full_name": "Neil Nguyen"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (pro yard).",
+      "product_ids": [
+        "ijoist_ewp_lvl",
+        "ponderosa_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "bah_lumber_profile_b",
+      "company_name": "B.A.H. LUMBER",
+      "customer_type": "pro_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Norfolk",
+        "state": "VA"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1023",
+        "given_name": "Yuki",
+        "family_name": "Diallo",
+        "full_name": "Yuki Diallo"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (pro yard).",
+      "product_ids": [
+        "cedar_bevel",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "baker_lumber",
+      "company_name": "BAKER LUMBER",
+      "customer_type": "independent_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Martinsburg",
+        "state": "WV"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1024",
+        "given_name": "Calvin",
+        "family_name": "Park",
+        "full_name": "Calvin Park"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (independent yard).",
+      "product_ids": [
+        "western_red_cedar"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "baker_plumbing_supply",
+      "company_name": "BAKER PLUMBING SUPPLY",
+      "customer_type": "specialty_dealer",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Baltimore",
+        "state": "MD"
+      },
+      "annual_volume_tier": "XS",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1025",
+        "given_name": "Gabriela",
+        "family_name": "Fernandez",
+        "full_name": "Gabriela Fernandez"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (specialty dealer).",
+      "product_ids": [
+        "t_groove"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "barbara_building_products",
+      "company_name": "BARBARA BUILDING PRODUCTS",
+      "customer_type": "commercial_dealer",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Newark",
+        "state": "NJ"
+      },
+      "annual_volume_tier": "L",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1026",
+        "given_name": "Steve",
+        "family_name": "Schmidt",
+        "full_name": "Steve Schmidt"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (commercial dealer).",
+      "product_ids": [
+        "ijoist_ewp_lvl",
+        "mcl",
+        "t_groove"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "barkley_lumber",
+      "company_name": "BARKLEY LUMBER",
+      "customer_type": "independent_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Lexington",
+        "state": "KY"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1027",
+        "given_name": "Monica",
+        "family_name": "Briggs",
+        "full_name": "Monica Briggs"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (independent yard).",
+      "product_ids": [
+        "western_red_cedar"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "bes_lumber_profile_a",
+      "company_name": "B.E.S. LUMBER",
+      "customer_type": "pro_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Salisbury",
+        "state": "MD"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1028",
+        "given_name": "Brett",
+        "family_name": "Esposito",
+        "full_name": "Brett Esposito"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (pro yard).",
+      "product_ids": [
+        "cedar_bevel",
+        "cedar_lmd",
+        "ijoist_ewp_lvl",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "bes_lumber_profile_b",
+      "company_name": "B.E.S. LUMBER",
+      "customer_type": "pro_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Wilmington",
+        "state": "DE"
+      },
+      "annual_volume_tier": "L",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1029",
+        "given_name": "Layla",
+        "family_name": "Abbott",
+        "full_name": "Layla Abbott"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (pro yard).",
+      "product_ids": [
+        "abx_capboard",
+        "cedar_lmd",
+        "ijoist_ewp_lvl",
+        "mcl",
+        "ponderosa_pine",
+        "syp_hf_2",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "bellet_lumber",
+      "company_name": "BELLET LUMBER",
+      "customer_type": "independent_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Bethlehem",
+        "state": "PA"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1030",
+        "given_name": "Will",
+        "family_name": "Perez",
+        "full_name": "Will Perez"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (independent yard).",
+      "product_ids": [
+        "western_red_cedar"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "benchmark_lumber",
+      "company_name": "BENCHMARK LUMBER",
+      "customer_type": "full_line_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Cleveland",
+        "state": "OH"
+      },
+      "annual_volume_tier": "L",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1031",
+        "given_name": "Kim",
+        "family_name": "Hernandez",
+        "full_name": "Kim Hernandez"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (full line yard).",
+      "product_ids": [
+        "ijoist_ewp_lvl",
+        "fur_trim",
+        "red_red_fir",
+        "western_red_cedar",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "benchmark_building_supply",
+      "company_name": "BENCHMARK BUILDING SUPPLY",
+      "customer_type": "pro_dealer",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Indianapolis",
+        "state": "IN"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1032",
+        "given_name": "Nick",
+        "family_name": "Morales",
+        "full_name": "Nick Morales"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (pro dealer).",
+      "product_ids": [
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "berry",
+      "company_name": "BERRY",
+      "customer_type": "multi_branch_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Lancaster",
+        "state": "PA"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1033",
+        "given_name": "Louisa",
+        "family_name": "Walsh",
+        "full_name": "Louisa Walsh"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (multi branch yard).",
+      "product_ids": [
+        "cedar_bevel",
+        "cedar_lmd",
+        "fur_trim",
+        "western_red_cedar",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "blackmon_building_supply",
+      "company_name": "BLACKMON BUILDING SUPPLY",
+      "customer_type": "pro_supply",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Greenville",
+        "state": "SC"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1034",
+        "given_name": "Frank",
+        "family_name": "Adebayo",
+        "full_name": "Frank Adebayo"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (pro supply).",
+      "product_ids": [
+        "mcl",
+        "syp_hf_2",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "boardman_inc",
+      "company_name": "BOARDMAN INC",
+      "customer_type": "commercial_gc_supply",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Syracuse",
+        "state": "NY"
+      },
+      "annual_volume_tier": "L",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1035",
+        "given_name": "Dina",
+        "family_name": "Sokolov",
+        "full_name": "Dina Sokolov"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (commercial gc supply).",
+      "product_ids": [
+        "ijoist_ewp_lvl",
+        "furu_pres_treated",
+        "perm",
+        "t_groove",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "bohemia_building_materials",
+      "company_name": "BOHEMIA BUILDING MATERIALS",
+      "customer_type": "long_island_pro",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Bohemia",
+        "state": "NY"
+      },
+      "annual_volume_tier": "XL",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1036",
+        "given_name": "Ed",
+        "family_name": "Reyes",
+        "full_name": "Ed Reyes"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (long island pro).",
+      "product_ids": [
+        "abx_capboard",
+        "doug_fir",
+        "frp",
+        "ijoist_ewp_lvl",
+        "syp_hf_2"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "borth_lumber_company_inc",
+      "company_name": "BORTH LUMBER COMPANY INC",
+      "customer_type": "independent_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Harrisburg",
+        "state": "PA"
+      },
+      "annual_volume_tier": "XL",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1037",
+        "given_name": "Helena",
+        "family_name": "Ibrahim",
+        "full_name": "Helena Ibrahim"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (independent yard).",
+      "product_ids": [
+        "abx_capboard",
+        "cedar_bevel",
+        "cedar_lmd",
+        "furu_pres_treated",
+        "mcl",
+        "perm",
+        "ponderosa_pine",
+        "red_red_fir",
+        "select_tie_pine",
+        "western_red_cedar",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "boss_lumber_co_inc",
+      "company_name": "BOSS LUMBER CO INC",
+      "customer_type": "pro_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Altoona",
+        "state": "PA"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1038",
+        "given_name": "Pat",
+        "family_name": "Keller",
+        "full_name": "Pat Keller"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (pro yard).",
+      "product_ids": [
+        "abx_capboard",
+        "t_groove"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "boston_lumber_co_inc",
+      "company_name": "BOSTON LUMBER CO INC",
+      "customer_type": "structural_dealer",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Boston",
+        "state": "MA"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1039",
+        "given_name": "Angela",
+        "family_name": "O'Brien",
+        "full_name": "Angela O'Brien"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (structural dealer).",
+      "product_ids": [
+        "ijoist_ewp_lvl"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "brandt_lumber_products",
+      "company_name": "BRANDT LUMBER PRODUCTS",
+      "customer_type": "distributor",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Madison",
+        "state": "WI"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1040",
+        "given_name": "Chris",
+        "family_name": "Yamamoto",
+        "full_name": "Chris Yamamoto"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (distributor).",
+      "product_ids": [
+        "cedar_bevel",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "bs_lumber_supply",
+      "company_name": "B.S. LUMBER & SUPPLY",
+      "customer_type": "full_line_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Erie",
+        "state": "PA"
+      },
+      "annual_volume_tier": "L",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1041",
+        "given_name": "Maria",
+        "family_name": "Kravitz",
+        "full_name": "Maria Kravitz"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (full line yard).",
+      "product_ids": [
+        "cedar_bevel",
+        "cedar_siding",
+        "cedar_lmd",
+        "eastern_wht_pin_ac",
+        "ijoist_ewp_lvl",
+        "mcl",
+        "red_red_fir",
+        "syp_hf_2",
+        "western_red_cedar",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "boardman_beams",
+      "company_name": "BOARDMAN BEAMS",
+      "customer_type": "component_fab",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Youngstown",
+        "state": "OH"
+      },
+      "annual_volume_tier": "S",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1042",
+        "given_name": "Dan",
+        "family_name": "Hughes",
+        "full_name": "Dan Hughes"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (component fab).",
+      "product_ids": [
+        "western_red_cedar"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "bottrell_lumber_co_inc",
+      "company_name": "BOTTRELL LUMBER CO INC",
+      "customer_type": "pro_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Pittsburgh",
+        "state": "PA"
+      },
+      "annual_volume_tier": "L",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1043",
+        "given_name": "Gina",
+        "family_name": "Bennett",
+        "full_name": "Gina Bennett"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (pro yard).",
+      "product_ids": [
+        "frp",
+        "ijoist_ewp_lvl",
+        "furu_pres_treated",
+        "mcl",
+        "perm"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "brainerd_building_products",
+      "company_name": "BRAINERD BUILDING PRODUCTS",
+      "customer_type": "dealer",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Brainerd",
+        "state": "MN"
+      },
+      "annual_volume_tier": "M",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1044",
+        "given_name": "Alex",
+        "family_name": "Kowalski",
+        "full_name": "Alex Kowalski"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (dealer).",
+      "product_ids": [
+        "abx_capboard",
+        "western_red_cedar",
+        "mcl"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "briere_a_j_lumber",
+      "company_name": "BRIERE-A & J LUMBER",
+      "customer_type": "independent_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Albany",
+        "state": "NY"
+      },
+      "annual_volume_tier": "L",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1045",
+        "given_name": "Luisa",
+        "family_name": "Kim",
+        "full_name": "Luisa Kim"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (independent yard).",
+      "product_ids": [
+        "abx_capboard",
+        "doug_fir",
+        "ijoist_ewp_lvl",
+        "furu_pres_treated",
+        "western_red_cedar"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    },
+    {
+      "buyer_id": "brooks_lumber",
+      "company_name": "BROOKS-LUMBER",
+      "customer_type": "small_yard",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Portland",
+        "state": "ME"
+      },
+      "annual_volume_tier": "XS",
+      "default_contact": {
+        "title": "Buyer/Owner",
+        "phone_placeholder": "+1-555-1046",
+        "given_name": "Tom",
+        "family_name": "Vasquez",
+        "full_name": "Tom Vasquez"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (small yard).",
+      "product_ids": [
+        "fur_trim"
+      ],
+      "terms_tone": "needs_written_confirmation",
+      "terms_voice": "Payment and terms are whatever is on the formal quote and your approved account file\u2014do not promise NET 30 or open terms on this call. Say credit may need to confirm anything new, and the written quote governs."
+    },
+    {
+      "buyer_id": "building_supply_center",
+      "company_name": "BUILDING SUPPLY CENTER",
+      "customer_type": "full_line_flagship",
+      "primary_region": "US",
+      "ship_to": {
+        "city": "Allentown",
+        "state": "PA"
+      },
+      "annual_volume_tier": "XL",
+      "default_contact": {
+        "title": "Purchasing",
+        "phone_placeholder": "+1-555-1047",
+        "given_name": "Sarah",
+        "family_name": "Santos",
+        "full_name": "Sarah Santos"
+      },
+      "payment_terms_typical": "Per quote and approved account file",
+      "notes": "Synthetic Russin Lumber account profile for transcript generation (full line flagship).",
+      "product_ids": [
+        "abx_capboard",
+        "cedar_bevel",
+        "cedar_siding",
+        "cedar_lmd",
+        "doug_fir",
+        "eastern_wht_pin_ac",
+        "frp",
+        "fur_trim",
+        "ijoist_ewp_lvl",
+        "select_tie_pine",
+        "mcl",
+        "ponderosa_pine",
+        "red_red_fir",
+        "syp_hf_2",
+        "t_groove",
+        "western_red_cedar",
+        "yellow_pine"
+      ],
+      "terms_tone": "established_open_account",
+      "terms_voice": "Established account: you may briefly reference usual terms if it fits, but still say the written quote confirms numbers and terms\u2014no open-ended verbal guarantees."
+    }
+  ]
+}

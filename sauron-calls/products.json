@@ -1,0 +1,591 @@
+{
+  "schema_version": "1.1",
+  "products": [
+    {
+      "product_id": "abx_capboard",
+      "short_name": "ABX CAPBOARD",
+      "category": "trim_exterior",
+      "typical_unit": "piece",
+      "description": "Aluminum/composite cap and fascia boards; exterior trim accessory.",
+      "lead_time_days": {
+        "typical_min": 5,
+        "typical_max": 10
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Exterior trim & fascia",
+        "material": "Aluminum-composite cap / fascia system (ABX class)",
+        "marketing_blurb": "Deck-out fascia, window heads, and rake details with a durable, paint-ready cap that sheds water better than raw wood returns.",
+        "primary_applications": [
+          "Fascia and sub-fascia capping on eaves and rakes",
+          "Window drip caps and head flashing integration",
+          "Gable trim transitions where a rigid, low-maintenance cap is specified"
+        ],
+        "typical_profiles": [
+          "Nominal fascia cap 5/4 × 8\" to 12\" coverage (manufacturer-specific)",
+          "Drip-edge compatible profiles; color-matched coil often ordered separately"
+        ],
+        "standard_lengths_ft": [8, 10, 12],
+        "finish_options": ["Factory pre-finished white", "Paint-grade smooth", "Woodgrain-embossed (SKU-dependent)"],
+        "coating_performance": "Ask for coastal/salt-spray rated SKUs where within one mile of salt water.",
+        "fasteners": "Color-matched trim screws or stainless per manufacturer; pre-drill in cold weather.",
+        "bundling": "Sold per piece; job packs may be broken for LTL.",
+        "storage": "Store flat, dry, out of direct sun before install; stack tall bundles on dunnage.",
+        "warranty_class": "Manufacturer limited finish/substrate warranty; varies by series—quote exact SKU.",
+        "documents_to_request": ["Installation sheet", "Expansion/contraction chart", "Wind-load tables if applicable"],
+        "hs_style_category": "Exterior building trim / formed metal-composite trim"
+      }
+    },
+    {
+      "product_id": "cedar_bevel",
+      "short_name": "CEDAR BEVEL",
+      "category": "siding",
+      "typical_unit": "sq_ft",
+      "description": "Bevel cedar siding; exterior spec and appearance grades.",
+      "lead_time_days": {
+        "typical_min": 7,
+        "typical_max": 14
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Natural wood siding",
+        "species": "Western red cedar or incense cedar (grade line dependent—confirm on quote)",
+        "marketing_blurb": "Classic bevel lap with strong shadow line; spec-grade and appearance grades for paint, stain, or natural weathering.",
+        "primary_applications": [
+          "Residential and light commercial cladding",
+          "Gable accents and feature walls",
+          "Historic-appropriate repairs where bevel lap is existing"
+        ],
+        "grades_typical": ["Clear vertical grain (CVG)", "A & better", "STK (select tight knot)", "Custom export clears"],
+        "nominal_sizes": ["1×6\", 1×8\", 1×10\" exposures vary by mill reveal—verify coverage"],
+        "surface": ["Smooth face", "Resawn face (rough) for stain hold"],
+        "moisture_content": "Kiln-dried target 12–15% for exterior stock; acclimate on site per GC schedule.",
+        "coverage_notes": "Quote by square foot of wall area; add 8–12% waste for cuts and stagger.",
+        "finish_guidance": "Factory pre-stain available on some lines; field coat all six sides if painting.",
+        "fasteners": "Hot-dip galvanized or stainless ring-shank siding nails; blind-fasten where specified.",
+        "storage": "Keep strapped, off ground, under cover; sticker if loose-piled in humid yards.",
+        "standards_reference": ["NLGA/WWPA grade rules for cedar", "Local wind load and nailing schedule per engineer of record"],
+        "sustainability": "FSC/PEFC available as special order on some mills; lead time extends."
+      }
+    },
+    {
+      "product_id": "cedar_siding",
+      "short_name": "CEDAR SIDING",
+      "category": "siding",
+      "typical_unit": "sq_ft",
+      "description": "Cedar siding assortment; job-lot and stocking SKUs.",
+      "lead_time_days": {
+        "typical_min": 7,
+        "typical_max": 14
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Natural wood siding (assorted)",
+        "species": "Primarily western red cedar; may include Port Orford or Alaska yellow cedar on specialty pulls",
+        "marketing_blurb": "Job-lot program spanning bevel, channel, tongue-and-groove, and shingles/shakes-pull equivalents from regional mills.",
+        "primary_applications": [
+          "Full cladding packages",
+          "Wainscot and porch skirt",
+          "Accent bands matching existing cedar architecture"
+        ],
+        "profiles_in_scope": ["Bevel lap", "Channel rustic", "T&G v-joint or STP", "Shiplap"],
+        "grading": "Quote references exact mill tally; knotty vs clear varies sharply in price and lead time.",
+        "unit_basis": "Priced per covered square foot once profile and reveal are locked.",
+        "custom_runs": "Minimums apply on pre-primed or fire-retardant treated cedar—ask inside sales.",
+        "compat_trim": "Pairs with western red cedar trim stock, ABX caps, or composite jambs as specified.",
+        "documentation": "Mill certificates, grade stamps, and moisture certification available on request.",
+        "freight_notes": "Long packs may require extended trailers or piggyback unload by appointment."
+      }
+    },
+    {
+      "product_id": "cedar_lmd",
+      "short_name": "CEDAR LMD",
+      "category": "lumber_dimension",
+      "typical_unit": "board_foot",
+      "description": "Cedar dimensional lumber; various nominal sizes.",
+      "lead_time_days": {
+        "typical_min": 5,
+        "typical_max": 12
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Dimension lumber (cedar)",
+        "species": "Western red cedar dimensional (LMD line)",
+        "marketing_blurb": "Light, stable cedar for exposed rafters, pergolas, trim blocking, and exterior millwork cores.",
+        "primary_applications": [
+          "Exposed structural accents rated for appropriate spans",
+          "Exterior nailers and outriggers in cedar assemblies",
+          "Posts and beams where natural decay resistance is desired (engineer-sized)"
+        ],
+        "nominal_sizes_stocking": ["2×4", "2×6", "2×8", "2×10", "4×4", "4×6", "6×6 (limited)"],
+        "lengths_ft": [8, 10, 12, 14, 16, "20 special order"],
+        "grades": ["Construction", "Select", "Appearance", "Export clears by inquiry"],
+        "texture": ["S4S", "S1S2E rough"],
+        "unit_pricing": "Board foot (MBF basis) with min charge on small picks.",
+        "handling": "Soft species—use wide carriers; avoid single-point slings on long lengths.",
+        "field_notes": "Seal end cuts in the field if priming schedule slips to reduce checking."
+      }
+    },
+    {
+      "product_id": "doug_fir",
+      "short_name": "DOUG FIR",
+      "category": "lumber_dimension",
+      "typical_unit": "board_foot",
+      "description": "Douglas fir framing and appearance; studs and boards.",
+      "lead_time_days": {
+        "typical_min": 3,
+        "typical_max": 10
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Structural dimension & boards",
+        "species": "Douglas fir–larch (DF-L) or Douglas fir south (region dependent)",
+        "marketing_blurb": "High-strength softwood for framing, industrial crating, and vertical-grain appearance where specified.",
+        "primary_applications": [
+          "Studs, plates, headers (grade and stamp per plan)",
+          "Concrete forms and tilt-up bracing",
+          "T&G roof deck and industrial flooring in industrial grades"
+        ],
+        "nominal_sizes": ["2× material", "4× and larger timbers by order"],
+        "grades_framing": ["No. 2 & better", "Stud", "MSR machine stress rated (specified)"],
+        "grades_appearance": ["C & better", "Vertical grain clears (long lead)"],
+        "moisture_content": "Surfaced green or kiln-dried per stamp; match to indoor vs outdoor spec.",
+        "standards_reference": ["SPIB/NLGA", "ASTM grading under applicable rules"],
+        "unit_basis": "Piece count on sticks; MBF on random-width tally.",
+        "storage": "Stickering green timbers if job holds more than two weeks in wet climates."
+      }
+    },
+    {
+      "product_id": "furu_pres_treated",
+      "short_name": "FURU PRES TREATED",
+      "category": "treated",
+      "typical_unit": "piece",
+      "description": "Preservative-treated furring and utility stock for exterior exposure.",
+      "lead_time_days": {
+        "typical_min": 3,
+        "typical_max": 7
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Preservative-treated utility",
+        "material": "SPF/SYP furring strips; MCA or comparable treated formulation (retention by SKU)",
+        "marketing_blurb": "Ground-contact and above-ground retentions for strapping rainscreens, sleeper decks, and utility packs.",
+        "primary_applications": [
+          "Vertical and horizontal furring over WRB",
+          "Concrete sleeper pads for low-clearance decks",
+          "Packaged barn/outbuilding kits"
+        ],
+        "common_sizes": ["1×3", "1×4", "2×3 furring", "Custom rip from 2× stock by yard"],
+        "retention_notes": "Match retention code (UC codes) to soil contact and species—quote tag on bundle end.",
+        "fasteners": "Hot-dip galvanized or stainless; avoid bright nails in treated interfaces.",
+        "handling": "Wet when fresh—allow surface dry before cladding; use dust controls when ripping.",
+        "disposal": "Follow local landfill rules for cutoffs; do not burn.",
+        "warranty": "Treater's limited warranty; job documentation requires end tags and invoices."
+      }
+    },
+    {
+      "product_id": "fur_trim",
+      "short_name": "FURU-TRIM",
+      "category": "trim_interior",
+      "typical_unit": "linear_ft",
+      "description": "Furring/trim strips; interior packs and contractor counts.",
+      "lead_time_days": {
+        "typical_min": 3,
+        "typical_max": 7
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Interior/utility trim strips",
+        "material": "Kiln-dried SPF or hem-fir rippings; paint-grade",
+        "marketing_blurb": "Contractor-pack furring and small trim for shims, backing, and light finish carpentry.",
+        "primary_applications": [
+          "Cabinet and built-in shims",
+          "Light gauge plaster/gypsum backing",
+          "Door jamb buildup where thin rips are needed"
+        ],
+        "sizes_typical": ["1×2", "1×3", "1×4 S4S packs"],
+        "bundling": "Job packs of fixed lineal count; may be banded MRF.",
+        "finish": "Unprimed; pre-primed available as separate SKU at some branches.",
+        "moisture_content": "KD 14–16% typical; stabilize before fine paint work.",
+        "quality_notes": "Utility grade—expect wane and skip allowed per pack spec; inspect before stain-grade use."
+      }
+    },
+    {
+      "product_id": "ijoist_ewp_lvl",
+      "short_name": "I-JOIST/EWP/LVL",
+      "category": "engineered_wood",
+      "typical_unit": "piece",
+      "description": "Engineered floor and header members; vendor-specific depths.",
+      "lead_time_days": {
+        "typical_min": 10,
+        "typical_max": 21
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Engineered wood products (EWP)",
+        "systems": ["I-joists", "LVL headers and beams", "LSL rim board (companion orders)", "EWP connectors and hangers"],
+        "marketing_blurb": "Designed floor and roof framing with predictable stiffness; shop drawings and supplier stamps required on structural packages.",
+        "primary_applications": [
+          "Residential and multifamily floor systems",
+          "Long-span headers over openings",
+          "Roofs requiring consistent bounce control"
+        ],
+        "design_requirements": "Loads, spacing, bearing length, and hanger schedule from engineer or vendor software output.",
+        "typical_depths_in": ["9.5\", 11.875\", 14\", 16\", 18\", 24\" (manufacturer catalog)"],
+        "moisture_service": "Protect from ponding; OSB webs swell if left uncovered—house-wrap cutoffs over joist packs on site.",
+        "field_modification": "NO improper cuts in flanges; follow manufacturer bulletin for penetrations.",
+        "documentation": "Installation manuals, COA sheets, ICC-ES reports as referenced on plans.",
+        "freight": "Wide bundles may require flatbed with unload equipment; crane fees billed separately if applicable."
+      }
+    },
+    {
+      "product_id": "mcl",
+      "short_name": "MCL",
+      "category": "lumber_general",
+      "typical_unit": "board_foot",
+      "description": "Miscellaneous contractor lumber line; mixed softwood stocking.",
+      "lead_time_days": {
+        "typical_min": 3,
+        "typical_max": 10
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Contractor mixed stocking program (MCL)",
+        "scope": "Blend of hem-fir, SPF, and SYP common sizes; yard-run convenience line",
+        "marketing_blurb": "Fast-pick dimensional for service crews, punch lists, and non-critical blocking where exact species is not specified.",
+        "primary_applications": [
+          "Temp bracing and protection",
+          "Blocking and backing where plans read ‘wood nailer’ generically",
+          "Packaged small-job kits for remodelers"
+        ],
+        "sizes_typical": ["2×4 through 2×12 random", "1× boards for utility"],
+        "grading": "No. 2 & better or economy—tagged per lift; not for graded structural without re-inspection.",
+        "unit_basis": "MBF or per-piece yard price; no mill certification on mixed pulls.",
+        "substitution_policy": "Subject to inventory substitution within posted species envelope—confirm for exposed work."
+      }
+    },
+    {
+      "product_id": "perm",
+      "short_name": "PERM",
+      "category": "trim_moulding",
+      "typical_unit": "linear_ft",
+      "description": "Pre-matched primed SPF moulding and jambs.",
+      "lead_time_days": {
+        "typical_min": 5,
+        "typical_max": 12
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Primed interior moulding program",
+        "material": "Finger-jointed or solid SPF; factory pre-primed white",
+        "marketing_blurb": "Pre-matched casing, base, crowns, and jambs for fast trim packages with consistent prime.",
+        "primary_applications": [
+          "Residential trim outs",
+          "Light commercial offices",
+          "MDU punch where repeatable profiles speed close-out"
+        ],
+        "profiles": ["Colonial casing", "Base 3-1/4 / 4-1/4", "Crowns in common spring angles", "Flat jambs with quirk detail"],
+        "lengths_ft": [8, 12, 14, 16, "some 17' for tall runs"],
+        "paint_system": "Acrylic primer; topcoat with quality latex within 30 days of exposure rule set per painter TDS.",
+        "joinery": "Scarf or coped joints recommended; prime all end cuts.",
+        "storage": "Flat racks—avoid bowing by banding until install.",
+        "quality_notes": "Inspect for corner crush on long bundles before job start."
+      }
+    },
+    {
+      "product_id": "ponderosa_pine",
+      "short_name": "PONDEROSA PINE",
+      "category": "lumber_dimension",
+      "typical_unit": "board_foot",
+      "description": "Ponderosa pine boards; craft and utility lines.",
+      "lead_time_days": {
+        "typical_min": 5,
+        "typical_max": 14
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Softwood boards",
+        "species": "Ponderosa pine (Pinus ponderosa)",
+        "marketing_blurb": "Light-colored boards with mellow grain—popular for shelving, feature walls, and rustic interiors when clear grades are specified.",
+        "primary_applications": [
+          "Wide-board paneling",
+          "Craft and fixture building",
+          "Economy shelving and workbench tops (appropriate grade)"
+        ],
+        "nominal_sizes": ["1×4 through 1×12", "5/4 decking-style thicknesses on some runs"],
+        "grades": ["Clear", "C select", "Knotty common", "Industrial (#3 shop)—confirm availability"],
+        "texture": ["S4S", "Resawn one face"],
+        "moisture_content": "KD 10–12% for interior; exterior use requires coating discipline.",
+        "workability": "Softer than fir—use sharp cutterheads; pre-drill near ends for screws.",
+        "sustainability": "Regionally sourced Intermountain/West Coast; chain-of-custody on request."
+      }
+    },
+    {
+      "product_id": "red_red_fir",
+      "short_name": "RED RED FIR",
+      "category": "lumber_dimension",
+      "typical_unit": "board_foot",
+      "description": "Fir appearance grades; decking and fascia applications.",
+      "lead_time_days": {
+        "typical_min": 7,
+        "typical_max": 14
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Fir appearance lumber",
+        "species": "White fir / grand fir group marketed as red/white fir in regional tallies (verify invoice species code at quote)",
+        "marketing_blurb": "Straight, relatively fine-textured fir boards suited to painted fascia, soffit nailers, and covered porch ceilings.",
+        "primary_applications": [
+          "Paint-grade fascia and sub-fascia where cedar is value-engineered out",
+          "Protected porch ceilings with vented assembly",
+          "Interior stain-grade where tight grain preferred over SPF"
+        ],
+        "nominal_sizes": ["1×6 through 1×12", "5/4 deck boards in appearance grades"],
+        "grades": ["C & better appearance", "Construction common for paint hide"],
+        "moisture_content": "KD stock for interior; exterior—coat all faces prior to exposure.",
+        "fasteners": "Corrosion-resistant; set-back rules for decking profiles match WUD or county guide.",
+        "ordering_note": "SKUs may read 'RDF' or similar legacy codes; confirm grade stamp photo with buyer."
+      }
+    },
+    {
+      "product_id": "select_tie_pine",
+      "short_name": "SELECT TIE PINE",
+      "category": "lumber_dimension",
+      "typical_unit": "board_foot",
+      "description": "Select tie/manufactured pine assortments for packaged goods.",
+      "lead_time_days": {
+        "typical_min": 5,
+        "typical_max": 12
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Manufactured pine assortments",
+        "species": "Southern pine or mixed pine packaged under select/tie programs (mill bundle dependent)",
+        "marketing_blurb": "Bundled, tally-stable pine for manufacturers, pallet shops, and export crating requiring consistent cut lengths.",
+        "primary_applications": [
+          "Cut-to-length packaging lines",
+          "Dunnage and blocking for controlled specs",
+          "Component manufacturing where wane limits are published per bundle tag"
+        ],
+        "unit_basis": "Random width and length tallies; priced MBF with bundle minimums.",
+        "quality": "Select ties emphasize structural uniformity within bundle—knot and slope of grain per grade stamp.",
+        "documentation": "NHLA or regional rules sheet provided with mill test if required.",
+        "freight": "Secured with polyester banding; inspect for broken bands before offload."
+      }
+    },
+    {
+      "product_id": "syp_hf_2",
+      "short_name": "SYP/HF 2",
+      "category": "lumber_dimension",
+      "typical_unit": "board_foot",
+      "description": "Southern yellow pine / HF #2 dimensional and boards.",
+      "lead_time_days": {
+        "typical_min": 2,
+        "typical_max": 7
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "High-rotation framing & boards",
+        "species": "Southern yellow pine (SYP) or hem-fir interchange per regional stocking—confirm stamp at delivery",
+        "marketing_blurb": "High-density option (SYP) in many yards for stiff joists and decking cradles; HF variant for West Coast balanced inventories.",
+        "primary_applications": [
+          "Floor and wall framing where No. 2 is specified",
+          "Deck joists on prescriptive decks",
+          "General utility blocking"
+        ],
+        "grades": ["No. 2", "No. 3 economy pulls"],
+        "sizes": ["2×4–2×12", "lengths to 20' on fast movers"],
+        "density_note": "SYP is harder than SPF—pre-drill near ends for finish screws.",
+        "treatment_option": "Pressure-treated SYP available as separate commodity for exterior.",
+        "unit_basis": "Per-piece retail or MBF wholesale."
+      }
+    },
+    {
+      "product_id": "thermally_mod",
+      "short_name": "THERMALLY MOD",
+      "category": "specialty_wood",
+      "typical_unit": "board_foot",
+      "description": "Thermally modified decking/cladding; extended lead on some widths.",
+      "lead_time_days": {
+        "typical_min": 14,
+        "typical_max": 28
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Thermally modified wood (TMW)",
+        "process": "High-temperature modification of hardwood or softwood to improve dimensional stability and decay resistance",
+        "marketing_blurb": "Low-maintenance exterior wood aesthetic without chemical preservatives; ideal for premium decks, cladding, and fencing.",
+        "primary_applications": [
+          "Exposed decking on sleepers or joists per span tables",
+          "Rainscreen cladding with ventilated cavity",
+          "Feature soffits in coastal microclimates"
+        ],
+        "species_lines": ["Ash", "Radiata pine", "Southern pine", "European softwoods (import)"],
+        "profiles": ["S4S boards", "T&G cladding", "Decking with hidden-fastener grooves (brand specific)"],
+        "fasteners": "Proprietary clip systems or stainless trim-head screws; follow supplier torque guidance.",
+        "finish_optional": "Natural graying expected UV; tinted oils renew color if desired.",
+        "handling": "Brittle relative to green lumber—radius edges before field ripping.",
+        "standards_reference": "Manufacturer ICC-ES or ETA for cladding/decking where code asks for compliance.",
+        "storage": "Indoor acclimation recommended 48–72 hours; keep wrapped until layout."
+      }
+    },
+    {
+      "product_id": "t_groove",
+      "short_name": "T-GROOVE",
+      "category": "paneling",
+      "typical_unit": "sq_ft",
+      "description": "Tongue-and-groove paneling and porch ceiling stock.",
+      "lead_time_days": {
+        "typical_min": 5,
+        "typical_max": 14
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Tongue-and-groove boards",
+        "species_options": ["Western red cedar", "Pine", "Fir", "PVC/synthetic class (separate catalog)"],
+        "marketing_blurb": "Classic porch ceiling and accent wall profile; v-joint or bead options change shadow line and formalness.",
+        "primary_applications": [
+          "Covered porch ceilings with vented soffit detail",
+          "Shiplap-style feature walls",
+          "Gable-end accents"
+        ],
+        "nominal_sizes": ["1×4 to 1×8 net widths vary by router setup"],
+        "install_guidance": "Blind-nail through tongue at 45°; leave modest expansion at perimeter per species chart.",
+        "moisture": "Acclimate interior installs; exterior under cover still moves with RH swings.",
+        "finish": "Prefinish or field coat; seal back if one-sided moisture exposure.",
+        "coverage": "Quote with pattern diagram from architect; add waste for scarfing long runs."
+      }
+    },
+    {
+      "product_id": "western_red_cedar",
+      "short_name": "WESTERN RED CEDAR",
+      "category": "siding_trim",
+      "typical_unit": "board_foot",
+      "description": "WRC boards, bevel, and clears; high rotation SKU.",
+      "lead_time_days": {
+        "typical_min": 7,
+        "typical_max": 14
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Premium exterior wood",
+        "species": "Thuja plicata (western red cedar)",
+        "marketing_blurb": "Flagship exterior spec wood—naturally durable, light weight, and available from knotty micro to clear vertical grain.",
+        "primary_applications": [
+          "Siding, trim, posts, and beams in coastal and mountain architecture",
+          "Sauna and covered outdoor rooms (appropriate grades)",
+          "Fence boards and gates"
+        ],
+        "forms": ["Rough or S4S boards", "Bevel", "T&G", "Timbers", "Shingle stock"],
+        "grades_overview": ["Architect knots", "Clear", "CVG", "STK", "Custom export clears"],
+        "weights_shipping": "Low density vs fir—load planning allows longer packs on same GVW in some lanes.",
+        "standards": "PCCA/NLGA rules; import phytos paperwork on cross-border moves.",
+        "care": "Allow 15% min waste on clear runs; book-match long walls early in takeoff.",
+        "sustainability": "FSC/PEFC runs quoted separately; domestic BC/PNW supply mix rotates seasonally."
+      }
+    },
+    {
+      "product_id": "yellow_pine",
+      "short_name": "YELLOW PINE",
+      "category": "lumber_dimension",
+      "typical_unit": "board_foot",
+      "description": "Yellow pine boards and dimension for industrial and retail.",
+      "lead_time_days": {
+        "typical_min": 3,
+        "typical_max": 10
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Southern yellow pine (industrial & retail)",
+        "species": "Pinus spp. in the southern yellow pine group",
+        "marketing_blurb": "Stiff, dense pine for structural crating, trailer decking repair stock, and fast retail sticks where SYP is specified.",
+        "primary_applications": [
+          "Industrial platforms and crating",
+          "Deck boards when treated version ordered",
+          "General hi-strength blocking vs comparable SPF"
+        ],
+        "grades": ["No. 1 & 2", "No. 3 industrial", "MSR if tagged"],
+        "sizes": ["2×4–2×12", "1× stock", "timber mats by inquiry"],
+        "fasteners": "Ring-shank or screw with high torque; splits if overdriven—set nail guns softer.",
+        "treatment_cross_sell": "Pair quote with borate or MCA treatment lines for ground-contact uses."
+      }
+    },
+    {
+      "product_id": "eastern_wht_pin_ac",
+      "short_name": "EASTERN WHT PIN AC",
+      "category": "lumber_dimension",
+      "typical_unit": "board_foot",
+      "description": "Eastern white pine; kiln dried appearance grades.",
+      "lead_time_days": {
+        "typical_min": 5,
+        "typical_max": 12
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Eastern white pine appearance",
+        "species": "Pinus strobus",
+        "marketing_blurb": "Wide, fine-grained boards for traditional millwork and lightweight timber frames—premium paint and stain substrate when clear.",
+        "primary_applications": [
+          "Wide-board paneling and wainscot",
+          "Handrail stock and window stools in traditional profiles",
+          "Timber frame girts in architectural grades (engineer-reviewed)"
+        ],
+        "grades": ["C Select", "D Select", "Premium (mill proprietary)", "Knotty for cottage look"],
+        "sizes": ["1×6–1×12", "5/4 and 6/4 specials"],
+        "moisture_content": "KD 10–12% interior service",
+        "workability": "Excellent for hand tools; resin canals minimal vs southern pines.",
+        "ordering": "Wide boards may be single-piece pulls—advance hold for large runs."
+      }
+    },
+    {
+      "product_id": "frp",
+      "short_name": "FRP",
+      "category": "panel_system",
+      "typical_unit": "sheet",
+      "description": "Fiberglass reinforced wall panels; commercial kitches and restrooms.",
+      "lead_time_days": {
+        "typical_min": 3,
+        "typical_max": 10
+      },
+      "certifications_common": [],
+      "substitution_notes": null,
+      "catalog_spec": {
+        "family": "Fiberglass reinforced plastic wall system",
+        "material": "Polyester or vinyl ester resin with fiberglass reinforcement; USDA-compliant options available",
+        "marketing_blurb": "Sanitary, scrubbable wall protection for commercial kitchens, labs, and high-wear corridors—pairs with division trim.",
+        "primary_applications": [
+          "Restaurant kitchens and dish areas",
+          "Healthcare ancillary wet rooms",
+          "Clean corridors in schools and stadiums"
+        ],
+        "sheet_sizes": ["4×8', 4×10', 4×12' typical; metric imports on bid"],
+        "thickness": ["0.090\" (~2.3 mm) Class A common", "0.120\" heavy-duty"],
+        "textures": ["Embossed pebble", "Smooth", "Grooved for quarry tile alignment"],
+        "adhesive_system": "Trowel-grade or low-VOC contact—follow manufacturer fire and humidity limits.",
+        "trim_division": "Matching two-piece division bars, inside/outside corners, J-channels.",
+        "fire_rating": "Class A ASTM E84 assemblies with approved adhesive and substrate—submittal package required.",
+        "storage": "Ship and store upright; avoid bowing from one-side sun heat.",
+        "warranty": "Manufacturer finish warranty; professional installation required for full coverage."
+      }
+    }
+  ]
+}
