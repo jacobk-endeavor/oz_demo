@@ -1,7 +1,14 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { loadEnv } from 'vite'
+import pg from 'pg'
 import { OZ_CHAT_CONTRACT_VERSION, runOzChatLoop, type OzChatRequest, type OzChatStreamEvent } from './chatRuntime'
 
 const OZ_CHAT_PATH = '/api/oz/chat'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const REPO_ROOT = path.resolve(__dirname, '../..')
+let pool: pg.Pool | null = null
 
 function normalizedUrlPath(url: string | undefined): string {
   const pathOnly = url?.split('?')[0] ?? ''
@@ -38,6 +45,30 @@ function writeSseDone(res: ServerResponse, message: string): void {
     finish_reason: 'error',
   }
   writeSseFrame(res, doneEvent)
+}
+
+function readEnv(): Record<string, string> {
+  const root = loadEnv(process.env.NODE_ENV || 'development', REPO_ROOT, '')
+  return root
+}
+
+function openAiKey(): string | undefined {
+  const env = readEnv()
+  return (process.env.OPENAI_API_KEY || env.OPENAI_API_KEY || env.VITE_OPENAI_API_KEY)?.trim()
+}
+
+function getPool(): pg.Pool | null {
+  if (pool) return pool
+  const env = readEnv()
+  const url = (env.DATABASE_URL || '').trim()
+  if (!url) return null
+  pool = new pg.Pool({
+    connectionString: url,
+    max: 4,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 15_000,
+  })
+  return pool
 }
 
 export function ozChatApiPlugin() {
@@ -79,7 +110,13 @@ export function ozChatApiPlugin() {
     res.setHeader('x-oz-chat-contract-version', contractVersion)
 
     try {
-      for await (const event of runOzChatLoop(request)) {
+      const db = getPool()
+      for await (const event of runOzChatLoop(request, {
+        transcripts: {
+          openAiApiKey: openAiKey(),
+          dbQuery: db ? (sql, params) => db.query(sql, params) : undefined,
+        },
+      })) {
         writeSseFrame(res, event)
       }
     } catch (error) {
