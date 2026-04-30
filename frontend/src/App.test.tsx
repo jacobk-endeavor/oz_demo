@@ -2,7 +2,8 @@ import { afterEach, describe, it, expect } from 'vitest'
 import { render, screen, within, cleanup, act, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
-import App, { getHashPage } from './App'
+import App from './App'
+import { getHashPage } from './app/workflows/workflowRouting'
 
 afterEach(() => {
   cleanup()
@@ -16,12 +17,6 @@ afterEach(() => {
     // ignore
   }
 })
-
-function expectPlaceholder(pageId: string, title: string) {
-  const el = screen.getByTestId('workflow-placeholder')
-  expect(el).toHaveAttribute('data-page', pageId)
-  expect(el).toHaveTextContent(title)
-}
 
 describe('getHashPage()', () => {
   it('returns oz for empty hash', () => {

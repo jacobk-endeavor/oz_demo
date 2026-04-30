@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import {
-  fieldMobileNavItems,
-  fieldWorkflowIdForPage,
-  isFieldMobileNavId,
-} from './features/fieldApp/fieldAppSidebarNav'
+import { fieldMobileNavItems, fieldWorkflowIdForPage, isFieldMobileNavId } from './features/fieldApp/fieldAppSidebarNav'
 import { FieldAppView } from './features/fieldApp/FieldAppView'
-import { getFieldMobileWorkflow } from './features/fieldApp/fieldMobileWorkflows'
 import {
   applyLeadTableView,
   defaultLeadTableViewState,
@@ -19,9 +14,6 @@ import { interpretLeadTableWithLlm } from './features/leadGen/interpretLeadTable
 import { buildLeadTableLlmContext } from './features/leadGen/leadTableLlmContext'
 import type { SortColumn } from './features/leadGen/leadGenTableModel'
 import { buildMilwaukeeDistributorRows } from './features/leadGen/milwaukeeDistributorsMock'
-import { LeadGenDistributorsTable } from './features/leadGen/LeadGenDistributorsTable'
-import { CompetitorOffersTable } from './features/lumberyard/CompetitorOffersTable'
-import { CompetitorSearchInterstitial } from './features/lumberyard/CompetitorSearchInterstitial'
 import { postCompetitorOffers } from './features/lumberyard/competitorOffersClient'
 import {
   COMPETITOR_SEARCH_MIN_DISPLAY_MS,
@@ -29,7 +21,6 @@ import {
 } from './features/lumberyard/competitorSearchTiming'
 import type { CompetitorOfferRow } from './features/lumberyard/competitorOffersTypes'
 import { matchCompetitorProductSearchIntent } from './features/lumberyard/competitorProductIntents'
-import { LumberyardCallsTable } from './features/lumberyard/LumberyardCallsTable'
 import { makeLeadTableAttachment } from './features/leadGen/leadTableComposerContext'
 import { makeCompetitorOfferAttachment } from './features/lumberyard/competitorComposerContext'
 import { makeLumberyardAttachment } from './features/lumberyard/lumberyardComposerContext'
@@ -74,104 +65,27 @@ import { DashboardGeneratorPage } from './features/dashboardGenerator/DashboardG
 import { FieldNotesPage } from './features/fieldNotes/FieldNotesPage'
 import { QuotesReadyForReviewPage } from './features/quotesReady/QuotesReadyForReviewPage'
 import { QuoteAutomationWorkspace } from './features/quoteAutomation/QuoteAutomationWorkspace'
-import { CustomerDemandAndProfitContextPanel } from './features/dashboardGenerator/CustomerDemandAndProfitContextPanel'
 import { matchProductRequestCustomerDashboardIntent } from './features/dashboardGenerator/productRequestDashboardIntent'
 import {
   matchProfitByProductGraphIntent,
   matchWarehouseBackfillPnlIntent,
 } from './features/dashboardGenerator/profitGraphIntent'
-import {
-  joinClasses,
-  OzWorkflowShell,
-  PlaceholderSubtabPage,
-  WORKFLOW_PAGE_META,
-  type OzAssistantMessage,
-  type OzChatTurnContext,
-  type WorkflowPageMeta,
-} from './shared/ui'
+import { OzWorkflowShell, PlaceholderSubtabPage, type OzAssistantMessage, type OzChatTurnContext } from './shared/ui'
 import { augmentUserMessageWithTableContext, type TableRowContextAttachment } from './shared/tableRowContext'
-import type { FieldMobileNavId, OzWorkflowNavId } from './shared/ui'
+import {
+  getPageMeta,
+  isCommandCenterFirstPage,
+  isFieldAppCommandCenter,
+  isLeadTableChatPage,
+  useHashRoute,
+  type Page,
+} from './app/workflows/workflowRouting'
+import { getPendingKnowledgeUiKind } from './app/chat/pendingKnowledgeUi'
+import { CommandCenterContextBody } from './app/workflows/CommandCenterContextBody'
 
 const OZ_ASSISTANT_NO_SEED: OzAssistantMessage[] = []
 
-export type Page = OzWorkflowNavId
-
-const allPages = new Set<Page>([
-  'oz',
-  'search',
-  'field-app',
-  ...fieldMobileNavItems.map((e) => e.id),
-  'tables',
-  'knowledge-base',
-  'nebula',
-  'field-notes',
-  'quotes-ready',
-  'dashboards',
-  'quote-automation',
-  'lead-generation',
-  'background-agents',
-  'help',
-])
-
-
-function isPage(value: string): value is Page {
-  return allPages.has(value as Page)
-}
-
-function getPageMeta(p: Page): WorkflowPageMeta {
-  if (isFieldMobileNavId(p)) {
-    const w = getFieldMobileWorkflow(fieldWorkflowIdForPage(p))!
-    return {
-      eyebrow: 'Field (mobile workflow)',
-      title: w.shortTitle,
-      subtitle: w.summary,
-    }
-  }
-  return WORKFLOW_PAGE_META[p as keyof typeof WORKFLOW_PAGE_META]
-}
-
-function isFieldAppCommandCenter(p: Page): boolean {
-  return p === 'field-app' || isFieldMobileNavId(p)
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function getHashPage(): Page {
-  const hashPath = window.location.hash.replace(/^#\/?/, '').split('?')[0]
-  if (hashPath === '') return 'oz'
-  if (hashPath === 'files') return 'knowledge-base' // legacy: Files was merged into Knowledge Base
-  /** `#/settings` opens the sidebar settings tab — route treats it as Oz. */
-  if (hashPath === 'settings') return 'oz'
-  return isPage(hashPath) ? hashPath : 'oz'
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useHashRoute(): [Page, (p: Page) => void] {
-  const [page, setPage] = useState<Page>(getHashPage)
-
-  useEffect(() => {
-    function onHashChange() {
-      setPage(getHashPage())
-    }
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
-  }, [])
-
-  function navigate(p: Page) {
-    setPage(p)
-    window.location.hash = `#/${p}`
-  }
-
-  return [page, navigate]
-}
-
-/** Chat-first with no right-hand column until a chat action opens a context surface (e.g. lead gen on Home). */
-function isCommandCenterFirstPage(p: Page): boolean {
-  return p === 'oz' || isFieldAppCommandCenter(p)
-}
-
-function isLeadTableChatPage(p: Page): boolean {
-  return p === 'oz' || p === 'tables' || p === 'lead-generation'
-}
+export type { Page } from './app/workflows/workflowRouting'
 
 /** Lets the right-hand call table panel mount and paint before the library fetch fills rows. */
 const LUMBERYARD_PANEL_SETTLE_BEFORE_ROWS_MS = 400
@@ -378,37 +292,14 @@ export default function App() {
   }, [])
 
   const pendingLumberyardKnowledgeUi = useCallback(
-    (
-      userText: string,
-    ):
-      | 'thinking'
-      | 'knowledge_base'
-      | 'knowledge_web'
-      | 'knowledge_crm'
-      | 'knowledge_crm_likely_buyers'
-      | 'knowledge_customer_demand' => {
-      if (!isLeadTableChatPage(page)) return 'thinking'
-      if (isFieldAppCommandCenter(page)) return 'thinking'
-      if (
-        page === 'oz' &&
-        (matchProductRequestCustomerDashboardIntent(userText) ||
-          matchProfitByProductGraphIntent(userText) ||
-          matchWarehouseBackfillPnlIntent(userText))
-      ) {
-        return 'knowledge_customer_demand'
-      }
-      if (!isOpenAiConfigured()) return 'thinking'
-      if (page === 'oz' && matchStockUpLikelyBuyersIntent(userText)) {
-        if (lastCompetitorProductQueriesRef.current.length > 0) return 'knowledge_crm_likely_buyers'
-        return 'thinking'
-      }
-      if (page === 'oz' && matchCompetitorProductSearchIntent(userText)) return 'knowledge_web'
-      const wantLumber =
-        (matchLumberyardTableIntent(userText) ||
-          matchLumberyardAnalyticsOrResearchIntent(userText) ||
-          lumberyardOpenRef.current)
-      return wantLumber ? 'knowledge_base' : 'thinking'
-    },
+    (userText: string) =>
+      getPendingKnowledgeUiKind({
+        page,
+        userText,
+        openAiConfigured: isOpenAiConfigured(),
+        lumberyardOpen: lumberyardOpenRef.current,
+        hasCompetitorQueries: lastCompetitorProductQueriesRef.current.length > 0,
+      }),
     [page],
   )
   const { sendNonHardcodedTurn } = useOzChatStream({
@@ -870,7 +761,7 @@ export default function App() {
         return { reply: out.reply, delayMs: out.delayMs }
       }
     },
-    [navigate, page, pendingLumberyardKnowledgeUi, ragCallsScope, sendNonHardcodedTurn],
+    [page, pendingLumberyardKnowledgeUi, ragCallsScope, sendNonHardcodedTurn],
   )
 
   const onBackgroundAgentConnectingComplete = useCallback(() => {
@@ -942,156 +833,50 @@ export default function App() {
   const lumberyardPhaseKey = `${lumberyardCalls.length}-${lumberyardCalls[0]?.id ?? 'none'}`
   const competitorPhaseKey = `${competitorOfferRows.length}-${competitorOffersMeta.productQueries.join(',')}`
 
-  const renderLeadTable = (enableRowChatContext: boolean) => (
-    <LeadGenDistributorsTable
-      rows={displayRows}
-      view={tableView}
-      onSort={handleTableSort}
-      onClose={page === 'oz' && leadGenContextOpen ? onContextPanelClose : undefined}
-      phaseKey={tablePhaseKey}
-      rowStaggerMs={leadDistributorRowStaggerMs}
-      deferredDataPaint={leadDistributorRowStaggerMs === LIKELY_BUYERS_LEAD_ROW_STAGGER_MS}
-      selectedRowIds={
-        enableRowChatContext
-          ? tableChatAttachments.filter((a) => a.scope === 'lead').map((a) => a.rowId)
-          : []
-      }
-      onRowToggleContext={enableRowChatContext ? toggleLeadRowContext : undefined}
-    />
-  )
-
-  const lumberyardTableEl = (
-    <LumberyardCallsTable
-      calls={lumberyardCalls}
-      onClose={onContextPanelClose}
-      phaseKey={lumberyardPhaseKey}
-      selectedRowIds={tableChatAttachments.filter((a) => a.scope === 'lumberyard').map((a) => a.rowId)}
-      onRowToggleContext={toggleLumberyardRowContext}
-    />
-  )
-
-  const searchInterstitialRowHints = lumberyardCalls
-    .slice(0, 5)
-    .map((c) => c.title)
-    .filter((t) => t.trim().length > 0)
-
-  const searchInterstitialEl = (
-    <CompetitorSearchInterstitial
-      rowLineHints={searchInterstitialRowHints}
-      onBackToActivity={() => {
-        setCompetitorOffersOpen(false)
-        setCompetitorOffersSearching(false)
-        setCompetitorOfferRows([])
-        setCompetitorOffersMeta({ usedWebSearch: false, productQueries: [] })
-      }}
-      onClose={onContextPanelClose}
-    />
-  )
-
-  const competitorTableEl = (
-    <CompetitorOffersTable
-      rows={competitorOfferRows}
-      phaseKey={competitorPhaseKey}
-      tableTitle="Competitor × product board"
-      selectedRowIds={tableChatAttachments.filter((a) => a.scope === 'competitor').map((a) => a.rowId)}
-      onRowToggleContext={toggleCompetitorRowContext}
-    />
-  )
-
   const showLeadForWorkspace =
     page === 'tables' ||
     page === 'lead-generation' ||
     (page === 'oz' && (leadGenContextOpen || ozCustomerDemandProfitOpen))
 
-  const body: ReactNode = showLumberYard
-    ? (
-        <div
-          className={joinClasses(
-            'h-full min-h-0 min-w-0 overflow-hidden p-0 transition-opacity duration-[390ms]',
-            lumberyardKbHidingContext && 'pointer-events-none opacity-0',
-          )}
-        >
-          {competitorOffersOpen && competitorOffersSearching
-            ? searchInterstitialEl
-            : competitorOffersOpen && competitorOfferRows.length > 0
-              ? competitorTableEl
-              : lumberyardTableEl}
-        </div>
-      )
-    : showLeadForWorkspace
-      ? page === 'oz'
-        ? (
-            <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden p-0">
-              {ozCustomerDemandProfitOpen ? (
-                <>
-                  <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                    <CustomerDemandAndProfitContextPanel
-                      includePnl={ozCustomerPanelIncludePnl}
-                      onExported={({ groupLabel }) => recordChatExportNotice(groupLabel)}
-                    />
-                  </div>
-                  {chatExportNotices.length > 0 && (
-                    <div className="shrink-0 border-t border-zinc-200/80 bg-zinc-50/90 px-2 py-1.5">
-                      <p className="mb-1 text-[9px] font-semibold tracking-wide text-zinc-400 uppercase">
-                        Your charts (queued for Dashboards)
-                      </p>
-                      <ul className="flex flex-wrap gap-1" role="list">
-                        {chatExportNotices.map((n) => (
-                          <li
-                            key={n.id}
-                            className="rounded-lg bg-white px-2 py-0.5 text-[10px] text-zinc-700 shadow-sm ring-1 ring-zinc-200/80"
-                          >
-                            {n.label}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{renderLeadTable(true)}</div>
-              )}
-            </div>
-          )
-        : (
-            <div
-              className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col"
-              data-testid="lead-docked-workspace"
-            >
-              <div className="min-h-0 min-w-0 flex-1 overflow-auto px-0 py-0">
-                {ozCustomerDemandProfitOpen ? (
-                  <div className="flex h-full min-h-0 w-full flex-col">
-                    <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                      <CustomerDemandAndProfitContextPanel
-                        includePnl={ozCustomerPanelIncludePnl}
-                        onExported={({ groupLabel }) => recordChatExportNotice(groupLabel)}
-                      />
-                    </div>
-                    {chatExportNotices.length > 0 && (
-                      <div className="shrink-0 border-t border-zinc-200/80 bg-zinc-50/90 px-2 py-1.5">
-                        <p className="mb-1 text-[9px] font-semibold tracking-wide text-zinc-400 uppercase">
-                          Your charts (queued for Dashboards)
-                        </p>
-                        <ul className="flex flex-wrap gap-1" role="list">
-                          {chatExportNotices.map((n) => (
-                            <li
-                              key={n.id}
-                              className="rounded-lg bg-white px-2 py-0.5 text-[10px] text-zinc-700 shadow-sm ring-1 ring-zinc-200/80"
-                            >
-                              {n.label}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="h-full min-h-0 w-full">{renderLeadTable(false)}</div>
-                )}
-              </div>
-            </div>
-          )
-      : !isCommandCenterFirstPage(page)
+  const commandCenterBody =
+    showLumberYard || showLeadForWorkspace ? (
+      <CommandCenterContextBody
+        showLumberYard={showLumberYard}
+        showLeadForWorkspace={showLeadForWorkspace}
+        page={page as 'oz' | 'tables' | 'lead-generation'}
+        lumberyardKbHidingContext={lumberyardKbHidingContext}
+        competitorOffersOpen={competitorOffersOpen}
+        competitorOffersSearching={competitorOffersSearching}
+        competitorOfferRows={competitorOfferRows}
+        competitorPhaseKey={competitorPhaseKey}
+        lumberyardCalls={lumberyardCalls}
+        lumberyardPhaseKey={lumberyardPhaseKey}
+        tableView={tableView}
+        displayRows={displayRows}
+        tablePhaseKey={tablePhaseKey}
+        leadDistributorRowStaggerMs={leadDistributorRowStaggerMs}
+        likelyBuyersLeadRowStaggerMs={LIKELY_BUYERS_LEAD_ROW_STAGGER_MS}
+        leadGenContextOpen={leadGenContextOpen}
+        ozCustomerDemandProfitOpen={ozCustomerDemandProfitOpen}
+        ozCustomerPanelIncludePnl={ozCustomerPanelIncludePnl}
+        chatExportNotices={chatExportNotices}
+        tableChatAttachments={tableChatAttachments}
+        onTableSort={handleTableSort}
+        onContextPanelClose={onContextPanelClose}
+        onToggleLeadRowContext={toggleLeadRowContext}
+        onToggleLumberyardRowContext={toggleLumberyardRowContext}
+        onToggleCompetitorRowContext={toggleCompetitorRowContext}
+        onRecordChatExportNotice={recordChatExportNotice}
+        onBackToActivity={() => {
+          setCompetitorOffersOpen(false)
+          setCompetitorOffersSearching(false)
+          setCompetitorOfferRows([])
+          setCompetitorOffersMeta({ usedWebSearch: false, productQueries: [] })
+        }}
+      />
+    ) : null
+
+  const body: ReactNode = commandCenterBody ?? (!isCommandCenterFirstPage(page)
         ? page === 'dashboards'
           ? (
               <div className="h-full min-h-0 min-w-0 overflow-auto">
@@ -1146,7 +931,7 @@ export default function App() {
               : (
                   <PlaceholderSubtabPage name={meta.title} pageId={page} />
                 )
-        : null
+        : null)
 
   const fieldAssistant =
     isFieldAppCommandCenter(page) ? (
