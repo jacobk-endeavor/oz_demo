@@ -1,4 +1,4 @@
-import { fetchOpenAiJsonObject, type OzOpenAiMessage } from '../../services/ozOpenAi'
+import { fetchOpenAIJsonObject, type OzOpenAIMessage } from '../../services/ozOpenAi'
 import { describeTableState, type LeadTableViewState, type SortColumn } from './leadGenTableModel'
 import { LEAD_SOURCE_IDS, type LeadSourceId } from './leadSourceMeta'
 
@@ -178,19 +178,19 @@ export async function interpretLeadTableWithLlm(
   }
 
   const stateLine = describeTableState(prev)
-  const user: OzOpenAiMessage = {
+  const user: OzOpenAIMessage = {
     role: 'user',
     content: `Current list state: ${stateLine}
 
 User message: ${trimmed}`,
   }
-  const messages: OzOpenAiMessage[] = [
+  const messages: OzOpenAIMessage[] = [
     { role: 'system', content: TABLE_INTERPRET_SYSTEM },
     user,
   ]
 
   try {
-    const raw = await fetchOpenAiJsonObject(messages, { maxTokens: 1_200, temperature: 0.15 })
+    const raw = await fetchOpenAIJsonObject(messages, { maxTokens: 1_200, temperature: 0.15 })
     if (!raw || typeof raw !== 'object') {
       return { handled: false }
     }

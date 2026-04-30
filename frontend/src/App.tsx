@@ -40,9 +40,9 @@ import type { DistributorRow } from './features/leadGen/milwaukeeDistributorsMoc
 import type { LumberyardCallRow } from './features/lumberyard/lumberyardTypes'
 import {
   buildOzGptSystemPrompt,
-  fetchOpenAiChatCompletion,
-  isOpenAiConfigured,
-  type OzOpenAiMessage,
+  fetchOpenAIChatCompletion,
+  isOpenAIConfigured,
+  type OzOpenAIMessage,
 } from './services/ozOpenAi'
 import { useFieldTtsMuteHotkey } from './services/fieldElevenTts'
 import { evaluateBackgroundAgentWithLlm } from './features/backgroundAgents/backgroundAgentAi'
@@ -296,7 +296,7 @@ export default function App() {
       getPendingKnowledgeUiKind({
         page,
         userText,
-        openAiConfigured: isOpenAiConfigured(),
+        openAiConfigured: isOpenAIConfigured(),
         lumberyardOpen: lumberyardOpenRef.current,
         hasCompetitorQueries: lastCompetitorProductQueriesRef.current.length > 0,
       }),
@@ -347,7 +347,7 @@ export default function App() {
         const prior = inCollecting ? { what: flow.partialWhat, when: flow.partialWhen } : null
         const r = tryCompleteBackgroundRequest(prior, text)
 
-        if (isOpenAiConfigured()) {
+        if (isOpenAIConfigured()) {
           try {
             const priorLines = context.priorExchanges
               .slice(-8)
@@ -616,7 +616,7 @@ export default function App() {
         // Kick the LLM call off in parallel with the knowledge-pill animation so the reply
         // is ready (or close to it) the instant the icons finish — instead of starting the
         // network call only after the ~960ms pill sequence completes.
-        const intelPromise = isOpenAiConfigured()
+        const intelPromise = isOpenAIConfigured()
           ? (async () => {
               const intelText = augmentUserMessageWithTableContext(text, context.tableContextAttachments, {
                 scopes: ['lumberyard', 'competitor'],
@@ -661,7 +661,7 @@ export default function App() {
       }
       type TableOut = ReturnType<typeof processLeadTableChat>
       let out: TableOut | null = null
-      if (isOpenAiConfigured()) {
+      if (isOpenAIConfigured()) {
         try {
           const llm = await interpretLeadTableWithLlm(text, viewRef.current, context.priorUserMessages)
           if (llm.handled) {
@@ -704,7 +704,7 @@ export default function App() {
         }
       }
 
-      if (page === 'oz' && isOpenAiConfigured() && out.usedConversationalFallback) {
+      if (page === 'oz' && isOpenAIConfigured() && out.usedConversationalFallback) {
         try {
           return await sendNonHardcodedTurn({ text, context, ragScope: ragCallsScope })
         } catch (e) {
@@ -715,7 +715,7 @@ export default function App() {
         }
       }
 
-      if (!isOpenAiConfigured()) {
+      if (!isOpenAIConfigured()) {
         return { reply: out.reply, delayMs: out.delayMs }
       }
 
@@ -723,7 +723,7 @@ export default function App() {
       const rowsForLlm = applyLeadTableView(baseForLlm, out.state)
       const tableContext = buildLeadTableLlmContext(out.state, rowsForLlm)
 
-      const priorForModel: OzOpenAiMessage[] = []
+      const priorForModel: OzOpenAIMessage[] = []
       for (const ex of context.priorExchanges) {
         if (ex.role === 'user') priorForModel.push({ role: 'user', content: ex.text })
         else if (ex.role === 'oz') priorForModel.push({ role: 'assistant', content: ex.text })
@@ -748,14 +748,14 @@ export default function App() {
         scopes: ['lead', 'lumberyard', 'competitor'],
       })
 
-      const messages: OzOpenAiMessage[] = [
+      const messages: OzOpenAIMessage[] = [
         { role: 'system', content: systemContent },
         ...priorForModel,
         { role: 'user', content: leadUserContent },
       ]
 
       try {
-        const reply = await fetchOpenAiChatCompletion(messages, { maxTokens: 3_200 })
+        const reply = await fetchOpenAIChatCompletion(messages, { maxTokens: 3_200 })
         return { reply, delayMs: 140 }
       } catch {
         return { reply: out.reply, delayMs: out.delayMs }

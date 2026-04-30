@@ -1,5 +1,5 @@
-import { fetchOpenAiChatCompletion, isOpenAiConfigured } from '../../services/ozOpenAi'
-import type { OzOpenAiMessage } from '../../services/ozOpenAi'
+import { fetchOpenAIChatCompletion, isOpenAIConfigured } from '../../services/ozOpenAi'
+import type { OzOpenAIMessage } from '../../services/ozOpenAi'
 import {
   buildCustomerLeadSourceBars,
   buildCustomerProductRequestBars,
@@ -175,13 +175,13 @@ export async function generateChartsFromPrompt(userText: string): Promise<Dashbo
   const text = userText.trim()
   if (!text) return heuristicsChartsForPrompt('default')
 
-  if (isOpenAiConfigured() && !import.meta.env.VITEST) {
+  if (isOpenAIConfigured() && !import.meta.env.VITEST) {
     try {
-      const messages: OzOpenAiMessage[] = [
+      const messages: OzOpenAIMessage[] = [
         { role: 'system', content: CHART_SYSTEM },
         { role: 'user', content: text },
       ]
-      const raw = await fetchOpenAiChatCompletion(messages, {
+      const raw = await fetchOpenAIChatCompletion(messages, {
         maxTokens: 2_200,
         temperature: 0.2,
         responseFormat: 'json_object',

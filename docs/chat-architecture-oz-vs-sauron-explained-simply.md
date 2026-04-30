@@ -39,7 +39,7 @@ In Oz Demo, **`App.tsx`** is that checklist. When someone sends chat:
 2. A **priority-ordered branch tree** runs: special intents (background agents, charts, competitor flow, lumberyard, …) **short-circuit** when they match.
 3. Lead-table handling often tries an **LLM JSON interpreter** first (`interpretLeadTableWithLlm`), then falls back to **rules** (`processLeadTableChat`).
 4. On the home **`page === 'oz'`**, if the table path marks **`usedConversationalFallback`**, the app may call **`POST /api/oz/rag-calls`** (pgvector RAG).
-5. Otherwise, if OpenAI is configured, **`fetchOpenAiChatCompletion`** hits **`POST /api/oz/openai`** (dev proxy) or the client key path in production builds.
+5. Otherwise, if OpenAI is configured, **`fetchOpenAIChatCompletion`** hits **`POST /api/oz/openai`** (dev proxy) or the client key path in production builds.
 
 The AI is mostly used as:
 
@@ -75,7 +75,7 @@ Flow in code (general chat):
 
 1. **`ChatPage.tsx`** → **`useChat`** → **`POST /api/chat`** with `{ message, conversation_id }`.
 2. **`Sauron/backend/app/routers/chat.py`** persists the **user** message, loads **history** from the DB, opens **`StreamingResponse`** (`text/event-stream`).
-3. **`stream_general_chat`** (`general_chat.py`) sets CRM persona + optional BDR rules, then **`stream_chat_sse`** (`_chat_common.py`).
+3. **`stream_general_chat`** (`general_chat_service.py`) sets CRM persona + optional BDR rules, then **`stream_chat_sse`** (`_chat_common.py`).
 4. **`stream_chat_sse`** registers **tool schemas**, builds **system + history**, calls **`stream_chat_with_tools`** (`_openrouter.py`), wraps each yielded piece as SSE **`data: …`** lines, ends with **`[DONE]`**.
 5. **`useChat`** parses the stream: plain strings accumulate assistant **text**; JSON objects with **`type: tool_call` / `tool_result`** update UI segments (e.g. **`ToolCallGroup`**).
 
@@ -537,3 +537,94 @@ Typical intent:
 - **Sauron:** “**We** expose **labeled actions**; the model chooses how many to use **inside one streamed chat**, within **limits and prompts we set**.”
 
 Both are valid. Production systems often combine them: **explicit routing for safety and UX**, **tool loops for depth** where questions are fuzzy and evidence must be gathered.
+
+---
+
+## Authoritative prompt-processing diagrams
+
+These diagrams are the canonical, implementation-aligned view of how one user prompt is processed in each system.
+
+### Oz Demo — client-side router, one lane per send
+
+```mermaid
+flowchart TD
+  %% Oz Demo · one authoritative prompt path per send
+  A([User sends text]) --> B["OzAssistantPanel -> onUserMessage(text, context)"]
+  B --> C{"Eligible for this handler?\n`isLeadTableChatPage`\n(and not Field App command center silent return)"}
+
+  C -->|no| Z([End · no Oz `onUserMessage` reply path])
+  C -->|yes| D{T1 · Background-agent flow?\ncollecting OR `matchBackgroundAgentIntent`}
+
+  D -->|handled| Z
+  D -->|no| E{T2 · Customer demand / P&L /\nproduct-dashboard intents}
+
+  E -->|handled| Z
+  E -->|no| F{T3 · Competitor x product\n(`page === oz` + intent)}
+
+  F -->|handled| Z
+  F -->|no| G{T4 · Stock-up · likely-buyers intent}
+
+  G -->|handled| Z
+  G -->|no| H{T5 · Lumberyard /\ncall-mining intents}
+
+  H -->|"yes -> POST /api/oz/lumberyard-intel\n(+ GET library if needed)"| Z
+
+  subgraph lead["T6 · Lead distributor table · always runs until return above"]
+    direction TB
+    I["`interpretLeadTableWithLlm` (optional JSON OpenAI)\n· if handled -> `usedConversationalFallback = false`"]
+    J["else `processLeadTableChat` rules engine\n· may set `usedConversationalFallback`"]
+    I --> J
+  end
+
+  H -->|no| lead
+
+  subgraph ragOpenAI["T7-T8 · Model lanes (after `out` from table path)"]
+    direction TB
+    K{"`page === oz`\nAND OpenAI configured\nAND `out.usedConversationalFallback`?"}
+    K -->|yes| L["POST /api/oz/rag-calls\nembed query -> pgvector -> single-shot chat completion"]
+    K -->|no| M
+    L --> Z
+
+    subgraph M["Otherwise"]
+      direction TB
+      N{"OpenAI configured?"}
+      N -->|no| O["Reply with deterministic\n`out.reply` only"] --> Z
+      N -->|yes| P["Build system + handler snapshot\n+ optional prior exchanges"]
+      P --> Q["POST /api/oz/openai · `fetchOpenAIChatCompletion`\n(polish / grounded chat)"]
+      Q --> Z
+    end
+  end
+
+  lead --> K
+```
+
+### Sauron CRM — server-led chat with bounded tool loop
+
+```mermaid
+flowchart TD
+  %% Sauron general chat · authoritative path
+  A([User sends text]) --> B["ChatPage -> useChat"]
+  B --> C["POST /api/chat · JWT\n(general_chat router · chat.py)"]
+
+  subgraph api["FastAPI · same request"]
+    direction TB
+    C --> D["Persist user `ChatMessage` · commit"]
+    D --> E["Reload messages -> history list"]
+    E --> F["Return StreamingResponse\ntext/event-stream + conversation id header"]
+    F --> G["Generator: stream_general_chat\n(general_chat_service.py · CRM persona +/- BDR addendum)"]
+    G --> H["stream_chat_sse (_chat_common.py)"]
+    H --> I["Compose system + entity context +\ntool schemas (transcript search/read,\ncompany info, emails, web, enrichment ...)\n(enabled flags depend on DB / services)"]
+    I --> J["OpenRouter · stream_chat_with_tools\n(model + tools · max_tool_rounds cap)"]
+
+    subgraph loop["Tool rounds (until final text or cap)"]
+      direction LR
+      J --> K{Model emits\ntool_calls?}
+      K -->|yes| L["_execute_tool per call\n(DB + search + external APIs);\nparallel where applicable"]
+      L --> J
+      K -->|no| M[Stream assistant text deltas\nas SSE `data:` lines]
+    end
+  end
+
+  M --> N([Browser parses SSE tokens\n+ structured tool segments -> UI])
+  N --> O["Finalize (async): persist\nfull assistant · optional title generation"]
+```

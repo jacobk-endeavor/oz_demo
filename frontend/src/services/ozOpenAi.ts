@@ -8,9 +8,9 @@
  */
 const OPENAI_CHAT = 'https://api.openai.com/v1/chat/completions'
 
-export type OzOpenAiRole = 'system' | 'user' | 'assistant'
+export type OzOpenAIRole = 'system' | 'user' | 'assistant'
 
-export type OzOpenAiMessage = { role: OzOpenAiRole; content: string }
+export type OzOpenAIMessage = { role: OzOpenAIRole; content: string }
 
 const DEFAULT_MODEL = 'gpt-4o'
 
@@ -20,7 +20,7 @@ function hasViteKey(): boolean {
 }
 
 /** When true, `App` will call the model; connection still depends on a server key in dev. */
-export function isOpenAiConfigured(): boolean {
+export function isOpenAIConfigured(): boolean {
   if (import.meta.env.VITEST) return false
   return import.meta.env.DEV || hasViteKey()
 }
@@ -40,7 +40,7 @@ function parseContent(data: unknown): string {
   return text.trim()
 }
 
-export type OpenAiChatOptions = {
+export type OpenAIChatOptions = {
   model?: string
   maxTokens?: number
   /** Lower temperature (e.g. 0.2) for JSON / tool-like outputs. */
@@ -52,9 +52,9 @@ export type OpenAiChatOptions = {
 /**
  * @throws on network error, HTTP error, or empty content
  */
-export async function fetchOpenAiChatCompletion(
-  messages: OzOpenAiMessage[],
-  options?: OpenAiChatOptions,
+export async function fetchOpenAIChatCompletion(
+  messages: OzOpenAIMessage[],
+  options?: OpenAIChatOptions,
 ): Promise<string> {
   if (import.meta.env.VITEST) {
     throw new Error('openai disabled in test')
@@ -109,11 +109,11 @@ export async function fetchOpenAiChatCompletion(
  * Chat completion with `response_format: json_object` (model must be instructed to return one JSON object).
  * @returns parsed JSON
  */
-export async function fetchOpenAiJsonObject(
-  messages: OzOpenAiMessage[],
-  options?: Omit<OpenAiChatOptions, 'responseFormat' | 'temperature'> & { maxTokens?: number; temperature?: number },
+export async function fetchOpenAIJsonObject(
+  messages: OzOpenAIMessage[],
+  options?: Omit<OpenAIChatOptions, 'responseFormat' | 'temperature'> & { maxTokens?: number; temperature?: number },
 ): Promise<unknown> {
-  const text = await fetchOpenAiChatCompletion(messages, {
+  const text = await fetchOpenAIChatCompletion(messages, {
     ...options,
     responseFormat: 'json_object',
     temperature: options?.temperature ?? 0.2,
@@ -121,3 +121,14 @@ export async function fetchOpenAiJsonObject(
   })
   return JSON.parse(text) as unknown
 }
+
+/**
+ * Backward-compatible aliases during naming migration.
+ * Prefer `OpenAI`-capitalized exports in new code.
+ */
+export type OzOpenAiRole = OzOpenAIRole
+export type OzOpenAiMessage = OzOpenAIMessage
+export type OpenAiChatOptions = OpenAIChatOptions
+export const isOpenAiConfigured = isOpenAIConfigured
+export const fetchOpenAiChatCompletion = fetchOpenAIChatCompletion
+export const fetchOpenAiJsonObject = fetchOpenAIJsonObject

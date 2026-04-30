@@ -1,5 +1,5 @@
-import { fetchOpenAiJsonObject } from '../../services/ozOpenAi'
-import type { OzOpenAiMessage } from '../../services/ozOpenAi'
+import { fetchOpenAIJsonObject } from '../../services/ozOpenAi'
+import type { OzOpenAIMessage } from '../../services/ozOpenAi'
 
 export type BackgroundAgentEnriched = {
   /** One-line, Title Case, for the card header */
@@ -57,7 +57,7 @@ export async function evaluateBackgroundAgentWithLlm(args: {
   /** Short transcript for context, user lines only is fine */
   recentContext: string
 }): Promise<EvaluateBackgroundAgentResult> {
-  const system: OzOpenAiMessage = {
+  const system: OzOpenAIMessage = {
     role: 'system',
     content: `You evaluate whether a user has given **enough information** to configure a "background agent" in a sales-ops product demo: a **scheduled, repeatable task** with a clear **deliverable** (what they get) and a **run cadence** (when).
 
@@ -89,7 +89,7 @@ Return **only** a JSON object with this shape (no markdown):
 If sufficient is false, set questions to a non-empty array and leave other string fields as empty string and companies as []. If sufficient is true, set questions to [].`,
   }
 
-  const user: OzOpenAiMessage = {
+  const user: OzOpenAIMessage = {
     role: 'user',
     content: `## Latest user message
 ${args.lastUserMessage}
@@ -103,7 +103,7 @@ ${args.recentContext || '(none)'}
 `,
   }
 
-  const raw = await fetchOpenAiJsonObject([system, user], { maxTokens: 1_200, temperature: 0.2 })
+  const raw = await fetchOpenAIJsonObject([system, user], { maxTokens: 1_200, temperature: 0.2 })
   if (!isRecord(raw)) {
     return { sufficient: false, questions: ['What exactly should the agent do each time, and when should it run?'] }
   }
