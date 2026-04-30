@@ -49,7 +49,6 @@ export function isFieldAppCommandCenter(p: Page): boolean {
 export function getHashPage(): Page {
   const hashPath = window.location.hash.replace(/^#\/?/, '').split('?')[0]
   if (hashPath === '') return 'oz'
-  if (hashPath === 'files') return 'knowledge-base'
   if (hashPath === 'settings') return 'oz'
   return isPage(hashPath) ? hashPath : 'oz'
 }

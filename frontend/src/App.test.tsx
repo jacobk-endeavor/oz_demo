@@ -44,8 +44,10 @@ describe('getHashPage()', () => {
     expect(getHashPage()).toBe('dashboards')
   })
 
-  it('defaults to oz for removed routes such as #/reports', () => {
+  it('defaults to oz for removed routes such as #/reports and #/files', () => {
     window.location.hash = '#/reports?focus=int_001'
+    expect(getHashPage()).toBe('oz')
+    window.location.hash = '#/files'
     expect(getHashPage()).toBe('oz')
   })
 
