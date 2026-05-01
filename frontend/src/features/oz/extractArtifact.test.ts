@@ -2,13 +2,16 @@ import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
+import * as XLSX from 'xlsx'
 import {
+  buildExcelExtractUnits,
   buildExtractManifest,
   buildPptxExtractUnits,
   shouldEmitFullText,
-  writeExtractArtifact,
   writePdfExtractArtifact,
   writePptxExtractArtifact,
+  writeExtractArtifact,
+  writeExcelExtractArtifact,
 } from './extractArtifact'
 
 const cleanupDirs: string[] = []
@@ -179,6 +182,80 @@ describe('writePptxExtractArtifact', () => {
     const body = await readFile(path.join(outputDir, 'unit-slide-001.txt'), 'utf8')
     expect(body).toContain('[source=Sales Deck][slide=1]')
     expect(body).toContain('Opening\n\nVisible text\n\nTalk track')
+  })
+})
+
+describe('buildExcelExtractUnits', () => {
+  it('chunks each sheet into 20-row units with header prepended', () => {
+    const workbook = XLSX.utils.book_new()
+    const pricingRows = Array.from({ length: 23 }, (_, idx) => ({ SKU: `A-${idx + 1}`, Price: `${idx + 10}` }))
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(pricingRows), 'Pricing')
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet([
+        { Region: 'West', Discount: '2%' },
+        { Region: 'East', Discount: '4%' },
+      ]),
+      'Discounts',
+    )
+    const data = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer
+
+    const result = buildExcelExtractUnits({
+      sourceId: 'abcdef123456',
+      workbook: data,
+    })
+
+    expect(result.sheetCount).toBe(2)
+    expect(result.failedSheets).toEqual([])
+    expect(result.units).toHaveLength(3)
+
+    expect(result.units[0]).toMatchObject({
+      locator: 'sheet=Pricing rows=1-20',
+      chunkIds: ['abcdef123456_pricing_r00001_00020'],
+      fileName: 'unit-sheet-pricing-r00001_00020.csv',
+    })
+    expect(result.units[0]?.body.startsWith('SKU,Price\n')).toBe(true)
+
+    expect(result.units[1]).toMatchObject({
+      locator: 'sheet=Pricing rows=21-23',
+      chunkIds: ['abcdef123456_pricing_r00021_00023'],
+      fileName: 'unit-sheet-pricing-r00021_00023.csv',
+    })
+    expect(result.units[2]).toMatchObject({
+      locator: 'sheet=Discounts rows=1-2',
+      chunkIds: ['abcdef123456_discounts_r00001_00002'],
+      fileName: 'unit-sheet-discounts-r00001_00002.csv',
+    })
+  })
+
+  it('integrates with artifact writer for workbook extracts', async () => {
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet([
+        { SKU: 'A-1', Color: 'Pebble Grey' },
+        { SKU: 'A-2', Color: 'Walnut' },
+      ]),
+      'Colors',
+    )
+    const data = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer
+    const repoRoot = await mkdtemp(path.join(os.tmpdir(), 'extract-artifact-excel-'))
+    cleanupDirs.push(repoRoot)
+
+    const result = await writeExcelExtractArtifact({
+      repoRoot,
+      sourceId: 'abcdef123456',
+      title: 'Color Chart',
+      workbook: data,
+    })
+
+    expect(result.sheetCount).toBe(1)
+    expect(result.failedSheets).toEqual([])
+    expect(result.manifest.doc_kind).toBe('tabular-reference')
+    expect(result.manifest.has_full_text).toBe(false)
+    expect(result.manifest.units).toHaveLength(1)
+    await expect(stat(path.join(result.outputDir, 'full.txt'))).rejects.toThrow()
+    expect(await stat(path.join(result.outputDir, 'unit-sheet-colors-r00001_00002.csv'))).toBeDefined()
   })
 })
 
