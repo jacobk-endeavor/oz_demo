@@ -1,0 +1,211 @@
+{
+  "manifest_version": 1,
+  "source_id": "619750b2547f",
+  "title": "8434c5d5-b970-4839-904f-2c882bb30080_USA Look Book 2025",
+  "doc_kind": "unknown",
+  "has_full_text": false,
+  "units": [
+    {
+      "locator": "page=1",
+      "file": "unit-page-001.txt",
+      "chunk_ids": [
+        "619750b2547f_p001_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=2",
+      "file": "unit-page-002.txt",
+      "chunk_ids": [
+        "619750b2547f_p002_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=3",
+      "file": "unit-page-003.txt",
+      "chunk_ids": [
+        "619750b2547f_p003_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=4",
+      "file": "unit-page-004.txt",
+      "chunk_ids": [
+        "619750b2547f_p004_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=5",
+      "file": "unit-page-005.txt",
+      "chunk_ids": [
+        "619750b2547f_p005_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=6",
+      "file": "unit-page-006.txt",
+      "chunk_ids": [
+        "619750b2547f_p006_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=7",
+      "file": "unit-page-007.txt",
+      "chunk_ids": [
+        "619750b2547f_p007_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=8",
+      "file": "unit-page-008.txt",
+      "chunk_ids": [
+        "619750b2547f_p008_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=9",
+      "file": "unit-page-009.txt",
+      "chunk_ids": [
+        "619750b2547f_p009_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=10",
+      "file": "unit-page-010.txt",
+      "chunk_ids": [
+        "619750b2547f_p010_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=11",
+      "file": "unit-page-011.txt",
+      "chunk_ids": [
+        "619750b2547f_p011_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=12",
+      "file": "unit-page-012.txt",
+      "chunk_ids": [
+        "619750b2547f_p012_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=13",
+      "file": "unit-page-013.txt",
+      "chunk_ids": [
+        "619750b2547f_p013_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=14",
+      "file": "unit-page-014.txt",
+      "chunk_ids": [
+        "619750b2547f_p014_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=15",
+      "file": "unit-page-015.txt",
+      "chunk_ids": [
+        "619750b2547f_p015_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=16",
+      "file": "unit-page-016.txt",
+      "chunk_ids": [
+        "619750b2547f_p016_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=17",
+      "file": "unit-page-017.txt",
+      "chunk_ids": [
+        "619750b2547f_p017_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=18",
+      "file": "unit-page-018.txt",
+      "chunk_ids": [
+        "619750b2547f_p018_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=19",
+      "file": "unit-page-019.txt",
+      "chunk_ids": [
+        "619750b2547f_p019_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=20",
+      "file": "unit-page-020.txt",
+      "chunk_ids": [
+        "619750b2547f_p020_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=21",
+      "file": "unit-page-021.txt",
+      "chunk_ids": [
+        "619750b2547f_p021_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=22",
+      "file": "unit-page-022.txt",
+      "chunk_ids": [
+        "619750b2547f_p022_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=23",
+      "file": "unit-page-023.txt",
+      "chunk_ids": [
+        "619750b2547f_p023_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=24",
+      "file": "unit-page-024.txt",
+      "chunk_ids": [
+        "619750b2547f_p024_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=25",
+      "file": "unit-page-025.txt",
+      "chunk_ids": [
+        "619750b2547f_p025_00000"
+      ],
+      "images": []
+    }
+  ],
+  "brand": "Millboard",
+  "year": 2025
+}

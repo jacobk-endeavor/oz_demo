@@ -1,0 +1,18 @@
+{
+  "manifest_version": 1,
+  "source_id": "4f851fe42ee6",
+  "title": "fake-automation-source-document",
+  "doc_kind": "unknown",
+  "has_full_text": false,
+  "units": [
+    {
+      "locator": "page=1",
+      "file": "unit-page-001.txt",
+      "chunk_ids": [
+        "4f851fe42ee6_p001_00000"
+      ],
+      "images": []
+    }
+  ],
+  "brand": "Russin"
+}

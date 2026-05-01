@@ -1,0 +1,114 @@
+{
+  "manifest_version": 1,
+  "source_id": "358d2305d36b",
+  "title": "2024_WRC Brochure_REV_062124",
+  "doc_kind": "marketing",
+  "has_full_text": true,
+  "units": [
+    {
+      "locator": "page=1",
+      "file": "unit-page-001.txt",
+      "chunk_ids": [
+        "358d2305d36b_p001_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=2",
+      "file": "unit-page-002.txt",
+      "chunk_ids": [
+        "358d2305d36b_p002_00000",
+        "358d2305d36b_p002_00001",
+        "358d2305d36b_p002_00002"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=3",
+      "file": "unit-page-003.txt",
+      "chunk_ids": [
+        "358d2305d36b_p003_00000",
+        "358d2305d36b_p003_00001"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=4",
+      "file": "unit-page-004.txt",
+      "chunk_ids": [
+        "358d2305d36b_p004_00000",
+        "358d2305d36b_p004_00001"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=5",
+      "file": "unit-page-005.txt",
+      "chunk_ids": [
+        "358d2305d36b_p005_00000",
+        "358d2305d36b_p005_00001"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=6",
+      "file": "unit-page-006.txt",
+      "chunk_ids": [
+        "358d2305d36b_p006_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=7",
+      "file": "unit-page-007.txt",
+      "chunk_ids": [
+        "358d2305d36b_p007_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=8",
+      "file": "unit-page-008.txt",
+      "chunk_ids": [
+        "358d2305d36b_p008_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=9",
+      "file": "unit-page-009.txt",
+      "chunk_ids": [
+        "358d2305d36b_p009_00000"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=10",
+      "file": "unit-page-010.txt",
+      "chunk_ids": [
+        "358d2305d36b_p010_00000",
+        "358d2305d36b_p010_00001"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=11",
+      "file": "unit-page-011.txt",
+      "chunk_ids": [
+        "358d2305d36b_p011_00000",
+        "358d2305d36b_p011_00001",
+        "358d2305d36b_p011_00002"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=12",
+      "file": "unit-page-012.txt",
+      "chunk_ids": [
+        "358d2305d36b_p012_00000"
+      ],
+      "images": []
+    }
+  ],
+  "full_text_file": "full.txt"
+}

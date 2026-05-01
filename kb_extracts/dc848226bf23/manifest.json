@@ -1,0 +1,29 @@
+{
+  "manifest_version": 1,
+  "source_id": "dc848226bf23",
+  "title": "Shadow Line+ Spec Sheet_US",
+  "doc_kind": "unknown",
+  "has_full_text": false,
+  "units": [
+    {
+      "locator": "page=1",
+      "file": "unit-page-001.txt",
+      "chunk_ids": [
+        "dc848226bf23_p001_00000",
+        "dc848226bf23_p001_00001"
+      ],
+      "images": []
+    },
+    {
+      "locator": "page=2",
+      "file": "unit-page-002.txt",
+      "chunk_ids": [
+        "dc848226bf23_p002_00000",
+        "dc848226bf23_p002_00001"
+      ],
+      "images": []
+    }
+  ],
+  "brand": "Millboard",
+  "product_line": "Shadow Line+"
+}

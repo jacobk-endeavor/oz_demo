@@ -1,0 +1,25 @@
+OZ DEMO PLACEHOLDER SOURCE DOCUMENT
+Machine Concept / Spec Review Package
+Customer: Russin Lumber
+Prepared For: Field Sales Demo
+Document Type: Fake source PDF for quote automation
+Requested Package:
+- Composite decking bundle for regional contractor program
+- Hidden fastener system as recommended accessory
+- Exterior trim option for upsell review
+Known Constraints:
+- Budget sensitive account
+- Fast delivery requested
+- Final dimensions not yet confirmed
+- Delivery address missing
+Assumptions For Demo:
+- Standard delivery window used for rough estimate
+- Quote requires rep review before customer delivery
+- Oz should identify missing information before final pricing
+AI Extraction Targets:
+1. Requested products
+2. Quantity assumptions
+3. Pricing template selection
+4. Missing customer information
+5. Upsell and cross-sell suggestions
+Replace this PDF with the real source document later.

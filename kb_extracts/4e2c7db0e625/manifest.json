@@ -1,0 +1,21 @@
+{
+  "manifest_version": 1,
+  "source_id": "4e2c7db0e625",
+  "title": "2020 Warranty Services Checklist 2021 08 26",
+  "doc_kind": "warranty",
+  "has_full_text": true,
+  "units": [
+    {
+      "locator": "page=1",
+      "file": "unit-page-001.txt",
+      "chunk_ids": [
+        "4e2c7db0e625_p001_00000",
+        "4e2c7db0e625_p001_00001",
+        "4e2c7db0e625_p001_00002"
+      ],
+      "images": []
+    }
+  ],
+  "full_text_file": "full.txt",
+  "brand": "Deckorators"
+}

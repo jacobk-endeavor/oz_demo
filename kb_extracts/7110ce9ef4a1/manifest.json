@@ -1,0 +1,20 @@
+{
+  "manifest_version": 1,
+  "source_id": "7110ce9ef4a1",
+  "title": "2023 Azek-Deckorators Color Comparison U.S. 11.21.2022",
+  "doc_kind": "visual-catalog",
+  "has_full_text": false,
+  "units": [
+    {
+      "locator": "page=1",
+      "file": "unit-page-001.txt",
+      "chunk_ids": [
+        "7110ce9ef4a1_p001_00000",
+        "7110ce9ef4a1_p001_00001"
+      ],
+      "images": []
+    }
+  ],
+  "brand": "AZEK",
+  "year": 2023
+}
