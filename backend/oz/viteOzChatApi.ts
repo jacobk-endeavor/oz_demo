@@ -4,11 +4,14 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
 import pg from 'pg'
+import { buildOzChatAgentManifest } from './ozChatAgentManifest'
 import { OZ_CHAT_CONTRACT_VERSION, runOzChatLoop, type OzChatRequest, type OzChatStreamEvent } from './chatRuntime'
 import { TrackCToolScaffold } from './trackCToolScaffold'
 
 // Canonical API route for the unified Oz runtime.
 const OZ_CHAT_PATH = '/api/oz/chat'
+/** GET JSON manifest (system prompt + OpenAI-style tool defs) for external agents / consumers. */
+const OZ_CHAT_MANIFEST_PATH = '/api/oz/chat/manifest'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // `backend/oz` lives under repo root; env is loaded from root to match existing project behavior.
 const REPO_ROOT = path.resolve(__dirname, '../..')
@@ -36,6 +39,12 @@ function isOzChatPost(req: IncomingMessage): boolean {
   const path = normalizedUrlPath(req.url)
   // Accept exact match and prefixed paths so preview/proxy setups still resolve correctly.
   return path === OZ_CHAT_PATH || path.endsWith(OZ_CHAT_PATH)
+}
+
+function isOzChatManifestGet(req: IncomingMessage): boolean {
+  if (req.method !== 'GET') return false
+  const path = normalizedUrlPath(req.url)
+  return path === OZ_CHAT_MANIFEST_PATH || path.endsWith(OZ_CHAT_MANIFEST_PATH)
 }
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -94,7 +103,24 @@ function openAiKey(): string | undefined {
 
 export function ozChatApiPlugin() {
   async function handler(req: IncomingMessage, res: ServerResponse, next: () => void) {
-    // Only intercept the Oz chat route; all other requests continue down Vite middleware chain.
+    if (isOzChatManifestGet(req)) {
+      try {
+        const manifest = buildOzChatAgentManifest()
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-store')
+        res.setHeader('x-oz-chat-contract-version', manifest.contract_version)
+        res.setHeader('x-oz-registry-prompt-version', manifest.registry_prompt_version)
+        res.end(JSON.stringify(manifest))
+      } catch (error) {
+        res.statusCode = 500
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }))
+      }
+      return
+    }
+
+    // Only intercept the Oz chat POST route; all other requests continue down Vite middleware chain.
     if (!isOzChatPost(req)) {
       next()
       return
@@ -133,6 +159,9 @@ export function ozChatApiPlugin() {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
     res.setHeader('x-oz-chat-contract-version', contractVersion)
     res.setHeader('x-oz-trace-id', request.trace_id ?? '')
+
+    const httpStarted = Date.now()
+    let sseFrames = 0
 
     try {
       await initTrackCScaffold
@@ -181,10 +210,28 @@ export function ozChatApiPlugin() {
               }
             : undefined,
       })) {
+        sseFrames += 1
         writeSseFrame(res, event)
       }
     } catch (error) {
       writeSseDone(res, error instanceof Error ? error.message : String(error))
+    }
+
+    if (process.env.OZ_CHAT_HTTP_LOG === '1') {
+      const duration_ms = Math.max(0, Date.now() - httpStarted)
+      try {
+        console.error(
+          `[oz-chat-http] ${JSON.stringify({
+            ts: new Date().toISOString(),
+            trace_id: request.trace_id,
+            duration_ms,
+            sse_frames: sseFrames,
+            contract_version: contractVersion,
+          })}`,
+        )
+      } catch {
+        /* ignore */
+      }
     }
 
     res.end()
