@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { extractPdfUnits, type PdfExtractNeedsOcr, type PdfPageTextExtractor } from './pdfExtractor'
 
 export type ExtractDocKind =
   | 'marketing'
@@ -169,4 +170,52 @@ export async function writeExtractArtifact(input: WriteExtractArtifactInput): Pr
   await rename(stagingDir, outputDir)
 
   return { outputDir, manifest }
+}
+
+export type WritePdfExtractArtifactInput = Omit<WriteExtractArtifactInput, 'units'> & {
+  pdfBytes: Uint8Array
+  primaryExtractor: PdfPageTextExtractor
+  fallbackExtractor: PdfPageTextExtractor
+  minAvgCharsPerPage?: number
+}
+
+export type WritePdfExtractArtifactResult =
+  | { status: 'ok'; outputDir: string; manifest: ExtractManifest; pageCount: number; extractor: 'pypdf' | 'pdfminer' }
+  | PdfExtractNeedsOcr
+
+/**
+ * Track A PDF path:
+ * - pypdf primary
+ * - pdfminer fallback when extracted text is too sparse
+ * - per-page units in kb_extracts/<source_id>/unit-page-<n>.txt
+ * - image-only PDFs signal `needs_ocr` for caller to mark source as failed
+ */
+export async function writePdfExtractArtifact(input: WritePdfExtractArtifactInput): Promise<WritePdfExtractArtifactResult> {
+  const extracted = await extractPdfUnits({
+    pdfBytes: input.pdfBytes,
+    primaryExtractor: input.primaryExtractor,
+    fallbackExtractor: input.fallbackExtractor,
+    minAvgCharsPerPage: input.minAvgCharsPerPage,
+  })
+  if (extracted.status !== 'ok') {
+    return extracted
+  }
+  const { outputDir, manifest } = await writeExtractArtifact({
+    repoRoot: input.repoRoot,
+    sourceId: input.sourceId,
+    title: input.title,
+    docKind: input.docKind,
+    brand: input.brand,
+    productLine: input.productLine,
+    year: input.year,
+    distributorBranded: input.distributorBranded,
+    units: extracted.units,
+  })
+  return {
+    status: 'ok',
+    outputDir,
+    manifest,
+    pageCount: extracted.pageCount,
+    extractor: extracted.extractor,
+  }
 }
