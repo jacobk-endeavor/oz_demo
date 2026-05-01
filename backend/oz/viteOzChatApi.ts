@@ -6,8 +6,10 @@ import { loadEnv } from 'vite'
 import pg from 'pg'
 import { OZ_CHAT_CONTRACT_VERSION, runOzChatLoop, type OzChatRequest, type OzChatStreamEvent } from './chatRuntime'
 
+// Canonical API route for the unified Oz runtime.
 const OZ_CHAT_PATH = '/api/oz/chat'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// `backend/oz` lives under repo root; env is loaded from root to match existing project behavior.
 const REPO_ROOT = path.resolve(__dirname, '../..')
 let pool: pg.Pool | null = null
 
@@ -20,6 +22,7 @@ function normalizedUrlPath(url: string | undefined): string {
 function isOzChatPost(req: IncomingMessage): boolean {
   if (req.method !== 'POST') return false
   const path = normalizedUrlPath(req.url)
+  // Accept exact match and prefixed paths so preview/proxy setups still resolve correctly.
   return path === OZ_CHAT_PATH || path.endsWith(OZ_CHAT_PATH)
 }
 
@@ -33,10 +36,12 @@ function readBody(req: IncomingMessage): Promise<string> {
 }
 
 function writeSseFrame(res: ServerResponse, event: OzChatStreamEvent): void {
+  // Every SSE frame is one JSON event on a `data:` line.
   res.write(`data: ${JSON.stringify(event)}\n\n`)
 }
 
 function writeSseDone(res: ServerResponse, message: string): void {
+  // Error fallback: still emit a terminal `done` event so client can close cleanly.
   const doneEvent: OzChatStreamEvent = {
     type: 'done',
     contract_version: OZ_CHAT_CONTRACT_VERSION,
@@ -55,6 +60,7 @@ function normalizedTraceId(value: unknown): string | undefined {
 }
 
 function resolveTraceId(req: IncomingMessage, parsed: OzChatRequest): string {
+  // Prefer client-provided trace IDs for correlation; otherwise generate one server-side.
   return (
     normalizedTraceId(parsed.trace_id) ||
     normalizedTraceId(req.headers['x-oz-trace-id']) ||
@@ -64,6 +70,7 @@ function resolveTraceId(req: IncomingMessage, parsed: OzChatRequest): string {
 }
 
 function readEnv(): Record<string, string> {
+  // Keep env-loading local so runtime picks up latest values across dev restarts.
   const root = loadEnv(process.env.NODE_ENV || 'development', REPO_ROOT, '')
   return root
 }
@@ -89,6 +96,7 @@ function getPool(): pg.Pool | null {
 
 export function ozChatApiPlugin() {
   async function handler(req: IncomingMessage, res: ServerResponse, next: () => void) {
+    // Only intercept the Oz chat route; all other requests continue down Vite middleware chain.
     if (!isOzChatPost(req)) {
       next()
       return
@@ -113,6 +121,7 @@ export function ozChatApiPlugin() {
     }
 
     const contractVersion = parsed.contract_version || OZ_CHAT_CONTRACT_VERSION
+    // Normalize request so downstream runtime always receives required, clean metadata.
     const request: OzChatRequest = {
       ...parsed,
       message,
@@ -129,6 +138,7 @@ export function ozChatApiPlugin() {
 
     try {
       const db = getPool()
+      // Runtime is an async generator: each yielded event is streamed to client as SSE.
       for await (const event of runOzChatLoop(request, {
         transcripts: {
           openAiApiKey: openAiKey(),
@@ -147,6 +157,7 @@ export function ozChatApiPlugin() {
   return {
     name: 'oz-chat-api',
     enforce: 'pre' as const,
+    // Register for both `vite dev` and `vite preview`.
     configureServer(server: { middlewares: { use: (fn: typeof handler) => void } }) {
       server.middlewares.use(handler)
     },

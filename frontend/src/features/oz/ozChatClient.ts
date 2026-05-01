@@ -1,5 +1,6 @@
 import type { OzChatTurnContext } from '../../shared/ui'
 
+// Single canonical transport path for non-hardcoded Oz chat turns.
 const OZ_CHAT_PATH = '/api/oz/chat'
 
 export type OzChatClientRequest = {
@@ -11,6 +12,7 @@ export type OzChatClientRequest = {
 
 export type OzChatClientResponse = {
   reply: string
+  // Correlates frontend and backend logs/telemetry for a single turn.
   traceId: string
   telemetry: {
     policyPath?: string
@@ -31,6 +33,7 @@ function extractReplyFromJson(payload: unknown): string | null {
 }
 
 function createTraceId(): string {
+  // Browser UUID when available, deterministic fallback otherwise.
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
   return `oz-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
@@ -44,6 +47,7 @@ function parseSseDataLine(dataLine: string): ParsedSseLine {
   try {
     const parsed = JSON.parse(trimmed) as Record<string, unknown>
     const type = typeof parsed.type === 'string' ? parsed.type : ''
+    // Runtime emits explicit token events for stream assembly.
     if (type === 'token') {
       const token =
         typeof parsed.token === 'string'
@@ -56,6 +60,7 @@ function parseSseDataLine(dataLine: string): ParsedSseLine {
       return token ? { token, event: parsed } : { event: parsed }
     }
     if (type === 'done') {
+      // `done` carries authoritative final message when provided.
       const doneReply =
         typeof parsed.reply === 'string'
           ? parsed.reply
@@ -69,6 +74,7 @@ function parseSseDataLine(dataLine: string): ParsedSseLine {
     if (typeof parsed.token === 'string' && parsed.token) return { token: parsed.token, event: parsed }
     return { event: parsed }
   } catch {
+    // If the frame is plain text, treat as token text for resilience.
     return { token: trimmed }
   }
 }
@@ -109,6 +115,7 @@ async function readSseReply(
         if (parsed.doneReply) doneReply = parsed.doneReply
         const event = parsed.event
         if (!event) continue
+        // Preserve server trace id if emitted mid-stream.
         if (typeof event.trace_id === 'string' && event.trace_id.trim()) traceId = event.trace_id.trim()
         if (event.type === 'tool_call' && typeof event.tool_call_id === 'string' && typeof event.name === 'string') {
           telemetry.toolCalls += 1
@@ -130,10 +137,12 @@ async function readSseReply(
           }
           continue
         }
+        // Policy gate trace gives quick insight into hardcoded vs agent routing.
         if (event.type === 'trace' && event.stage === 'policy_gate' && typeof event.decision === 'string') {
           telemetry.policyPath = event.decision
           continue
         }
+        // Runtime summary currently reports end-to-end latency.
         if (
           event.type === 'trace' &&
           event.stage === 'runtime_summary' &&
@@ -153,6 +162,7 @@ async function readSseReply(
 }
 
 export async function postOzChat(request: OzChatClientRequest): Promise<OzChatClientResponse> {
+  // Always attach a trace id so FE/BE logs can be correlated.
   const traceId = request.traceId?.trim() || createTraceId()
   const response = await fetch(OZ_CHAT_PATH, {
     method: 'POST',
@@ -181,11 +191,13 @@ export async function postOzChat(request: OzChatClientRequest): Promise<OzChatCl
     const parsed = await readSseReply(response.body)
     return {
       reply: parsed.reply,
+      // Prefer server trace id if present, then header, then generated client id.
       traceId: parsed.traceId ?? response.headers.get('x-oz-trace-id') ?? traceId,
       telemetry: parsed.telemetry,
     }
   }
 
+  // Non-stream JSON fallback for compatibility with alternate runtimes.
   const payload = (await response.json()) as unknown
   const reply = extractReplyFromJson(payload)
   if (!reply) throw new Error('Unified chat returned unexpected JSON shape')
