@@ -7,7 +7,8 @@ import pg from 'pg'
 import { buildOzChatAgentManifest } from './ozChatAgentManifest'
 import { OZ_CHAT_CONTRACT_VERSION, runOzChatLoop, type OzChatRequest, type OzChatStreamEvent } from './chatRuntime'
 import { runOzChatLoopAgentic } from './chatRuntimeAgentic'
-import { loadOzConfig, type OzChatRuntimeKind } from './ozConfig'
+import { runOzChatLoopAgenticOpenAi } from './chatRuntimeAgenticOpenAi'
+import { loadOzConfig, type OzChatAgenticProvider, type OzChatRuntimeKind } from './ozConfig'
 import { TrackCToolScaffold } from './trackCToolScaffold'
 
 // Canonical API route for the unified Oz runtime.
@@ -126,6 +127,28 @@ function resolveRuntimeKind(
   return { kind: configured, source: 'config' }
 }
 
+type AgenticProviderResolution =
+  | { provider: 'openai'; apiKey: string }
+  | { provider: 'anthropic'; apiKey: string }
+  | { provider: null; reason: string }
+
+function resolveAgenticProvider(preference: OzChatAgenticProvider): AgenticProviderResolution {
+  const openai = openAiKey()
+  const anthropic = anthropicKey()
+  if (preference === 'openai') {
+    if (openai) return { provider: 'openai', apiKey: openai }
+    return { provider: null, reason: 'OPENAI_API_KEY missing (provider preference: openai)' }
+  }
+  if (preference === 'anthropic') {
+    if (anthropic) return { provider: 'anthropic', apiKey: anthropic }
+    return { provider: null, reason: 'ANTHROPIC_API_KEY missing (provider preference: anthropic)' }
+  }
+  // auto: prefer OpenAI when both present (matches the existing OpenAI-shaped tool defs natively).
+  if (openai) return { provider: 'openai', apiKey: openai }
+  if (anthropic) return { provider: 'anthropic', apiKey: anthropic }
+  return { provider: null, reason: 'No agentic provider key set (looked for OPENAI_API_KEY then ANTHROPIC_API_KEY)' }
+}
+
 export function ozChatApiPlugin() {
   async function handler(req: IncomingMessage, res: ServerResponse, next: () => void) {
     if (isOzChatManifestGet(req)) {
@@ -148,6 +171,8 @@ export function ozChatApiPlugin() {
     if (isOzChatConfigGet(req)) {
       try {
         const config = await loadOzConfig(REPO_ROOT)
+        const preference = config.chat.agentic?.provider ?? 'auto'
+        const resolution = resolveAgenticProvider(preference)
         res.statusCode = 200
         res.setHeader('Content-Type', 'application/json; charset=utf-8')
         res.setHeader('Cache-Control', 'no-store')
@@ -157,7 +182,12 @@ export function ozChatApiPlugin() {
               runtime: config.chat.runtime,
               agentic: config.chat.agentic ?? null,
             },
-            agentic_available: Boolean(anthropicKey()),
+            agentic_available: resolution.provider !== null,
+            agentic_provider: resolution.provider, // 'openai' | 'anthropic' | null
+            providers_available: {
+              openai: Boolean(openAiKey()),
+              anthropic: Boolean(anthropicKey()),
+            },
           }),
         )
       } catch (error) {
@@ -261,11 +291,10 @@ export function ozChatApiPlugin() {
       }
 
       let runtimeIter: AsyncIterable<OzChatStreamEvent>
+      let providerNote: { provider: 'openai' | 'anthropic' } | null = null
       if (resolved.kind === 'agentic') {
-        const apiKey = anthropicKey()
-        if (!apiKey) {
-          // Fall through to scaffold rather than failing the turn outright; emit a trace so
-          // the UI shows why the user's chosen mode didn't take effect.
+        const provider = resolveAgenticProvider(config.chat.agentic?.provider ?? 'auto')
+        if (provider.provider === null) {
           writeSseFrame(res, {
             contract_version: contractVersion,
             sequence: 0,
@@ -273,14 +302,21 @@ export function ozChatApiPlugin() {
             type: 'trace',
             stage: 'mode_resolution',
             decision: 'fallback_scaffold',
-            details: { requested: 'agentic', source: resolved.source, reason: 'ANTHROPIC_API_KEY missing' },
+            details: { requested: 'agentic', source: resolved.source, reason: provider.reason },
           })
           sseFrames += 1
           runtimeIter = runOzChatLoop(request, sharedDeps)
+        } else if (provider.provider === 'openai') {
+          providerNote = { provider: 'openai' }
+          runtimeIter = runOzChatLoopAgenticOpenAi(request, {
+            ...sharedDeps,
+            openai: { apiKey: provider.apiKey, model: config.chat.agentic?.model },
+          })
         } else {
+          providerNote = { provider: 'anthropic' }
           runtimeIter = runOzChatLoopAgentic(request, {
             ...sharedDeps,
-            anthropic: { apiKey, model: config.chat.agentic?.model },
+            anthropic: { apiKey: provider.apiKey, model: config.chat.agentic?.model },
           })
         }
       } else {
@@ -294,7 +330,11 @@ export function ozChatApiPlugin() {
         type: 'trace',
         stage: 'mode_resolution',
         decision: resolved.kind,
-        details: { source: resolved.source, configured: config.chat.runtime },
+        details: {
+          source: resolved.source,
+          configured: config.chat.runtime,
+          ...(providerNote ? { provider: providerNote.provider } : {}),
+        },
       })
       sseFrames += 1
 

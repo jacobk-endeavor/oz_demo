@@ -5,10 +5,16 @@ const OZ_CHAT_PATH = '/api/oz/chat'
 const OZ_CHAT_CONFIG_PATH = '/api/oz/chat/config'
 
 export type OzChatRuntimeKind = 'scaffold' | 'agentic'
+export type OzChatAgenticProvider = 'openai' | 'anthropic' | null
 
 export type OzChatRuntimeConfig = {
-  chat: { runtime: OzChatRuntimeKind; agentic: { model?: string } | null }
+  chat: {
+    runtime: OzChatRuntimeKind
+    agentic: { provider?: 'auto' | 'openai' | 'anthropic'; model?: string } | null
+  }
   agentic_available: boolean
+  agentic_provider: OzChatAgenticProvider
+  providers_available: { openai: boolean; anthropic: boolean }
 }
 
 export async function fetchOzChatConfig(): Promise<OzChatRuntimeConfig | null> {

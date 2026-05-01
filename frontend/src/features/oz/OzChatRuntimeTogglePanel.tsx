@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
-import { fetchOzChatConfig, type OzChatRuntimeKind } from './ozChatClient'
+import { fetchOzChatConfig, type OzChatAgenticProvider, type OzChatRuntimeKind } from './ozChatClient'
 import {
   readOzChatRuntimeOverride,
   writeOzChatRuntimeOverride,
   type OzChatRuntimeOverride,
 } from './ozChatRuntimeToggle'
 
-type ServerSnapshot = { configured: OzChatRuntimeKind; agentic_available: boolean } | null
+type ServerSnapshot = {
+  configured: OzChatRuntimeKind
+  agentic_available: boolean
+  agentic_provider: OzChatAgenticProvider
+  providers_available: { openai: boolean; anthropic: boolean }
+} | null
 
 const BUTTON_BASE: React.CSSProperties = {
   padding: '4px 10px',
@@ -37,7 +42,12 @@ export function OzChatRuntimeTogglePanel({ style }: { style?: React.CSSPropertie
     let cancelled = false
     fetchOzChatConfig().then((cfg) => {
       if (cancelled || !cfg) return
-      setServer({ configured: cfg.chat.runtime, agentic_available: cfg.agentic_available })
+      setServer({
+        configured: cfg.chat.runtime,
+        agentic_available: cfg.agentic_available,
+        agentic_provider: cfg.agentic_provider,
+        providers_available: cfg.providers_available,
+      })
     })
     return () => {
       cancelled = true
@@ -60,9 +70,14 @@ export function OzChatRuntimeTogglePanel({ style }: { style?: React.CSSPropertie
 
   const effective: OzChatRuntimeKind = override ?? server?.configured ?? 'scaffold'
   const agenticDisabled = server != null && !server.agentic_available
-  const tooltip = `Effective: ${effective}${
+  const providerLabel = server?.agentic_provider ? ` via ${server.agentic_provider}` : ''
+  const tooltip = `Effective: ${effective}${providerLabel}${
     override ? ' (per-tab override)' : server ? ' (config/oz.yaml default)' : ' (loading…)'
-  }${agenticDisabled ? ' — ANTHROPIC_API_KEY not set; agentic falls back to scaffold' : ''}`
+  }${
+    agenticDisabled
+      ? ' — no agentic provider key set; agentic falls back to scaffold'
+      : ''
+  }`
 
   return (
     <div
@@ -107,6 +122,9 @@ export function OzChatRuntimeTogglePanel({ style }: { style?: React.CSSPropertie
       </div>
       <span style={{ color: '#71717a' }}>
         →&nbsp;<strong style={{ color: '#18181b' }}>{effective}</strong>
+        {effective === 'agentic' && server?.agentic_provider ? (
+          <span style={{ color: '#52525b' }}>&nbsp;via {server.agentic_provider}</span>
+        ) : null}
         {server ? ` (yaml: ${server.configured})` : ''}
       </span>
     </div>

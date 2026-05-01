@@ -20,6 +20,17 @@ describe('parseOzConfigYaml', () => {
     )
     expect(cfg.chat.runtime).toBe('agentic')
     expect(cfg.chat.agentic?.model).toBe('claude-opus-4-7')
+    expect(cfg.chat.agentic?.provider).toBe('auto')
+  })
+
+  it('parses chat.agentic.provider', () => {
+    const cfg = parseOzConfigYaml('chat:\n  runtime: agentic\n  agentic:\n    provider: openai\n')
+    expect(cfg.chat.agentic?.provider).toBe('openai')
+  })
+
+  it('falls back to auto for unknown provider values', () => {
+    const cfg = parseOzConfigYaml('chat:\n  agentic:\n    provider: groq\n')
+    expect(cfg.chat.agentic?.provider).toBe('auto')
   })
 
   it('falls back to scaffold for unknown runtime values', () => {

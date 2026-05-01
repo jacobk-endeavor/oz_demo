@@ -7,11 +7,14 @@ import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 
 export type OzChatRuntimeKind = 'scaffold' | 'agentic'
+export type OzChatAgenticProvider = 'auto' | 'openai' | 'anthropic'
 
 export type OzConfig = {
   chat: {
     runtime: OzChatRuntimeKind
     agentic?: {
+      provider?: OzChatAgenticProvider
+      /** Provider-specific model override; ignored when not applicable to the chosen provider. */
       model?: string
     }
   }
@@ -20,7 +23,7 @@ export type OzConfig = {
 const DEFAULT_CONFIG: OzConfig = {
   chat: {
     runtime: 'scaffold',
-    agentic: { model: 'claude-sonnet-4-6' },
+    agentic: { provider: 'auto' },
   },
 }
 
@@ -88,13 +91,13 @@ export function parseOzConfigYaml(text: string): OzConfig {
   const root = parseSimpleYaml(text)
   const runtimeRaw = (getValue(root, 'chat.runtime') ?? '').toLowerCase()
   const runtime: OzChatRuntimeKind = runtimeRaw === 'agentic' ? 'agentic' : 'scaffold'
+  const providerRaw = (getValue(root, 'chat.agentic.provider') ?? '').toLowerCase()
+  const provider: OzChatAgenticProvider =
+    providerRaw === 'openai' || providerRaw === 'anthropic' || providerRaw === 'auto' ? providerRaw : 'auto'
   const model = getValue(root, 'chat.agentic.model')
-  return {
-    chat: {
-      runtime,
-      agentic: model ? { model } : DEFAULT_CONFIG.chat.agentic,
-    },
-  }
+  const agentic: NonNullable<OzConfig['chat']['agentic']> = { provider }
+  if (model) agentic.model = model
+  return { chat: { runtime, agentic } }
 }
 
 let cached: { mtimeMs: number; config: OzConfig } | null = null
