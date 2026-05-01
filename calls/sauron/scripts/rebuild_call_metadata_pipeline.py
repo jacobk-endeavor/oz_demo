@@ -6,7 +6,7 @@ Part 1 — strip `calls.json` to transcripts-only (`call_id`, `transcript`).
 Part 2 — LLM reconstructs structured fields using `products.json`, compares to
 gold labels from the original file on N calls, and runs an LLM-as-judge pass.
 
-Loads `sauron-calls/.env` (does not override existing env vars). Uses OpenRouter via the
+Loads `calls/sauron/.env` (does not override existing env vars). Uses OpenRouter via the
 OpenAI-compatible API (`OPENROUTER_API_KEY`, optional `OPENROUTER_MODEL`,
 `OPENROUTER_JUDGE_MODEL`). Summary-vs-gold comparison uses embeddings:
 `OPENROUTER_EMBEDDING_MODEL` (default openai/text-embedding-3-small) and
@@ -141,7 +141,7 @@ def openrouter_client() -> Any:
     if not key:
         return None
     referer = os.environ.get("OPENROUTER_HTTP_REFERER", "").strip()
-    title = os.environ.get("OPENROUTER_APP_NAME", "sauron-calls metadata pipeline").strip()
+    title = os.environ.get("OPENROUTER_APP_NAME", "calls/sauron metadata pipeline").strip()
     headers: dict[str, str] = {}
     if referer:
         headers["HTTP-Referer"] = referer
@@ -466,7 +466,7 @@ def cmd_reconstruct(args: argparse.Namespace) -> None:
     client = openrouter_client()
     if client is None:
         print(
-            "Set OPENROUTER_API_KEY in sauron-calls/.env (or the environment).",
+            "Set OPENROUTER_API_KEY in calls/sauron/.env (or the environment).",
             file=sys.stderr,
         )
         sys.exit(1)

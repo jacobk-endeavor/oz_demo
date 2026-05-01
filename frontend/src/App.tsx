@@ -319,7 +319,7 @@ export default function App() {
           rag.error ? `\n**Reason:** ${rag.error}` : '',
           detail,
           '',
-          'Set **DATABASE_URL** or **PGHOST** / **PGUSER** / **PGPASSWORD** / **PGDATABASE**, run **`sauron-calls/scripts/ingest_calls_pgvector.py`**, then try again.',
+          'Set **DATABASE_URL** or **PGHOST** / **PGUSER** / **PGPASSWORD** / **PGDATABASE**, run **`calls/sauron/scripts/ingest_calls_pgvector.py`**, then try again.',
         ]
           .filter((line) => line !== '')
           .join('\n'),

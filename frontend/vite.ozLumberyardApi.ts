@@ -11,7 +11,7 @@ import { sanitizeLumberyardIntelReply } from './src/features/lumberyard/sanitize
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
-const LUMBER = path.join(REPO_ROOT, 'lumberyard-calls')
+const LUMBER = path.join(REPO_ROOT, 'calls', 'lumberyard')
 const OPENAI_CHAT = 'https://api.openai.com/v1/chat/completions'
 const BRAVE = 'https://api.search.brave.com/res/v1/web/search'
 
@@ -251,7 +251,7 @@ export function ozLumberyardApiPlugin(mode: string) {
       if (!existsSync(LUMBER)) {
         res.statusCode = 404
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ ok: false, error: 'lumberyard-calls directory not found' }))
+        res.end(JSON.stringify({ ok: false, error: 'calls/lumberyard directory not found' }))
         return
       }
       const mpath = path.join(LUMBER, 'call-library.json')

@@ -148,7 +148,7 @@ Citations from `searchResult` (or `readResult`) are forwarded on the terminal `d
 The Oz "KB" today is **call transcripts**, ingested into Postgres with pgvector:
 
 - Table: `call_rag_chunks` (`chunk_id`, `call_id`, `owner_user_id`, `chunk_index`, `content`, `embedding vector`).
-- Ingest: `sauron-calls/scripts/ingest_calls_pgvector.py` (referenced from `vite.ozRagCallsApi.ts` error messages).
+- Ingest: `calls/sauron/scripts/ingest_calls_pgvector.py` (referenced from `vite.ozRagCallsApi.ts` error messages).
 - Query path: [backend/oz/transcriptRagTools.ts](../backend/oz/transcriptRagTools.ts).
   - `search_transcripts` embeds the query with `text-embedding-3-small`, runs `ORDER BY embedding <=> $1::vector LIMIT topK`, optionally filters by `owner_user_id` for non-admin scope.
   - `read_transcript` loads up to `max_chunks` for one `call_id`, ordered by `chunk_index`.

@@ -1,9 +1,9 @@
 /**
- * Load repo-root .env, read lumberyard-calls/transcripts/*.txt, synthesize
+ * Load repo-root .env, read calls/lumberyard/transcripts/*.txt, synthesize
  * one MP3 per file (rep / customer lines use two different voices) via ElevenLabs,
  * stitch with ffmpeg, update call-library.json.
  *
- * Usage: from repo root: node lumberyard-calls/tools/generate-audio.mjs
+ * Usage: from repo root: node calls/lumberyard/tools/generate-audio.mjs
  * Needs: Node 18+.
  * Optional: `ffmpeg` on PATH for clean concat; if missing, raw MP3 buffers are
  * concatenated (usually playable; tiny gaps can occur at joins).
@@ -18,8 +18,8 @@ import { execFileSync, execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const REPO_ROOT = join(__dirname, '../..')
-const LUMBER_ROOT = join(REPO_ROOT, 'lumberyard-calls')
+const REPO_ROOT = join(__dirname, '../../..')
+const LUMBER_ROOT = join(REPO_ROOT, 'calls', 'lumberyard')
 const TRANSCRIPTS = join(LUMBER_ROOT, 'transcripts')
 const OUT_AUDIO = join(LUMBER_ROOT, 'audio')
 const MANIFEST = join(LUMBER_ROOT, 'call-library.json')
@@ -226,8 +226,8 @@ async function main() {
       notable: meta.notable,
       repPersona: meta.repPersona,
       customerPersona: meta.customerPersona,
-      transcript: `lumberyard-calls/transcripts/${f}`,
-      audio: `lumberyard-calls/audio/${name}.mp3`,
+      transcript: `calls/lumberyard/transcripts/${f}`,
+      audio: `calls/lumberyard/audio/${name}.mp3`,
       contentSha256: h,
       ...(durationSec != null && durationSec > 0 ? { durationSec } : {}),
       ...(keep.callDate ? { callDate: keep.callDate } : {}),
@@ -241,7 +241,7 @@ async function main() {
   const manifest = {
     version: 1,
     generated: new Date().toISOString(),
-    sourceRoot: 'lumberyard-calls/',
+    sourceRoot: 'calls/lumberyard/',
     stitch: useFfmpeg ? 'ffmpeg-concat' : 'mp3-buffer-concat',
     defaultCustomerVoice: voiceCustomer === DEFAULT_CUSTOMER_VOICE,
     modelId,

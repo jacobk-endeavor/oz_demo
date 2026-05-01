@@ -10,11 +10,11 @@
 
 - `version` — integer, bump if fields change.
 - `generated` — ISO timestamp when the manifest was last written by the generator.
-- `sourceRoot` — constant `"lumberyard-calls/"` (relative to repo root).
+- `sourceRoot` — constant `"calls/lumberyard/"` (relative to repo root).
 - `calls[]` — one entry per transcript/audio pair:
   - `id` — stable slug, e.g. `lumber-01-cedar-timbertech`
   - `title` — human title from the transcript header
-  - `transcript` — path under `lumberyard-calls/`, e.g. `transcripts/01-cedar-timbertech.txt`
+  - `transcript` — path under `calls/lumberyard/`, e.g. `transcripts/01-cedar-timbertech.txt`
   - `audio` — path to MP3, or `null` if not generated
   - `tags` — topic strings: `competitor`, `purchase`, `product-preference`, etc.
   - `notable` — short bullets: competitor name, product named, order intent, etc. (for search/RAG)
@@ -29,4 +29,4 @@
 ## Integration
 
 - Ingest: read `call-library.json` to list available calls and resolve paths to transcript + audio.
-- Rebuild: add or edit `transcripts/*.txt`, then run `node lumberyard-calls/tools/generate-audio.mjs`.
+- Rebuild: add or edit `transcripts/*.txt`, then run `node calls/lumberyard/tools/generate-audio.mjs`.

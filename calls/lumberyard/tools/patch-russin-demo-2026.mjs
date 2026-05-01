@@ -1,6 +1,6 @@
 /**
  * One-time patch: Russin-style demo narratives + shared hero account (Hudson Valley Deck & Porch / Morgan).
- * Run: node lumberyard-calls/tools/patch-russin-demo-2026.mjs
+ * Run: node calls/lumberyard/tools/patch-russin-demo-2026.mjs
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'

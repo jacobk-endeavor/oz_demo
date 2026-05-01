@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Ingest sauron-calls/calls_transcripts_only.json into Postgres + pgvector.
+Ingest calls/sauron/calls_transcripts_only.json into Postgres + pgvector.
 
-Loads repo-root `.env` first (DATABASE_URL or PG* vars), then optional `sauron-calls/.env`.
+Loads repo-root `.env` first (DATABASE_URL or PG* vars), then optional `calls/sauron/.env`.
 Does not override existing environment variables.
 
 Chunks carry metadata for chatbot retrieval:
@@ -11,7 +11,7 @@ Chunks carry metadata for chatbot retrieval:
   - chunk_index, chunk_id, meta
 
 Usage:
-  cd sauron-calls/scripts
+  cd calls/sauron/scripts
   python3 -m venv .venv && .venv/bin/pip install -r requirements-rag-ingest.txt
   .venv/bin/python ingest_calls_pgvector.py
 

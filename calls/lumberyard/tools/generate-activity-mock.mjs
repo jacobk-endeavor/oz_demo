@@ -1,6 +1,6 @@
 /**
  * Writes ../activity-mock.json — 15 email + 15 field-note rows for the lumberyard demo grid.
- * Run from repo root: node lumberyard-calls/tools/generate-activity-mock.mjs
+ * Run from repo root: node calls/lumberyard/tools/generate-activity-mock.mjs
  */
 import { writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'

@@ -1,5 +1,5 @@
 /**
- * Dev/preview API: pgvector RAG over `call_rag_chunks` (see sauron-calls/scripts/ingest_calls_pgvector.py).
+ * Dev/preview API: pgvector RAG over `call_rag_chunks` (see calls/sauron/scripts/ingest_calls_pgvector.py).
  */
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

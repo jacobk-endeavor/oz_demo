@@ -28,7 +28,7 @@ Requires **Node 18+**. **ffmpeg** is optional: if present on `PATH`, output is c
 
 ```bash
 cd /path/to/Oz-Demo
-node lumberyard-calls/tools/generate-audio.mjs
+node calls/lumberyard/tools/generate-audio.mjs
 ```
 
 This reads every `transcripts/*.txt`, writes `audio/<slug>.mp3` (gitignored), and rewrites `call-library.json` with timestamps, a `stitch` field, and file paths.
