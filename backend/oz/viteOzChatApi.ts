@@ -5,13 +5,25 @@ import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
 import pg from 'pg'
 import { OZ_CHAT_CONTRACT_VERSION, runOzChatLoop, type OzChatRequest, type OzChatStreamEvent } from './chatRuntime'
+import { TrackCToolScaffold } from './trackCToolScaffold'
 
 // Canonical API route for the unified Oz runtime.
 const OZ_CHAT_PATH = '/api/oz/chat'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // `backend/oz` lives under repo root; env is loaded from root to match existing project behavior.
 const REPO_ROOT = path.resolve(__dirname, '../..')
-let pool: pg.Pool | null = null
+const trackCScaffold = new TrackCToolScaffold({
+  readEnv,
+  poolFactory: (connectionString) =>
+    new pg.Pool({
+      connectionString,
+      max: 4,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 15_000,
+      application_name: 'oz-track-c-tools-readonly',
+    }),
+})
+const initTrackCScaffold = trackCScaffold.initialize()
 
 function normalizedUrlPath(url: string | undefined): string {
   const pathOnly = url?.split('?')[0] ?? ''
@@ -80,20 +92,6 @@ function openAiKey(): string | undefined {
   return (process.env.OPENAI_API_KEY || env.OPENAI_API_KEY || env.VITE_OPENAI_API_KEY)?.trim()
 }
 
-function getPool(): pg.Pool | null {
-  if (pool) return pool
-  const env = readEnv()
-  const url = (env.DATABASE_URL || '').trim()
-  if (!url) return null
-  pool = new pg.Pool({
-    connectionString: url,
-    max: 4,
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 15_000,
-  })
-  return pool
-}
-
 export function ozChatApiPlugin() {
   async function handler(req: IncomingMessage, res: ServerResponse, next: () => void) {
     // Only intercept the Oz chat route; all other requests continue down Vite middleware chain.
@@ -137,12 +135,37 @@ export function ozChatApiPlugin() {
     res.setHeader('x-oz-trace-id', request.trace_id ?? '')
 
     try {
-      const db = getPool()
+      await initTrackCScaffold
+      await trackCScaffold.refreshBetweenTurns()
+      const dbQuery = trackCScaffold.readOnlyDbQuery()
       // Runtime is an async generator: each yielded event is streamed to client as SSE.
       for await (const event of runOzChatLoop(request, {
         transcripts: {
           openAiApiKey: openAiKey(),
-          dbQuery: db ? (sql, params) => db.query(sql, params) : undefined,
+          dbQuery,
+        },
+        catalog: {
+          registry: {
+            async catalog_get(payload) {
+              return trackCScaffold.catalog_get(payload.sku)
+            },
+            async catalog_list(payload) {
+              return trackCScaffold.catalog_list(payload)
+            },
+          },
+        },
+        wiki: {
+          registry: {
+            async wiki_read(payload) {
+              return trackCScaffold.wiki_read(payload.path)
+            },
+            async wiki_grep(payload) {
+              return trackCScaffold.wiki_grep(payload.query, payload.top_n)
+            },
+            async wiki_log(payload) {
+              return trackCScaffold.wiki_log(payload)
+            },
+          },
         },
       })) {
         writeSseFrame(res, event)

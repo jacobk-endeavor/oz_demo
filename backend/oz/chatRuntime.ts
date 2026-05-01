@@ -22,6 +22,7 @@ import {
   type MemoryRecallAdapter,
   type MemoryWriteAdapter,
 } from './memoryAdapters'
+import type { CatalogGetResult, CatalogListResult, WikiGrepResult, WikiLogResult, WikiReadResult } from './trackCToolScaffold'
 import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
 
 export const OZ_CHAT_CONTRACT_VERSION = '2026-04-oz-chat-v1' as const
@@ -85,6 +86,26 @@ export type RuntimeDependencies = {
     openAiApiKey?: string
     embeddingModel?: string
   }
+  catalog?: {
+    registry?: {
+      catalog_get: (request: { sku: string }) => Promise<CatalogGetResult>
+      catalog_list: (request: {
+        product_line?: string
+        sub_category?: string
+        brand?: string
+        min_sales?: number
+        sort_by?: string
+        top_n?: number
+      }) => Promise<CatalogListResult>
+    }
+  }
+  wiki?: {
+    registry?: {
+      wiki_read: (request: { path: string }) => Promise<WikiReadResult>
+      wiki_grep: (request: { query: string; top_n?: number }) => Promise<WikiGrepResult>
+      wiki_log: (request: { kind?: string; since?: string; until?: string; top_n?: number }) => Promise<WikiLogResult>
+    }
+  }
 }
 
 export type OzToolSurface = {
@@ -97,6 +118,18 @@ export type OzToolSurface = {
   }) => Promise<GraphNeighborResult>
   search_transcripts: (request: { query: string; scope?: string; top_k?: number }) => Promise<TranscriptSearchResult>
   read_transcript: (request: { call_id: string; scope?: string; max_chunks?: number }) => Promise<TranscriptReadResult>
+  catalog_get: (request: { sku: string }) => Promise<CatalogGetResult>
+  catalog_list: (request: {
+    product_line?: string
+    sub_category?: string
+    brand?: string
+    min_sales?: number
+    sort_by?: string
+    top_n?: number
+  }) => Promise<CatalogListResult>
+  wiki_read: (request: { path: string }) => Promise<WikiReadResult>
+  wiki_grep: (request: { query: string; top_n?: number }) => Promise<WikiGrepResult>
+  wiki_log: (request: { kind?: string; since?: string; until?: string; top_n?: number }) => Promise<WikiLogResult>
 }
 
 function nowMs(now: () => Date): number {
@@ -119,6 +152,48 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
       embeddingModel: deps.transcripts?.embeddingModel,
     })
   const requestScope = defaultScopeFor(request)
+  const catalogRegistry = deps.catalog?.registry ?? {
+    async catalog_get(payload: { sku: string }) {
+      const sku = String(payload.sku ?? '').trim().toUpperCase()
+      return { sku, found: false, record: null, citation: `[catalog:sku=${sku}]` }
+    },
+    async catalog_list(payload: {
+      product_line?: string
+      sub_category?: string
+      brand?: string
+      min_sales?: number
+      sort_by?: string
+      top_n?: number
+    }) {
+      return {
+        filters: {
+          product_line: payload.product_line,
+          sub_category: payload.sub_category,
+          brand: payload.brand,
+          min_sales: payload.min_sales,
+          sort_by: payload.sort_by,
+          top_n: Math.max(1, Math.min(200, Math.trunc(Number(payload.top_n) || 25))),
+        },
+        total: 0,
+        rows: [],
+      }
+    },
+  }
+  const wikiRegistry = deps.wiki?.registry ?? {
+    async wiki_read(payload: { path: string }) {
+      return { path: payload.path, found: false, content: '', citation: `[wiki:${payload.path}]` }
+    },
+    async wiki_grep(payload: { query: string }) {
+      return { query: String(payload.query ?? ''), total: 0, hits: [] }
+    },
+    async wiki_log(payload: { kind?: string; since?: string; until?: string; top_n?: number }) {
+      return {
+        filters: { kind: payload.kind, since: payload.since, until: payload.until, top_n: payload.top_n ?? 25 },
+        total: 0,
+        entries: [],
+      }
+    },
+  }
 
   return {
     async graph_search(payload): Promise<GraphSearchResult> {
@@ -140,6 +215,21 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     },
     async read_transcript(payload): Promise<TranscriptReadResult> {
       return transcriptRegistry.read_transcript({ ...payload, scope: payload.scope ?? requestScope })
+    },
+    async catalog_get(payload): Promise<CatalogGetResult> {
+      return catalogRegistry.catalog_get(payload)
+    },
+    async catalog_list(payload): Promise<CatalogListResult> {
+      return catalogRegistry.catalog_list(payload)
+    },
+    async wiki_read(payload): Promise<WikiReadResult> {
+      return wikiRegistry.wiki_read(payload)
+    },
+    async wiki_grep(payload): Promise<WikiGrepResult> {
+      return wikiRegistry.wiki_grep(payload)
+    },
+    async wiki_log(payload): Promise<WikiLogResult> {
+      return wikiRegistry.wiki_log(payload)
     },
   }
 }
