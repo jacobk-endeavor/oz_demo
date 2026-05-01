@@ -944,6 +944,108 @@ export class TrackCToolScaffold {
     }
   }
 
+  /**
+   * Layer 3 bundled helper — composes primitives (Oz-Demo-rx1).
+   * Fan-out: catalog + wiki_lookup + kb (global + call) + recommendations.
+   */
+  async layer3ProductDossier(target: string): Promise<Record<string, unknown>> {
+    const t = String(target ?? '').trim()
+    const skuKey = t.toUpperCase().replace(/\s+/g, '')
+    const cat = this.catalog_get(skuKey)
+    const lookupSeed = cat.found
+      ? String(readText(cat.record as JsonRecord, ['product_line', 'description', 'sku']) ?? skuKey).slice(0, 120)
+      : t
+    const [wiki, kbGlobal, kbCalls, recs] = await Promise.all([
+      this.wiki_lookup(lookupSeed || t, 5),
+      this.kb_search({ query: t, surface: 'global', k: 8 }),
+      this.kb_search({ query: t, surface: 'call', k: 6 }),
+      Promise.resolve(this.recommendations_for(cat.found ? skuKey : t, 'all')),
+    ])
+    return {
+      status: 'ok',
+      bundled_tool: 'product_dossier',
+      target: t,
+      substrates_consulted: {
+        catalog: 'queried',
+        wiki: 'queried',
+        kb: 'queried',
+        recommendations: 'queried',
+        calls: 'queried',
+      },
+      catalog: cat,
+      wiki_lookup: wiki,
+      kb_global: kbGlobal,
+      kb_calls: kbCalls,
+      recommendations: recs,
+      budget_credits_used: 0.05,
+    }
+  }
+
+  /**
+   * Layer 3 compare — catalog_compare when ≥2 catalog SKUs resolve; always pulls wiki_read + kb_search (Oz-Demo-6eb).
+   */
+  async layer3Compare(targets: string[]): Promise<Record<string, unknown>> {
+    const ts = targets.map((x) => String(x ?? '').trim()).filter(Boolean)
+    const skuHits = ts.map((x) => x.toUpperCase()).filter((sku) => this.catalog_get(sku).found)
+    const catalog =
+      skuHits.length >= 2 ? this.catalog_compare(skuHits) : skuHits.length === 1 ? this.catalog_get(skuHits[0]) : null
+    const wikiPages = await Promise.all(ts.map((path) => this.wiki_read(path.replace(/^wiki\//, ''))))
+    const kbGlobal = await this.kb_search({ query: ts.join(' '), surface: 'global', k: 8 })
+    return {
+      status: 'ok',
+      bundled_tool: 'compare',
+      targets: ts,
+      substrates_consulted: {
+        catalog: skuHits.length >= 2 ? 'queried' : skuHits.length === 1 ? 'queried' : 'skipped',
+        wiki: 'queried',
+        kb: 'queried',
+        recommendations: 'skipped',
+        calls: 'skipped',
+      },
+      catalog_slice: catalog,
+      wiki_pages: wikiPages,
+      kb_global: kbGlobal,
+    }
+  }
+
+  /** Layer 3 wiki_compare — reads N entity pages for structured diff hints (Oz-Demo-6eb). */
+  async layer3WikiCompare(slugs: string[]): Promise<Record<string, unknown>> {
+    const paths = slugs.map((s) => String(s ?? '').trim()).filter(Boolean)
+    const pages = await Promise.all(paths.map((p) => this.wiki_read(p.replace(/^wiki\//, ''))))
+    const titles = pages.map((p) => (p.found ? parseSimpleFrontmatter(p.content).title : undefined))
+    return {
+      status: 'ok',
+      bundled_tool: 'wiki_compare',
+      slugs: paths,
+      substrates_consulted: { catalog: 'skipped', wiki: 'queried', kb: 'skipped', recommendations: 'skipped', calls: 'skipped' },
+      pages,
+      titles,
+    }
+  }
+
+  /** Layer 3 drift_check — contrasts catalog row vs wiki mentions vs kb quotes (Oz-Demo-coh). */
+  async layer3DriftCheck(target: string): Promise<Record<string, unknown>> {
+    const t = String(target ?? '').trim()
+    const skuKey = t.toUpperCase().replace(/\s+/g, '')
+    const cat = this.catalog_get(skuKey)
+    const wiki = await this.wiki_lookup(`${t} warranty install`, 4)
+    const kb = await this.kb_search({ query: `${t} warranty ${t} specification`, surface: 'global', k: 8 })
+    const drift_flags: string[] = []
+    if (cat.found && wiki.pages.length === 0) drift_flags.push('catalog_present_without_wiki_match')
+    if (!cat.found && wiki.pages.length > 0) drift_flags.push('wiki_present_without_catalog_row')
+    if ((kb.chunks?.length ?? 0) === 0) drift_flags.push('no_kb_evidence')
+    return {
+      status: 'ok',
+      bundled_tool: 'drift_check',
+      target: t,
+      substrates_consulted: { catalog: 'queried', wiki: 'queried', kb: 'queried', recommendations: 'skipped', calls: 'skipped' },
+      catalog: cat,
+      wiki_candidates: wiki,
+      kb_evidence: kb,
+      drift_flags,
+    }
+  }
+
   private async catalogSearchVector(query: string, limit: number): Promise<CatalogSearchRow[]> {
     const dbQuery = this.readOnlyDbQuery()
     const env = this.readEnv()

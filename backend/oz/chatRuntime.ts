@@ -144,7 +144,7 @@ export type RuntimeDependencies = {
   }
 }
 
-/** Layer 3 bundled helpers — stubbed here; full composites track Oz-Demo-rx1 / Oz-Demo-6eb / Oz-Demo-coh. */
+/** Layer 3 bundled helpers — when TrackCToolScaffold is wired, composites run as parallel primitive fan-out. */
 export type OzBundledLayer3StubResult = {
   status: 'stub'
   bundled_tool: 'product_dossier' | 'compare' | 'wiki_compare' | 'drift_check'
@@ -155,6 +155,15 @@ export type OzBundledLayer3StubResult = {
   targets?: string[]
   slugs?: string[]
 }
+
+export type OzBundledLayer3OkResult = {
+  status: 'ok'
+  bundled_tool: 'product_dossier' | 'compare' | 'wiki_compare' | 'drift_check'
+  substrates_consulted: Partial<Record<'catalog' | 'wiki' | 'kb' | 'recommendations' | 'calls', 'queried' | 'skipped'>>
+  [key: string]: unknown
+}
+
+export type OzBundledLayer3Result = OzBundledLayer3StubResult | OzBundledLayer3OkResult
 
 export type OzToolSurface = {
   graph_search: (request: { query: string; depth?: number; size?: number; scope?: string }) => Promise<GraphSearchResult>
@@ -206,10 +215,10 @@ export type OzToolSurface = {
   }) => Promise<Awaited<ReturnType<TrackCToolScaffold['catalog_neighbors']>>>
   wiki_lookup: (request: { query: string; top_n?: number }) => Promise<WikiLookupResult>
   image_view: (request: { path: string }) => Promise<ImageViewResult>
-  product_dossier: (request: { target: string }) => Promise<OzBundledLayer3StubResult>
-  compare: (request: { targets: string[]; dimensions?: string[] }) => Promise<OzBundledLayer3StubResult>
-  wiki_compare: (request: { slugs: string[] }) => Promise<OzBundledLayer3StubResult>
-  drift_check: (request: { target: string }) => Promise<OzBundledLayer3StubResult>
+  product_dossier: (request: { target: string }) => Promise<OzBundledLayer3Result>
+  compare: (request: { targets: string[]; dimensions?: string[] }) => Promise<OzBundledLayer3Result>
+  wiki_compare: (request: { slugs: string[] }) => Promise<OzBundledLayer3Result>
+  drift_check: (request: { target: string }) => Promise<OzBundledLayer3Result>
 }
 
 function nowMs(now: () => Date): number {
@@ -306,48 +315,82 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
       embeddingModel: deps.transcripts?.embeddingModel,
     })
   const requestScope = defaultScopeFor(request)
-  const catalogRegistry = deps.catalog?.registry ?? {
-    async catalog_get(payload: { sku: string }) {
-      const sku = String(payload.sku ?? '').trim().toUpperCase()
-      return { sku, found: false, record: null, citation: `[catalog:sku=${sku}]` }
-    },
-    async catalog_list(payload: {
-      product_line?: string
-      sub_category?: string
-      brand?: string
-      min_sales?: number
-      sort_by?: string
-      top_n?: number
-    }) {
-      return {
-        filters: {
-          product_line: payload.product_line,
-          sub_category: payload.sub_category,
-          brand: payload.brand,
-          min_sales: payload.min_sales,
-          sort_by: payload.sort_by,
-          top_n: Math.max(1, Math.min(200, Math.trunc(Number(payload.top_n) || 25))),
-        },
-        total: 0,
-        rows: [],
-      }
-    },
-  }
-  const wikiRegistry = deps.wiki?.registry ?? {
-    async wiki_read(payload: { path: string }) {
-      return { path: payload.path, found: false, content: '', citation: `[wiki:${payload.path}]` }
-    },
-    async wiki_grep(payload: { query: string }) {
-      return { query: String(payload.query ?? ''), total: 0, hits: [] }
-    },
-    async wiki_log(payload: { kind?: string; since?: string; until?: string; top_n?: number }) {
-      return {
-        filters: { kind: payload.kind, since: payload.since, until: payload.until, top_n: payload.top_n ?? 25 },
-        total: 0,
-        entries: [],
-      }
-    },
-  }
+  const tc = deps.trackC?.scaffold
+
+  const catalogRegistry =
+    deps.catalog?.registry ??
+    (tc
+      ? {
+          async catalog_get(payload: { sku: string }) {
+            return tc.catalog_get(payload.sku)
+          },
+          async catalog_list(payload: {
+            product_line?: string
+            sub_category?: string
+            brand?: string
+            min_sales?: number
+            sort_by?: string
+            top_n?: number
+          }) {
+            return tc.catalog_list(payload)
+          },
+        }
+      : {
+          async catalog_get(payload: { sku: string }) {
+            const sku = String(payload.sku ?? '').trim().toUpperCase()
+            return { sku, found: false, record: null, citation: `[catalog:sku=${sku}]` }
+          },
+          async catalog_list(payload: {
+            product_line?: string
+            sub_category?: string
+            brand?: string
+            min_sales?: number
+            sort_by?: string
+            top_n?: number
+          }) {
+            return {
+              filters: {
+                product_line: payload.product_line,
+                sub_category: payload.sub_category,
+                brand: payload.brand,
+                min_sales: payload.min_sales,
+                sort_by: payload.sort_by,
+                top_n: Math.max(1, Math.min(200, Math.trunc(Number(payload.top_n) || 25))),
+              },
+              total: 0,
+              rows: [],
+            }
+          },
+        })
+  const wikiRegistry =
+    deps.wiki?.registry ??
+    (tc
+      ? {
+          async wiki_read(payload: { path: string }) {
+            return tc.wiki_read(payload.path)
+          },
+          async wiki_grep(payload: { query: string; top_n?: number }) {
+            return tc.wiki_grep(payload.query, payload.top_n ?? 8)
+          },
+          async wiki_log(payload: { kind?: string; since?: string; until?: string; top_n?: number }) {
+            return tc.wiki_log(payload)
+          },
+        }
+      : {
+          async wiki_read(payload: { path: string }) {
+            return { path: payload.path, found: false, content: '', citation: `[wiki:${payload.path}]` }
+          },
+          async wiki_grep(payload: { query: string }) {
+            return { query: String(payload.query ?? ''), total: 0, hits: [] }
+          },
+          async wiki_log(payload: { kind?: string; since?: string; until?: string; top_n?: number }) {
+            return {
+              filters: { kind: payload.kind, since: payload.since, until: payload.until, top_n: payload.top_n ?? 25 },
+              total: 0,
+              entries: [],
+            }
+          },
+        })
 
   const kbSearch =
     deps.kb?.kb_search ??
@@ -372,8 +415,6 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
             provenance: { source: 'stub', retrieval: 'none' },
           }
         })
-
-  const tc = deps.trackC?.scaffold
 
   const surface: OzToolSurface = {
     async graph_search(payload): Promise<GraphSearchResult> {
@@ -474,36 +515,48 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
       return tc.image_view(payload.path)
     },
     async product_dossier(payload) {
+      if (tc) {
+        return tc.layer3ProductDossier(String(payload.target ?? '')) as OzBundledLayer3OkResult
+      }
       return layer3BundledStub(
         'product_dossier',
         'Oz-Demo-rx1',
-        'Bundled product_dossier is not implemented in this Oz runtime; compose catalog_get, wiki_lookup, kb_search, recommendations_for, and call-scoped kb_search in parallel.',
+        'Bundled product_dossier requires TrackCToolScaffold (OZ_PRODUCT_CATALOG_PATH / wiki / DB); compose primitives manually.',
         { target: String(payload.target ?? '') },
       )
     },
     async compare(payload) {
       const targets = Array.isArray(payload.targets) ? payload.targets.map((t) => String(t ?? '')) : []
+      if (tc) {
+        return tc.layer3Compare(targets) as OzBundledLayer3OkResult
+      }
       return layer3BundledStub(
         'compare',
         'Oz-Demo-6eb',
-        'Bundled compare is not implemented; compose catalog_compare, wiki_lookup/wiki_read, and kb_search instead.',
+        'Bundled compare requires TrackCToolScaffold; compose catalog_compare and wiki_read manually.',
         { targets },
       )
     },
     async wiki_compare(payload) {
       const slugs = Array.isArray(payload.slugs) ? payload.slugs.map((s) => String(s ?? '')) : []
+      if (tc) {
+        return tc.layer3WikiCompare(slugs) as OzBundledLayer3OkResult
+      }
       return layer3BundledStub(
         'wiki_compare',
         'Oz-Demo-6eb',
-        'Bundled wiki_compare is not implemented; call wiki_read per slug and compare sections in prose.',
+        'Bundled wiki_compare requires TrackCToolScaffold; call wiki_read per slug manually.',
         { slugs },
       )
     },
     async drift_check(payload) {
+      if (tc) {
+        return tc.layer3DriftCheck(String(payload.target ?? '')) as OzBundledLayer3OkResult
+      }
       return layer3BundledStub(
         'drift_check',
         'Oz-Demo-coh',
-        'Bundled drift_check is not implemented; contrast catalog rows, wiki entity pages, and kb_search quotes manually.',
+        'Bundled drift_check requires TrackCToolScaffold; contrast sources manually.',
         { target: String(payload.target ?? '') },
       )
     },
