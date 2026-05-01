@@ -341,6 +341,8 @@ export function KnowledgeBasePage() {
   const [libraryView, setLibraryView] = useState<LibraryView>('ingested')
   const [sortBy, setSortBy] = useState<SortBy>('type')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  /** When on, server ingest uses --reembed so kb_extracts + wiki scaffold always run (slower; for testing the full path). */
+  const [wikiFullPath, setWikiFullPath] = useState(false)
   const filesForUnmountRef = useRef<KbListEntry[]>([])
   const rowsRef = useRef(rows)
   rowsRef.current = rows
@@ -379,6 +381,7 @@ export function KnowledgeBasePage() {
         headers: {
           'Content-Type': 'application/octet-stream',
           'X-File-Name': encodeURIComponent(file.name),
+          ...(wikiFullPath ? { 'X-Oz-Kb-Wiki-Full': '1' } : {}),
         },
         body: buf,
       })
@@ -445,7 +448,7 @@ export function KnowledgeBasePage() {
         ),
       )
     }
-  }, [])
+  }, [wikiFullPath])
 
   const loadFilePreview = useCallback(
     async (id: string, file: File, kind: KnowledgeAssetKind) => {
@@ -662,6 +665,20 @@ export function KnowledgeBasePage() {
           <PlusIcon className="h-4 w-4" aria-hidden />
           Add
         </button>
+        <label className="flex max-w-[min(100%,18rem)] cursor-pointer items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50/90 px-2.5 py-1.5 text-xs text-zinc-700">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-400"
+            checked={wikiFullPath}
+            onChange={(e) => setWikiFullPath(e.target.checked)}
+          />
+          <span>
+            <span className="font-medium text-zinc-900">Wiki + extracts (full path)</span>
+            <span className="mt-0.5 block text-[11px] leading-snug text-zinc-600">
+              On: force <code className="rounded bg-zinc-200/80 px-0.5">kb_extracts</code> + wiki draft (re-embed). Off: default ingest; PDF preview still lazy-loads.
+            </span>
+          </span>
+        </label>
         {addModalOpen && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -798,7 +815,7 @@ export function KnowledgeBasePage() {
                   <tr>
                     <td colSpan={5} className="px-3 py-8 text-center text-sm text-zinc-400">
                       {libraryView === 'ingested'
-                        ? 'Nothing ingested yet. Use Add — each file is previewed locally, then uploaded to the dev server for pgvector ingest and a wiki source draft.'
+                        ? 'Nothing ingested yet. Use Add — each file is previewed locally, then uploaded for pgvector ingest. Enable “Wiki + extracts (full path)” to force kb_extracts + wiki draft in one shot.'
                         : 'No items in this view.'}
                     </td>
                   </tr>

@@ -39,6 +39,14 @@ function isKbIngestPost(req: IncomingMessage): boolean {
   return normalizedUrlPath(url) === KB_INGEST_PATH || url.includes(KB_INGEST_PATH)
 }
 
+/** When true, first ingest pass uses --reembed so kb_extracts + wiki scaffold run even for duplicate SHA. */
+function readWikiFullPathHeader(req: IncomingMessage): boolean {
+  const raw = req.headers['x-oz-kb-wiki-full']
+  if (typeof raw !== 'string') return false
+  const t = raw.trim().toLowerCase()
+  return t === '1' || t === 'true' || t === 'yes'
+}
+
 function parseDotEnv(contents: string): Record<string, string> {
   const out: Record<string, string> = {}
   for (const raw of contents.split('\n')) {
@@ -282,6 +290,7 @@ export function kbIngestApiPlugin() {
     const safeName = sanitizeBasename(decoded)
     const passwordHeader = req.headers['x-kb-password']
     const password = typeof passwordHeader === 'string' ? passwordHeader : undefined
+    const wikiFullPath = readWikiFullPathHeader(req)
 
     const uploadId = randomUUID()
     const rawPath = path.join(KB_RAW_INCOMING_ROOT, dayStamp(), `${uploadId}_${safeName}`)
@@ -306,7 +315,7 @@ export function kbIngestApiPlugin() {
     const env = mergeEnv()
     let stdout = ''
     try {
-      stdout = await execKbIngest({ py, env, rawPath, password, reembed: false })
+      stdout = await execKbIngest({ py, env, rawPath, password, reembed: wikiFullPath })
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e)
       const hint = hintForIngestFailure(detail)
@@ -329,7 +338,7 @@ export function kbIngestApiPlugin() {
     let sourceId = (parsed.source_id ?? shaFallback12).toLowerCase()
     let manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
 
-    if (!existsSync(manifestPath)) {
+    if (!wikiFullPath && !existsSync(manifestPath)) {
       try {
         stdout = await execKbIngest({ py, env, rawPath, password, reembed: true })
       } catch (e) {
@@ -376,6 +385,7 @@ export function kbIngestApiPlugin() {
         bytes_written: bytesWritten,
         raw_path: rawRelative.replace(/\\/g, '/'),
         wiki,
+        ...(wikiFullPath ? { wiki_full_path: true } : {}),
       }),
     )
   }
