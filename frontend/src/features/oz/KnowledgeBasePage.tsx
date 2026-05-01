@@ -47,6 +47,8 @@ type KbListEntry =
       errorMessage?: string
       /** Present when pgvector ingest succeeded but wiki scaffold reported an error. */
       wikiWarning?: string
+      /** Present when wiki scaffold was intentionally skipped (unchanged file or missing kb_extracts bundle). */
+      wikiNote?: string
     }
   | {
       id: string
@@ -387,7 +389,7 @@ export function KnowledgeBasePage() {
         error?: string
         detail?: string
         hint?: string
-        wiki?: { ok?: boolean; detail?: string }
+        wiki?: { ok?: boolean; detail?: string; skipped?: boolean }
       } = {}
       try {
         parsed = JSON.parse(raw) as typeof parsed
@@ -412,6 +414,14 @@ export function KnowledgeBasePage() {
       const wiki = parsed.wiki
       const wikiWarning =
         wiki && wiki.ok === false && typeof wiki.detail === 'string' ? wiki.detail : undefined
+      const wikiNote =
+        wiki &&
+        wiki.ok !== false &&
+        wiki.skipped === true &&
+        typeof wiki.detail === 'string' &&
+        wiki.detail.length > 0
+          ? wiki.detail
+          : undefined
       setRows((prev) =>
         prev.map((e) =>
           e.id === id && e.entryKind === 'file'
@@ -420,6 +430,7 @@ export function KnowledgeBasePage() {
                 ingest: 'ingested' as const,
                 sourceId: typeof parsed.source_id === 'string' ? parsed.source_id : undefined,
                 wikiWarning,
+                wikiNote,
               }
             : e,
         ),
@@ -606,6 +617,11 @@ export function KnowledgeBasePage() {
           {row.wikiWarning != null && row.wikiWarning.length > 0 ? (
             <p className="shrink-0 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-950">
               Wiki scaffold warning (chunks are still in pgvector): {row.wikiWarning}
+            </p>
+          ) : null}
+          {row.wikiNote != null && row.wikiNote.length > 0 ? (
+            <p className="shrink-0 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-xs text-zinc-800">
+              Wiki scaffold skipped: {row.wikiNote}
             </p>
           ) : null}
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

@@ -171,18 +171,31 @@ function hintForIngestFailure(detail: string): string | undefined {
   return undefined
 }
 
-function parseKbIngestStdout(stdout: string): { source_id?: string } {
+type KbIngestStdoutParse = {
+  source_id?: string
+  /** Present when ingest_kb skipped work because sha already ingested (no kb_extracts refresh). */
+  ingest_state?: 'ingested' | 'unchanged'
+}
+
+function parseKbIngestStdout(stdout: string): KbIngestStdoutParse {
+  let last: KbIngestStdoutParse = {}
   for (const line of stdout.split('\n')) {
     const t = line.trim()
     if (!t.startsWith('{')) continue
     try {
       const o = JSON.parse(t) as { event?: string; source_id?: string }
-      if (o.event === 'kb.ingested' && typeof o.source_id === 'string') return { source_id: o.source_id }
+      if (typeof o.source_id !== 'string') continue
+      if (o.event === 'kb.ingested') {
+        return { source_id: o.source_id, ingest_state: 'ingested' }
+      }
+      if (o.event === 'kb.unchanged') {
+        last = { source_id: o.source_id, ingest_state: 'unchanged' }
+      }
     } catch {
       /* ignore */
     }
   }
-  return {}
+  return last
 }
 
 function runWikiIngest(repoRoot: string, sourceId: string): { ok: boolean; detail?: string } {
@@ -304,9 +317,28 @@ export function kbIngestApiPlugin() {
     const shaFallback12 = sha256Hex.slice(0, 12).toLowerCase()
 
     const parsed = parseKbIngestStdout(stdout)
-    const sourceId = parsed.source_id ?? shaFallback12
+    const sourceId = (parsed.source_id ?? shaFallback12).toLowerCase()
 
-    const wiki = runWikiIngest(REPO_ROOT, sourceId)
+    const manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
+    let wiki: { ok: boolean; detail?: string; skipped?: boolean }
+    if (parsed.ingest_state === 'unchanged') {
+      wiki = {
+        ok: true,
+        skipped: true,
+        detail:
+          'Same content already had status=ready in kb_sources; kb_extracts/ was not rewritten. Run `calls/kb/scripts` ingest with `--reembed` if you need a fresh wiki extract bundle.',
+      }
+    } else if (!existsSync(manifestPath)) {
+      wiki = {
+        ok: true,
+        skipped: true,
+        detail:
+          `No kb_extracts bundle at kb_extracts/${sourceId}/manifest.json (wiki scaffold skipped). Chunks may still be in pgvector from a prior ingest.`,
+      }
+    } else {
+      wiki = runWikiIngest(REPO_ROOT, sourceId)
+      if (wiki.ok) wiki = { ...wiki, skipped: false }
+    }
 
     res.statusCode = 200
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -318,7 +350,7 @@ export function kbIngestApiPlugin() {
         sha256: sha256Hex,
         bytes_written: bytesWritten,
         raw_path: rawRelative.replace(/\\/g, '/'),
-        wiki: wiki.ok ? { ok: true } : { ok: false, detail: wiki.detail },
+        wiki,
       }),
     )
   }

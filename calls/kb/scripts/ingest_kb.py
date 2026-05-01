@@ -887,6 +887,13 @@ def process_one_file(
     existing = fetch_source_row(cur, sid)
     if existing and existing["status"] == "ready" and existing["sha256"] == sha and not reembed:
         print(f"skip (unchanged, ready): {file_path}", flush=True)
+        # Match kb.ingested shape so callers know wiki kb_extracts bundle was not refreshed.
+        print(
+            json.dumps(
+                {"event": "kb.unchanged", "event_version": 1, "source_id": sid},
+            ),
+            flush=True,
+        )
         conn.commit()
         return True
 
