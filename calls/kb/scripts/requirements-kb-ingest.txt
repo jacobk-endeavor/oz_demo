@@ -1,0 +1,6 @@
+-r ../../sauron/scripts/requirements-rag-ingest.txt
+openpyxl>=3.1.0
+pypdf>=4.0.0
+pdfminer.six>=20221105
+python-pptx>=0.6.21
+jsonschema>=4.20.0
