@@ -198,6 +198,44 @@ function parseKbIngestStdout(stdout: string): KbIngestStdoutParse {
   return last
 }
 
+function execKbIngest(params: {
+  py: string
+  env: NodeJS.ProcessEnv
+  rawPath: string
+  password?: string
+  reembed: boolean
+}): Promise<string> {
+  const args = [
+    KB_INGEST_SCRIPT,
+    params.rawPath,
+    '--scope',
+    'global',
+    '--on-success',
+    'emit-event',
+    ...(params.password ? ['--password', params.password] : []),
+    ...(params.reembed ? ['--reembed'] : []),
+  ]
+  return new Promise((resolve, reject) => {
+    execFile(
+      params.py,
+      args,
+      {
+        cwd: REPO_ROOT,
+        env: params.env,
+        maxBuffer: 24 * 1024 * 1024,
+        timeout: 600_000,
+      },
+      (err, out, stderr) => {
+        if (err) {
+          reject(new Error(String(stderr || '') || String(out || '') || (err as Error).message))
+          return
+        }
+        resolve(String(out || ''))
+      },
+    )
+  })
+}
+
 function runWikiIngest(repoRoot: string, sourceId: string): { ok: boolean; detail?: string } {
   const tsxCli = path.join(repoRoot, 'frontend/node_modules/tsx/dist/cli.mjs')
   const scriptPath = path.join(repoRoot, 'scripts/run-wiki-ingest.ts')
@@ -265,39 +303,10 @@ export function kbIngestApiPlugin() {
     }
 
     const py = resolvePython()
-    const args = [
-      KB_INGEST_SCRIPT,
-      rawPath,
-      '--scope',
-      'global',
-      '--on-success',
-      'emit-event',
-      ...(password ? ['--password', password] : []),
-    ]
-
     const env = mergeEnv()
     let stdout = ''
     try {
-      await new Promise<void>((resolve, reject) => {
-        execFile(
-          py,
-          args,
-          {
-            cwd: REPO_ROOT,
-            env,
-            maxBuffer: 24 * 1024 * 1024,
-            timeout: 600_000,
-          },
-          (err, out, stderr) => {
-            stdout = String(out || '')
-            if (err) {
-              reject(new Error(String(stderr || '') || stdout || (err as Error).message))
-              return
-            }
-            resolve()
-          },
-        )
-      })
+      stdout = await execKbIngest({ py, env, rawPath, password, reembed: false })
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e)
       const hint = hintForIngestFailure(detail)
@@ -316,28 +325,44 @@ export function kbIngestApiPlugin() {
 
     const shaFallback12 = sha256Hex.slice(0, 12).toLowerCase()
 
-    const parsed = parseKbIngestStdout(stdout)
-    const sourceId = (parsed.source_id ?? shaFallback12).toLowerCase()
+    let parsed = parseKbIngestStdout(stdout)
+    let sourceId = (parsed.source_id ?? shaFallback12).toLowerCase()
+    let manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
 
-    const manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
+    if (!existsSync(manifestPath)) {
+      try {
+        stdout = await execKbIngest({ py, env, rawPath, password, reembed: true })
+      } catch (e) {
+        const detail = e instanceof Error ? e.message : String(e)
+        const hint = hintForIngestFailure(detail)
+        res.statusCode = 502
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.end(
+          JSON.stringify({
+            ok: false,
+            error: 'ingest_kb.py failed during kb_extracts recovery (--reembed)',
+            detail,
+            ...(hint ? { hint } : {}),
+          }),
+        )
+        return
+      }
+      parsed = parseKbIngestStdout(stdout)
+      sourceId = (parsed.source_id ?? shaFallback12).toLowerCase()
+      manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
+    }
+
     let wiki: { ok: boolean; detail?: string; skipped?: boolean }
-    if (parsed.ingest_state === 'unchanged') {
-      wiki = {
-        ok: true,
-        skipped: true,
-        detail:
-          'Same content already had status=ready in kb_sources; kb_extracts/ was not rewritten. Run `calls/kb/scripts` ingest with `--reembed` if you need a fresh wiki extract bundle.',
-      }
-    } else if (!existsSync(manifestPath)) {
-      wiki = {
-        ok: true,
-        skipped: true,
-        detail:
-          `No kb_extracts bundle at kb_extracts/${sourceId}/manifest.json (wiki scaffold skipped). Chunks may still be in pgvector from a prior ingest.`,
-      }
-    } else {
+    if (existsSync(manifestPath)) {
       wiki = runWikiIngest(REPO_ROOT, sourceId)
       if (wiki.ok) wiki = { ...wiki, skipped: false }
+    } else {
+      wiki = {
+        ok: true,
+        skipped: true,
+        detail:
+          `Could not create kb_extracts/${sourceId}/manifest.json after ingest and a --reembed retry (wiki scaffold skipped). Check embedding spend limits, disk permissions, or run calls/kb/scripts/ingest_kb.py on this file with --reembed.`,
+      }
     }
 
     res.statusCode = 200
