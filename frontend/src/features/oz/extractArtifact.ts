@@ -26,6 +26,7 @@ export type ExtractUnitInput = {
   chunkIds: string[]
   fileName: string
   images?: string[]
+  meta?: ExtractUnitMeta
 }
 
 export type ExtractManifestUnit = {
@@ -34,6 +35,28 @@ export type ExtractManifestUnit = {
   chunk_ids: string[]
   content_hash: string
   images?: string[]
+  meta?: ExtractUnitMeta
+}
+
+export type ExtractUnitMeta = {
+  kind?: string
+  original_path?: string
+  provenance?: {
+    model: string
+    captioned_at: string
+  }
+}
+
+export type BuildImageExtractUnitInput = {
+  originalPath: string
+  caption: string
+  ocrText?: string
+  chunkId: string
+  fileName?: string
+  locator?: string
+  imagePath?: string
+  visionModel: string
+  captionedAt?: string
 }
 
 export type ExtractManifest = {
@@ -138,6 +161,43 @@ function normalizeSourceId(sourceId: string): string {
 
 function sortedUnique(values: string[]): string[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b))
+}
+
+function cleanText(value: string): string {
+  return value.trim().replace(/\r\n/g, '\n')
+}
+
+function normalizeImageMeta(meta: ExtractUnitMeta | undefined): ExtractUnitMeta | undefined {
+  if (meta == null) return undefined
+  const kind = meta.kind?.trim()
+  if (kind !== 'image') return meta
+
+  const originalPath = meta.original_path?.trim()
+  if (originalPath == null || originalPath.length === 0) {
+    throw new Error('image unit meta.original_path is required')
+  }
+  const provenance = meta.provenance
+  const model = provenance?.model?.trim()
+  if (model == null || model.length === 0) {
+    throw new Error('image unit meta.provenance.model is required')
+  }
+  const captionedAt = provenance?.captioned_at?.trim()
+  if (captionedAt == null || captionedAt.length === 0) {
+    throw new Error('image unit meta.provenance.captioned_at is required')
+  }
+  if (Number.isNaN(Date.parse(captionedAt))) {
+    throw new Error(`image unit meta.provenance.captioned_at is not a valid timestamp: ${captionedAt}`)
+  }
+
+  return {
+    ...meta,
+    kind: 'image',
+    original_path: safeRelativePath(originalPath),
+    provenance: {
+      model,
+      captioned_at: new Date(captionedAt).toISOString(),
+    },
+  }
 }
 
 function contentHash(body: string): string {
@@ -276,6 +336,7 @@ export function buildExtractManifest(input: WriteExtractArtifactInput): ExtractM
       chunk_ids: sortedUnique(unit.chunkIds),
       content_hash: contentHash(unit.body),
       ...(images != null && images.length > 0 ? { images } : {}),
+      ...(unit.meta != null ? { meta: normalizeImageMeta(unit.meta) } : {}),
     }
   })
 
@@ -291,6 +352,44 @@ export function buildExtractManifest(input: WriteExtractArtifactInput): ExtractM
     has_full_text: hasFullText,
     ...(hasFullText ? { full_text_file: 'full.txt' } : {}),
     units,
+  }
+}
+
+export function buildImageExtractUnit(input: BuildImageExtractUnitInput): ExtractUnitInput {
+  const caption = cleanText(input.caption)
+  if (caption.length === 0) throw new Error('image caption cannot be empty')
+  const ocrText = cleanText(input.ocrText ?? '')
+  const originalPath = safeRelativePath(input.originalPath)
+  const chunkId = input.chunkId.trim()
+  if (chunkId.length === 0) throw new Error('image chunkId cannot be empty')
+  const visionModel = input.visionModel.trim()
+  if (visionModel.length === 0) throw new Error('image visionModel cannot be empty')
+
+  const captionedAt = input.captionedAt == null ? new Date().toISOString() : input.captionedAt
+  if (Number.isNaN(Date.parse(captionedAt))) {
+    throw new Error(`image captionedAt is not a valid timestamp: ${captionedAt}`)
+  }
+
+  const segments = [`[image:${originalPath}]`, `Caption: ${caption}`]
+  if (ocrText.length > 0) {
+    segments.push('OCR:')
+    segments.push(ocrText)
+  }
+
+  return {
+    locator: input.locator?.trim() || 'image=1',
+    fileName: input.fileName?.trim() || 'unit-image-001.txt',
+    body: `${segments.join('\n\n')}\n`,
+    chunkIds: [chunkId],
+    images: [input.imagePath?.trim() || originalPath],
+    meta: {
+      kind: 'image',
+      original_path: originalPath,
+      provenance: {
+        model: visionModel,
+        captioned_at: new Date(captionedAt).toISOString(),
+      },
+    },
   }
 }
 

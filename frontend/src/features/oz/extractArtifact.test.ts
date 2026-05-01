@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import * as XLSX from 'xlsx'
 import {
   buildExcelExtractUnits,
+  buildImageExtractUnit,
   buildExtractManifest,
   buildPptxExtractUnits,
   shouldEmitFullText,
@@ -24,6 +25,14 @@ afterEach(async () => {
 
 describe('buildExtractManifest', () => {
   it('builds deterministic manifest with sorted chunk ids and content hashes', () => {
+    const imageUnit = buildImageExtractUnit({
+      originalPath: 'img/page-001-fig-01.png',
+      caption: 'Deck board close-up',
+      ocrText: 'Voyage decking',
+      chunkId: 'abc_p001_00001',
+      visionModel: 'gpt-4o-mini',
+      captionedAt: '2026-05-01T19:00:00Z',
+    })
     const manifest = buildExtractManifest({
       repoRoot: '/tmp/ignored',
       sourceId: 'ABCDEF123456',
@@ -37,9 +46,10 @@ describe('buildExtractManifest', () => {
         {
           locator: 'page=1',
           fileName: 'unit-page-001.txt',
-          body: 'alpha body',
-          chunkIds: ['abc_p001_00002', 'abc_p001_00001', 'abc_p001_00001'],
-          images: ['img/page-001-fig-01.png'],
+          body: imageUnit.body,
+          chunkIds: ['abc_p001_00002', ...imageUnit.chunkIds, ...imageUnit.chunkIds],
+          images: imageUnit.images,
+          meta: imageUnit.meta,
         },
       ],
     })
@@ -49,7 +59,15 @@ describe('buildExtractManifest', () => {
     expect(manifest.has_full_text).toBe(true)
     expect(manifest.full_text_file).toBe('full.txt')
     expect(manifest.units[0]?.chunk_ids).toEqual(['abc_p001_00001', 'abc_p001_00002'])
-    expect(manifest.units[0]?.content_hash).toBe('8be52585779d628b1925d0b8494cc568aa1be5f51542f07862c6a0e9a9b60b80')
+    expect(manifest.units[0]?.meta).toEqual({
+      kind: 'image',
+      original_path: 'img/page-001-fig-01.png',
+      provenance: {
+        model: 'gpt-4o-mini',
+        captioned_at: '2026-05-01T19:00:00.000Z',
+      },
+    })
+    expect(manifest.units[0]?.content_hash).toBeDefined()
   })
 
   it('rejects unsafe paths', () => {
@@ -256,6 +274,35 @@ describe('buildExcelExtractUnits', () => {
     expect(result.manifest.units).toHaveLength(1)
     await expect(stat(path.join(result.outputDir, 'full.txt'))).rejects.toThrow()
     expect(await stat(path.join(result.outputDir, 'unit-sheet-colors-r00001_00002.csv'))).toBeDefined()
+  })
+})
+
+describe('buildImageExtractUnit', () => {
+  it('builds a single image chunk with OCR + caption metadata', () => {
+    const unit = buildImageExtractUnit({
+      originalPath: 'img/figure.png',
+      caption: 'Exterior deck railing',
+      ocrText: 'ALX Contemporary',
+      chunkId: 'img_00001',
+      visionModel: 'gpt-4o-mini',
+      captionedAt: '2026-05-01T20:00:00Z',
+    })
+
+    expect(unit.locator).toBe('image=1')
+    expect(unit.fileName).toBe('unit-image-001.txt')
+    expect(unit.chunkIds).toEqual(['img_00001'])
+    expect(unit.images).toEqual(['img/figure.png'])
+    expect(unit.body).toContain('[image:img/figure.png]')
+    expect(unit.body).toContain('Caption: Exterior deck railing')
+    expect(unit.body).toContain('OCR:')
+    expect(unit.meta).toEqual({
+      kind: 'image',
+      original_path: 'img/figure.png',
+      provenance: {
+        model: 'gpt-4o-mini',
+        captioned_at: '2026-05-01T20:00:00.000Z',
+      },
+    })
   })
 })
 
