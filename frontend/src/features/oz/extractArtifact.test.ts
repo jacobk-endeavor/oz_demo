@@ -58,6 +58,17 @@ describe('buildExtractManifest', () => {
       }),
     ).toThrow('artifact file path must not contain dot segments')
   })
+
+  it('allows empty locator for text/markdown units', () => {
+    const manifest = buildExtractManifest({
+      repoRoot: '/tmp/ignored',
+      sourceId: 'abcdef123456',
+      title: 'Notes',
+      docKind: 'marketing',
+      units: [{ locator: '   ', fileName: 'unit-text-001.txt', body: 'hello', chunkIds: ['c1'] }],
+    })
+    expect(manifest.units[0]?.locator).toBe('')
+  })
 })
 
 describe('writeExtractArtifact', () => {
