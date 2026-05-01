@@ -22,7 +22,14 @@ import {
   type MemoryRecallAdapter,
   type MemoryWriteAdapter,
 } from './memoryAdapters'
-import type { CatalogGetResult, CatalogListResult, WikiGrepResult, WikiLogResult, WikiReadResult } from './trackCToolScaffold'
+import type {
+  CatalogGetResult,
+  CatalogListResult,
+  KbSearchToolResult,
+  WikiGrepResult,
+  WikiLogResult,
+  WikiReadResult,
+} from './trackCToolScaffold'
 import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
 
 export const OZ_CHAT_CONTRACT_VERSION = '2026-04-oz-chat-v1' as const
@@ -106,6 +113,15 @@ export type RuntimeDependencies = {
       wiki_log: (request: { kind?: string; since?: string; until?: string; top_n?: number }) => Promise<WikiLogResult>
     }
   }
+  kb?: {
+    kb_search?: (request: {
+      query: string
+      surface?: 'kb' | 'call' | 'global'
+      k?: number
+      kind?: string
+      call_scope?: string
+    }) => Promise<KbSearchToolResult>
+  }
 }
 
 export type OzToolSurface = {
@@ -130,6 +146,13 @@ export type OzToolSurface = {
   wiki_read: (request: { path: string }) => Promise<WikiReadResult>
   wiki_grep: (request: { query: string; top_n?: number }) => Promise<WikiGrepResult>
   wiki_log: (request: { kind?: string; since?: string; until?: string; top_n?: number }) => Promise<WikiLogResult>
+  kb_search: (request: {
+    query: string
+    surface?: 'kb' | 'call' | 'global'
+    k?: number
+    kind?: string
+    call_scope?: string
+  }) => Promise<KbSearchToolResult>
 }
 
 function nowMs(now: () => Date): number {
@@ -195,6 +218,28 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     },
   }
 
+  const kbSearch =
+    deps.kb?.kb_search ??
+    (async (payload: {
+      query: string
+      surface?: 'kb' | 'call' | 'global'
+      k?: number
+      kind?: string
+      call_scope?: string
+    }): Promise<KbSearchToolResult> => {
+      const query = String(payload.query ?? '').trim()
+      const surface =
+        payload.surface === 'kb' || payload.surface === 'call' || payload.surface === 'global'
+          ? payload.surface
+          : 'global'
+      return {
+        query,
+        surface,
+        chunks: [],
+        provenance: { source: 'stub', retrieval: 'none' },
+      }
+    })
+
   return {
     async graph_search(payload): Promise<GraphSearchResult> {
       const bounded: EnforcedGraphSearchRequest = applyGraphSearchLimits(
@@ -230,6 +275,9 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     },
     async wiki_log(payload): Promise<WikiLogResult> {
       return wikiRegistry.wiki_log(payload)
+    },
+    async kb_search(payload): Promise<KbSearchToolResult> {
+      return kbSearch(payload)
     },
   }
 }

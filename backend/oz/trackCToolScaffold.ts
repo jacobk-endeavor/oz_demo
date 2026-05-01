@@ -1,5 +1,12 @@
 import path from 'node:path'
 import { promises as fs } from 'node:fs'
+import {
+  embedOpenAiText,
+  OZ_DEMO_CALL_REP_IDS,
+  runKbSearch,
+  type KbSearchHit,
+  type KbSearchSurface,
+} from './kbSearchRag'
 
 type JsonRecord = Record<string, unknown>
 
@@ -15,6 +22,7 @@ type TrackCScaffoldDeps = {
   stat?: typeof fs.stat
   readFile?: typeof fs.readFile
   poolFactory?: (connectionString: string) => QueryPool
+  fetchImpl?: typeof fetch
 }
 
 type ScopedDbQuery = <T>(sql: string, params: unknown[]) => Promise<{ rows: T[] }>
@@ -64,6 +72,13 @@ export type WikiGrepResult = {
     snippet: string
     citation: string
   }>
+}
+
+export type KbSearchToolResult = {
+  query: string
+  surface: KbSearchSurface
+  chunks: KbSearchHit[]
+  provenance: { source: 'postgres' | 'stub'; retrieval: 'semantic_vector' | 'none' }
 }
 
 export type WikiLogResult = {
@@ -132,6 +147,7 @@ export class TrackCToolScaffold {
   private readonly stat: typeof fs.stat
   private readonly readFile: typeof fs.readFile
   private readonly poolFactory?: (connectionString: string) => QueryPool
+  private readonly fetchImpl: typeof fetch
   private readonly initializedAt = new Date().toISOString()
   private readonly catalogPath: string
   private readonly recommendationsPath: string
@@ -147,6 +163,7 @@ export class TrackCToolScaffold {
     this.stat = deps.stat ?? fs.stat
     this.readFile = deps.readFile ?? fs.readFile
     this.poolFactory = deps.poolFactory
+    this.fetchImpl = deps.fetchImpl ?? globalThis.fetch
 
     const env = this.readEnv()
     this.catalogPath = normalizePath(env.OZ_PRODUCT_CATALOG_PATH, DEFAULT_CATALOG_PATH)
@@ -323,6 +340,73 @@ export class TrackCToolScaffold {
       filters: { kind, since: args.since, until: args.until, top_n: topN },
       total: entries.length,
       entries,
+    }
+  }
+
+  async kb_search(args: {
+    query: string
+    surface?: KbSearchSurface
+    k?: number
+    kind?: string
+    call_scope?: string
+  }): Promise<KbSearchToolResult> {
+    const query = String(args.query ?? '').trim()
+    const surface: KbSearchSurface =
+      args.surface === 'kb' || args.surface === 'call' || args.surface === 'global' ? args.surface : 'global'
+    if (!query) {
+      return {
+        query,
+        surface,
+        chunks: [],
+        provenance: { source: 'stub', retrieval: 'none' },
+      }
+    }
+
+    const dbQuery = this.readOnlyDbQuery()
+    const env = this.readEnv()
+    const apiKey = (
+      process.env.OPENAI_API_KEY ||
+      env.OPENAI_API_KEY ||
+      env.VITE_OPENAI_API_KEY ||
+      ''
+    ).trim()
+    const embeddingModel = (env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small').trim()
+
+    if (!dbQuery || !apiKey) {
+      return {
+        query,
+        surface,
+        chunks: [],
+        provenance: { source: 'stub', retrieval: 'none' },
+      }
+    }
+
+    const chunks = await runKbSearch(
+      {
+        dbQuery,
+        embedQuery: (text) =>
+          embedOpenAiText({
+            apiKey,
+            model: embeddingModel,
+            text,
+            fetchImpl: this.fetchImpl,
+          }),
+      },
+      {
+        query,
+        surface,
+        k: args.k,
+        kind: args.kind,
+        call_scope: args.call_scope,
+        validRepIds: OZ_DEMO_CALL_REP_IDS,
+      },
+    )
+
+    return {
+      query,
+      surface,
+      chunks,
+      provenance: { source: 'postgres', retrieval: 'semantic_vector' },
     }
   }
 

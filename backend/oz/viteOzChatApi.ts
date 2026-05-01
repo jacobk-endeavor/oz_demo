@@ -167,6 +167,9 @@ export function ozChatApiPlugin() {
             },
           },
         },
+        kb: {
+          kb_search: (payload) => trackCScaffold.kb_search(payload),
+        },
       })) {
         writeSseFrame(res, event)
       }

@@ -1,11 +1,18 @@
 /**
  * Dev/preview API: pgvector RAG over `call_rag_chunks` (see calls/sauron/scripts/ingest_calls_pgvector.py).
+ * `kb_search` retrieval: `POST /api/oz/kb-search` (kb_rag_chunks ∪ call_rag_chunks).
  */
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import pg from 'pg'
+import {
+  embedOpenAiText,
+  OZ_DEMO_CALL_REP_IDS,
+  runKbSearch,
+  type KbSearchSurface,
+} from '../backend/oz/kbSearchRag'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -14,7 +21,7 @@ const OPENAI_EMBED = 'https://api.openai.com/v1/embeddings'
 const OPENAI_CHAT = 'https://api.openai.com/v1/chat/completions'
 
 /** Matches ingest `rep_name` values in calls_transcripts_only.json */
-export const RAG_CALL_REP_IDS = ['Jacob', 'Sami', 'Ryan', 'Joanna'] as const
+export const RAG_CALL_REP_IDS = OZ_DEMO_CALL_REP_IDS
 
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -124,6 +131,7 @@ type ChunkRow = {
 }
 
 const RAG_CALLS_PATH = '/api/oz/rag-calls'
+const KB_SEARCH_PATH = '/api/oz/kb-search'
 
 function normalizedUrlPath(url: string | undefined): string {
   const pathOnly = url?.split('?')[0] ?? ''
@@ -137,8 +145,105 @@ function isRagCallsPost(req: IncomingMessage): boolean {
   return p === RAG_CALLS_PATH || p.endsWith(RAG_CALLS_PATH)
 }
 
+function isKbSearchPost(req: IncomingMessage): boolean {
+  if (req.method !== 'POST') return false
+  const p = normalizedUrlPath(req.url)
+  return p === KB_SEARCH_PATH || p.endsWith(KB_SEARCH_PATH)
+}
+
 export function ozRagCallsApiPlugin(mode: string) {
+  async function kbSearchHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const key = openAiKey(mode)
+    if (!key) {
+      res.statusCode = 503
+      res.setHeader('Content-Type', 'application/json')
+      res.end(
+        JSON.stringify({
+          ok: false,
+          error: 'Set OPENAI_API_KEY in repo .env for kb_search embeddings.',
+        }),
+      )
+      return
+    }
+
+    const db = getPool(mode)
+    if (!db) {
+      res.statusCode = 503
+      res.setHeader('Content-Type', 'application/json')
+      res.end(
+        JSON.stringify({
+          ok: false,
+          error:
+            'Database not configured. Set DATABASE_URL or PGHOST, PGUSER, PGPASSWORD, PGDATABASE in repo .env.',
+        }),
+      )
+      return
+    }
+
+    let body: {
+      query?: string
+      surface?: KbSearchSurface
+      kb_scope?: KbSearchSurface
+      k?: number
+      kind?: string
+      call_scope?: string
+    }
+    try {
+      body = JSON.parse(await readBody(req)) as typeof body
+    } catch {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ ok: false, error: 'Invalid JSON' }))
+      return
+    }
+
+    const query = (body.query ?? '').trim()
+    if (!query) {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ ok: false, error: 'query required' }))
+      return
+    }
+
+    const surfaceRaw = body.surface ?? body.kb_scope
+    const surface: KbSearchSurface =
+      surfaceRaw === 'kb' || surfaceRaw === 'call' || surfaceRaw === 'global' ? surfaceRaw : 'global'
+
+    try {
+      const embedModelName = embedModel(mode)
+      const chunks = await runKbSearch(
+        {
+          dbQuery: async <T>(sql: string, params: unknown[]) => db.query<T>(sql, params),
+          embedQuery: (text) =>
+            embedOpenAiText({ apiKey: key, model: embedModelName, text, fetchImpl: fetch }),
+        },
+        {
+          query,
+          surface,
+          k: Number(body.k),
+          kind: body.kind,
+          call_scope: body.call_scope,
+          validRepIds: OZ_DEMO_CALL_REP_IDS,
+        },
+      )
+
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ ok: true, surface, query, chunks }))
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      res.statusCode = msg.includes('call_scope') ? 400 : 500
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ ok: false, error: msg }))
+    }
+  }
+
   async function handler(req: IncomingMessage, res: ServerResponse, next: () => void) {
+    if (isKbSearchPost(req)) {
+      await kbSearchHandler(req, res)
+      return
+    }
+
     if (!isRagCallsPost(req)) {
       next()
       return
