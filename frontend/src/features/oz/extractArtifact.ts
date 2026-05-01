@@ -60,6 +60,27 @@ export type WriteExtractArtifactInput = {
   distributorBranded?: boolean
 }
 
+export type PptxSlideInput = {
+  slideNumber: number
+  chunkIds: string[]
+  title?: string
+  bodyText?: string | string[]
+  speakerNotes?: string | string[]
+  visualHeavy?: boolean
+  imageFileName?: string
+}
+
+export type WritePptxExtractArtifactInput = {
+  repoRoot: string
+  sourceId: string
+  title: string
+  slides: PptxSlideInput[]
+  brand?: string
+  productLine?: string
+  year?: number
+  distributorBranded?: boolean
+}
+
 const FULL_TEXT_DOC_KINDS = new Set<ExtractDocKind>([
   'marketing',
   'install',
@@ -93,6 +114,48 @@ function sortedUnique(values: string[]): string[] {
 
 function contentHash(body: string): string {
   return createHash('sha256').update(body, 'utf8').digest('hex')
+}
+
+function pad3(n: number): string {
+  return String(n).padStart(3, '0')
+}
+
+function normalizeTextPart(part: string | string[] | undefined): string {
+  if (part == null) return ''
+  const pieces = Array.isArray(part) ? part : [part]
+  return pieces.map((line) => line.trim()).filter((line) => line.length > 0).join('\n')
+}
+
+function buildPptxSlideBody(sourceTitle: string, slide: PptxSlideInput): string {
+  const sections = [
+    normalizeTextPart(slide.title),
+    normalizeTextPart(slide.bodyText),
+    normalizeTextPart(slide.speakerNotes),
+  ].filter((part) => part.length > 0)
+  const content = sections.join('\n\n')
+  return `[source=${sourceTitle}][slide=${slide.slideNumber}]\n\n${content}`.trim()
+}
+
+export function buildPptxExtractUnits(sourceTitle: string, slides: PptxSlideInput[]): ExtractUnitInput[] {
+  return [...slides]
+    .sort((a, b) => a.slideNumber - b.slideNumber)
+    .map((slide) => {
+      if (!Number.isInteger(slide.slideNumber) || slide.slideNumber <= 0) {
+        throw new Error(`invalid slide number: ${slide.slideNumber}`)
+      }
+      const index = pad3(slide.slideNumber)
+      const images =
+        slide.visualHeavy === true
+          ? [slide.imageFileName?.trim() || `img/slide-${index}.png`]
+          : undefined
+      return {
+        locator: `slide=${slide.slideNumber}`,
+        fileName: `unit-slide-${index}.txt`,
+        body: buildPptxSlideBody(sourceTitle, slide),
+        chunkIds: slide.chunkIds,
+        ...(images != null ? { images } : {}),
+      }
+    })
 }
 
 export function shouldEmitFullText(docKind: ExtractDocKind): boolean {
@@ -217,4 +280,20 @@ export async function writePdfExtractArtifact(input: WritePdfExtractArtifactInpu
     pageCount: extracted.pageCount,
     extractor: extracted.extractor,
   }
+}
+
+export async function writePptxExtractArtifact(
+  input: WritePptxExtractArtifactInput,
+): Promise<{ outputDir: string; manifest: ExtractManifest }> {
+  return writeExtractArtifact({
+    repoRoot: input.repoRoot,
+    sourceId: input.sourceId,
+    title: input.title,
+    docKind: 'presentation',
+    units: buildPptxExtractUnits(input.title, input.slides),
+    ...(input.brand != null ? { brand: input.brand } : {}),
+    ...(input.productLine != null ? { productLine: input.productLine } : {}),
+    ...(input.year != null ? { year: input.year } : {}),
+    ...(input.distributorBranded != null ? { distributorBranded: input.distributorBranded } : {}),
+  })
 }

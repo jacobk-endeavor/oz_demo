@@ -4,9 +4,11 @@ import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   buildExtractManifest,
+  buildPptxExtractUnits,
   shouldEmitFullText,
   writeExtractArtifact,
   writePdfExtractArtifact,
+  writePptxExtractArtifact,
 } from './extractArtifact'
 
 const cleanupDirs: string[] = []
@@ -107,6 +109,76 @@ describe('writeExtractArtifact', () => {
 
     const manifestText = await readFile(path.join(outputDir, 'manifest.json'), 'utf8')
     expect(JSON.parse(manifestText)).toEqual(manifest)
+  })
+})
+
+describe('buildPptxExtractUnits', () => {
+  it('orders slides and concatenates title/body/notes with slide header', () => {
+    const units = buildPptxExtractUnits('Deck Demo', [
+      {
+        slideNumber: 2,
+        chunkIds: ['s2_a'],
+        title: 'Slide 2 title',
+        bodyText: ['Slide 2 body line 1', 'Slide 2 body line 2'],
+        speakerNotes: 'Slide 2 notes',
+      },
+      {
+        slideNumber: 1,
+        chunkIds: ['s1_a'],
+        title: 'Slide 1 title',
+        bodyText: 'Slide 1 body',
+        speakerNotes: 'Slide 1 notes',
+      },
+    ])
+
+    expect(units.map((u) => u.locator)).toEqual(['slide=1', 'slide=2'])
+    expect(units.map((u) => u.fileName)).toEqual(['unit-slide-001.txt', 'unit-slide-002.txt'])
+    expect(units[0]?.body).toBe('[source=Deck Demo][slide=1]\n\nSlide 1 title\n\nSlide 1 body\n\nSlide 1 notes')
+    expect(units[1]?.body).toContain('Slide 2 title\n\nSlide 2 body line 1\nSlide 2 body line 2\n\nSlide 2 notes')
+  })
+
+  it('adds default image path for visual-heavy slide', () => {
+    const units = buildPptxExtractUnits('Deck Demo', [
+      {
+        slideNumber: 7,
+        chunkIds: ['s7_a'],
+        title: 'Visual slide',
+        visualHeavy: true,
+      },
+    ])
+
+    expect(units[0]?.images).toEqual(['img/slide-007.png'])
+  })
+})
+
+describe('writePptxExtractArtifact', () => {
+  it('writes pptx slide units and manifest via extract path', async () => {
+    const repoRoot = await mkdtemp(path.join(os.tmpdir(), 'extract-artifact-pptx-'))
+    cleanupDirs.push(repoRoot)
+
+    const { outputDir, manifest } = await writePptxExtractArtifact({
+      repoRoot,
+      sourceId: 'abcdef123456',
+      title: 'Sales Deck',
+      slides: [
+        {
+          slideNumber: 1,
+          chunkIds: ['abc_s001_00000'],
+          title: 'Opening',
+          bodyText: 'Visible text',
+          speakerNotes: 'Talk track',
+        },
+      ],
+    })
+
+    expect(manifest.doc_kind).toBe('presentation')
+    expect(manifest.units[0]?.locator).toBe('slide=1')
+    expect(manifest.units[0]?.file).toBe('unit-slide-001.txt')
+    expect(await stat(path.join(outputDir, 'unit-slide-001.txt'))).toBeDefined()
+    expect(await stat(path.join(outputDir, 'full.txt'))).toBeDefined()
+    const body = await readFile(path.join(outputDir, 'unit-slide-001.txt'), 'utf8')
+    expect(body).toContain('[source=Sales Deck][slide=1]')
+    expect(body).toContain('Opening\n\nVisible text\n\nTalk track')
   })
 })
 
