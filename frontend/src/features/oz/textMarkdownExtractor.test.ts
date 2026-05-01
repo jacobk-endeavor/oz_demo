@@ -29,6 +29,24 @@ describe('extractTextMarkdown', () => {
     expect(out.units[0]?.fileName).toBe('unit-text-001.txt')
     expect(out.units[0]?.chunkIds).toEqual(['abcdef123456_00000', 'abcdef123456_00001'])
   })
+
+  it('supports section-aware strategy for master-spec-style text', () => {
+    const payload = [
+      '1 GENERAL',
+      'a'.repeat(1200),
+      '2 MATERIALS',
+      'b'.repeat(1200),
+      '3 EXECUTION',
+      'c'.repeat(1200),
+    ].join('\n\n')
+    const out = extractTextMarkdown('abcdef123456', payload, {}, 'section-aware')
+    expect(out.units).toHaveLength(1)
+    expect(out.chunks).toHaveLength(3)
+    expect(out.chunks[0]?.startsWith('1 GENERAL')).toBe(true)
+    expect(out.chunks[1]?.startsWith('2 MATERIALS')).toBe(true)
+    expect(out.chunks[2]?.startsWith('3 EXECUTION')).toBe(true)
+    expect(out.units[0]?.chunkIds).toEqual(['abcdef123456_00000', 'abcdef123456_00001', 'abcdef123456_00002'])
+  })
 })
 
 describe('runExtractFlow', () => {
@@ -41,6 +59,21 @@ describe('runExtractFlow', () => {
     })
     expect(result.units[0]?.locator).toBe('')
     expect(result.units[0]?.chunkIds[0]).toBe('abcdef123456_00000')
+    expect(result.chunkStrategy).toBe('char-window')
+  })
+
+  it('routes master-spec docs through section-aware strategy', () => {
+    const result = runExtractFlow({
+      sourceId: 'abcdef123456',
+      fileName: 'Cumaru Master Spec.txt',
+      mime: 'text/plain',
+      body: ['1 GENERAL', 'A'.repeat(1200), '2 PRODUCTS', 'B'.repeat(1200)].join('\n\n'),
+      docKind: 'master-spec',
+    })
+    expect(result.chunkStrategy).toBe('section-aware')
+    expect(result.chunks).toHaveLength(2)
+    expect(result.chunks[0]?.startsWith('1 GENERAL')).toBe(true)
+    expect(result.chunks[1]?.startsWith('2 PRODUCTS')).toBe(true)
   })
 
   it('rejects unsupported file types', () => {
@@ -80,6 +113,7 @@ describe('runExtractFlow', () => {
       schemas,
     })
     expect(result.schemaName).toBe('product_catalog.schema.json')
+    expect(result.chunkStrategy).toBe('per-record')
     expect(result.units[0]?.locator).toBe('[catalog:sku=PGFGD]')
     expect(result.units[0]?.chunkIds).toEqual(['cat_sku_PGFGD'])
     expect(result.units[0]?.body).toContain('PALIGHT FLEX GARAGE DOOR TRIM/ WEATHERSTOP')
@@ -103,6 +137,7 @@ describe('runExtractFlow', () => {
       schemas,
     })
     expect(result.schemaName).toBe('recommendations.schema.json')
+    expect(result.chunkStrategy).toBe('per-record')
     expect(result.units[0]?.locator).toBe('[recs:cross_sell:CD-RC-RCDeck#0]')
     expect(result.units[0]?.chunkIds).toEqual(['recs_xs_CD-RC-RCDeck_0'])
     expect(result.units[0]?.body).toContain('customers who buy CD-RC-RCDeck also buy RC-RC-RCBoards')
