@@ -386,6 +386,7 @@ export function KnowledgeBasePage() {
         source_id?: string
         error?: string
         detail?: string
+        hint?: string
         wiki?: { ok?: boolean; detail?: string }
       } = {}
       try {
@@ -394,7 +395,11 @@ export function KnowledgeBasePage() {
         /* ignore */
       }
       if (!res.ok) {
-        const errLine = parsed.detail || parsed.error || raw || res.statusText || 'Server ingest failed'
+        const baseErr = parsed.detail || parsed.error || raw || res.statusText || 'Server ingest failed'
+        const errLine =
+          typeof parsed.hint === 'string' && parsed.hint.length > 0
+            ? `${baseErr}\n${parsed.hint}`
+            : baseErr
         setRows((prev) =>
           prev.map((e) =>
             e.id === id && e.entryKind === 'file'

@@ -148,6 +148,29 @@ function streamUploadToFile(
   })
 }
 
+/** Turns opaque Python stderr into an actionable next step for developers. */
+function hintForIngestFailure(detail: string): string | undefined {
+  const d = detail.toLowerCase()
+  if (
+    d.includes('modulenotfounderror') ||
+    d.includes('no module named') ||
+    d.includes('missing dependency')
+  ) {
+    return 'Create the KB ingest venv and install deps: cd calls/kb/scripts && python3 -m venv .venv && .venv/bin/pip install -r requirements-kb-ingest.txt — then restart `npm run dev`.'
+  }
+  if (d.includes('openai_api_key') || (d.includes('openai') && d.includes('required'))) {
+    return 'Set OPENAI_API_KEY in the repo root `.env` (used for text embeddings).'
+  }
+  if (
+    d.includes('missing db config') ||
+    d.includes('database_url') ||
+    (d.includes('pghost') && d.includes('pguser'))
+  ) {
+    return 'Set DATABASE_URL (or PGHOST, PGUSER, PGPASSWORD, PGDATABASE) in `.env` for pgvector ingest.'
+  }
+  return undefined
+}
+
 function parseKbIngestStdout(stdout: string): { source_id?: string } {
   for (const line of stdout.split('\n')) {
     const t = line.trim()
@@ -263,13 +286,16 @@ export function kbIngestApiPlugin() {
         )
       })
     } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e)
+      const hint = hintForIngestFailure(detail)
       res.statusCode = 502
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       res.end(
         JSON.stringify({
           ok: false,
           error: 'ingest_kb.py failed',
-          detail: e instanceof Error ? e.message : String(e),
+          detail,
+          ...(hint ? { hint } : {}),
         }),
       )
       return

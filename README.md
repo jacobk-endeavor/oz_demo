@@ -25,6 +25,14 @@ npm run guardrails:arch
 npm run validate
 ```
 
+**Knowledge Base file ingest (dev server)** uses Python `calls/kb/scripts/ingest_kb.py`. One-time setup:
+
+```bash
+cd calls/kb/scripts && python3 -m venv .venv && .venv/bin/pip install -r requirements-kb-ingest.txt
+```
+
+Then ensure repo-root `.env` has `DATABASE_URL` and `OPENAI_API_KEY` as in `.env.example`.
+
 - `npm run build` checks TypeScript and creates a production build.
 - `npm run preview` serves the production build locally.
 - `npm run guardrails:arch` enforces Oz architecture boundaries (see `docs/oz-demo/ci-guardrails.md`).
