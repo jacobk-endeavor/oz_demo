@@ -1,19 +1,29 @@
 /**
  * Dev/preview middleware: upload a file from the Knowledge Base UI, run Track A ingest (pgvector),
  * then the wiki ingest scaffold (markdown under wiki/).
+ *
+ * Large uploads are streamed to `incoming/kb-ui-raw/` (not held fully in memory) and the file is kept
+ * as the canonical raw artifact for reprocessing or audit; ingest reads from that path.
  */
 import { execFile, execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import { createWriteStream, existsSync, mkdirSync, readFileSync, unlinkSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '../..')
-const UPLOAD_DIR = path.join(REPO_ROOT, '.kb-upload-tmp')
+/** Persistent raw uploads from the KB UI (gitignored); streamed here before ingest. */
+const KB_RAW_INCOMING_ROOT = path.join(REPO_ROOT, 'incoming', 'kb-ui-raw')
 const KB_INGEST_SCRIPT = path.join(REPO_ROOT, 'calls/kb/scripts/ingest_kb.py')
-const MAX_UPLOAD_BYTES = 45 * 1024 * 1024
+
+function maxUploadBytes(): number {
+  const raw = String(process.env.OZ_KB_UPLOAD_MAX_BYTES ?? '').trim()
+  const n = raw ? Number.parseInt(raw, 10) : NaN
+  if (Number.isFinite(n) && n > 0) return n
+  return 500 * 1024 * 1024
+}
 
 const KB_INGEST_PATH = '/api/oz/knowledge-base/ingest'
 
@@ -72,21 +82,69 @@ function sanitizeBasename(name: string): string {
   return base.length > 0 ? base.slice(0, 180) : 'upload.bin'
 }
 
-function readBody(req: IncomingMessage, maxBytes: number): Promise<Buffer> {
+function dayStamp(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/**
+ * Stream the request body to disk while hashing — avoids buffering multi‑hundred‑MB files in RAM.
+ * Uses pause/resume for backpressure with the file sink.
+ */
+function streamUploadToFile(
+  req: IncomingMessage,
+  destPath: string,
+  maxBytes: number,
+): Promise<{ sha256Hex: string; bytesWritten: number }> {
+  mkdirSync(path.dirname(destPath), { recursive: true })
+  const hash = createHash('sha256')
+  let total = 0
+  const ws = createWriteStream(destPath, { flags: 'wx' })
+
   return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = []
-    let total = 0
-    req.on('data', (c: Buffer) => {
-      total += c.length
+    const fail = (err: Error) => {
+      req.destroy()
+      ws.destroy()
+      try {
+        unlinkSync(destPath)
+      } catch {
+        /* ignore */
+      }
+      reject(err)
+    }
+
+    const onData = (chunk: Buffer | string) => {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+      total += buf.length
       if (total > maxBytes) {
-        req.destroy()
-        reject(new Error(`Body exceeds ${maxBytes} bytes`))
+        fail(
+          new Error(
+            `Upload exceeds configured maximum of ${maxBytes} bytes (set OZ_KB_UPLOAD_MAX_BYTES to raise).`,
+          ),
+        )
         return
       }
-      chunks.push(c)
+      hash.update(buf)
+      if (!ws.write(buf)) {
+        req.pause()
+        ws.once('drain', () => {
+          req.resume()
+        })
+      }
+    }
+
+    const onEnd = () => {
+      ws.end()
+    }
+
+    ws.on('finish', () => {
+      req.removeListener('data', onData)
+      req.removeListener('end', onEnd)
+      resolve({ sha256Hex: hash.digest('hex'), bytesWritten: total })
     })
-    req.on('end', () => resolve(Buffer.concat(chunks)))
-    req.on('error', reject)
+    ws.on('error', (e) => fail(e instanceof Error ? e : new Error(String(e))))
+    req.on('data', onData)
+    req.on('end', onEnd)
+    req.on('error', (e) => fail(e instanceof Error ? e : new Error(String(e))))
   })
 }
 
@@ -144,16 +202,6 @@ export function kbIngestApiPlugin() {
       return
     }
 
-    let body: Buffer
-    try {
-      body = await readBody(req, MAX_UPLOAD_BYTES)
-    } catch (e) {
-      res.statusCode = 413
-      res.setHeader('Content-Type', 'application/json; charset=utf-8')
-      res.end(JSON.stringify({ ok: false, error: e instanceof Error ? e.message : String(e) }))
-      return
-    }
-
     const rawName = req.headers['x-file-name']
     const decoded =
       typeof rawName === 'string' ? decodeURIComponent(rawName.replace(/\+/g, ' ')) : 'upload'
@@ -161,23 +209,29 @@ export function kbIngestApiPlugin() {
     const passwordHeader = req.headers['x-kb-password']
     const password = typeof passwordHeader === 'string' ? passwordHeader : undefined
 
-    mkdirSync(UPLOAD_DIR, { recursive: true })
-    const token = randomUUID()
-    const tmpPath = path.join(UPLOAD_DIR, `${token}-${safeName}`)
+    const uploadId = randomUUID()
+    const rawPath = path.join(KB_RAW_INCOMING_ROOT, dayStamp(), `${uploadId}_${safeName}`)
+    const rawRelative = path.relative(REPO_ROOT, rawPath)
 
+    let sha256Hex: string
+    let bytesWritten = 0
     try {
-      writeFileSync(tmpPath, body)
+      const streamed = await streamUploadToFile(req, rawPath, maxUploadBytes())
+      sha256Hex = streamed.sha256Hex
+      bytesWritten = streamed.bytesWritten
     } catch (e) {
-      res.statusCode = 500
+      const msg = e instanceof Error ? e.message : String(e)
+      const tooBig = msg.includes('exceeds') || msg.includes('maximum')
+      res.statusCode = tooBig ? 413 : 400
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
-      res.end(JSON.stringify({ ok: false, error: e instanceof Error ? e.message : String(e) }))
+      res.end(JSON.stringify({ ok: false, error: msg }))
       return
     }
 
     const py = resolvePython()
     const args = [
       KB_INGEST_SCRIPT,
-      tmpPath,
+      rawPath,
       '--scope',
       'global',
       '--on-success',
@@ -209,11 +263,6 @@ export function kbIngestApiPlugin() {
         )
       })
     } catch (e) {
-      try {
-        unlinkSync(tmpPath)
-      } catch {
-        /* ignore */
-      }
       res.statusCode = 502
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       res.end(
@@ -226,13 +275,7 @@ export function kbIngestApiPlugin() {
       return
     }
 
-    const shaFallback12 = createHash('sha256').update(body).digest('hex').slice(0, 12).toLowerCase()
-
-    try {
-      unlinkSync(tmpPath)
-    } catch {
-      /* ignore */
-    }
+    const shaFallback12 = sha256Hex.slice(0, 12).toLowerCase()
 
     const parsed = parseKbIngestStdout(stdout)
     const sourceId = parsed.source_id ?? shaFallback12
@@ -246,6 +289,9 @@ export function kbIngestApiPlugin() {
         ok: true,
         source_id: sourceId,
         sha256_12: sourceId,
+        sha256: sha256Hex,
+        bytes_written: bytesWritten,
+        raw_path: rawRelative.replace(/\\/g, '/'),
         wiki: wiki.ok ? { ok: true } : { ok: false, detail: wiki.detail },
       }),
     )

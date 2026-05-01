@@ -43,7 +43,7 @@ product_catalog.json
 recommendations.json
 raw/*
 
-# KB UI upload staging (dev server)
-.kb-upload-tmp/
+# KB UI raw uploads — streamed to disk before ingest (dev server)
+incoming/kb-ui-raw/
 
 docs/palantir-ontology/
