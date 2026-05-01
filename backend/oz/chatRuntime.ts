@@ -22,6 +22,7 @@ import {
   type MemoryRecallAdapter,
   type MemoryWriteAdapter,
 } from './memoryAdapters'
+import type { CatalogGetResult, CatalogListResult } from './trackCToolScaffold'
 import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
 
 export const OZ_CHAT_CONTRACT_VERSION = '2026-04-oz-chat-v1' as const
@@ -85,6 +86,19 @@ export type RuntimeDependencies = {
     openAiApiKey?: string
     embeddingModel?: string
   }
+  catalog?: {
+    registry?: {
+      catalog_get: (request: { sku: string }) => Promise<CatalogGetResult>
+      catalog_list: (request: {
+        product_line?: string
+        sub_category?: string
+        brand?: string
+        min_sales?: number
+        sort_by?: string
+        top_n?: number
+      }) => Promise<CatalogListResult>
+    }
+  }
 }
 
 export type OzToolSurface = {
@@ -97,6 +111,15 @@ export type OzToolSurface = {
   }) => Promise<GraphNeighborResult>
   search_transcripts: (request: { query: string; scope?: string; top_k?: number }) => Promise<TranscriptSearchResult>
   read_transcript: (request: { call_id: string; scope?: string; max_chunks?: number }) => Promise<TranscriptReadResult>
+  catalog_get: (request: { sku: string }) => Promise<CatalogGetResult>
+  catalog_list: (request: {
+    product_line?: string
+    sub_category?: string
+    brand?: string
+    min_sales?: number
+    sort_by?: string
+    top_n?: number
+  }) => Promise<CatalogListResult>
 }
 
 function nowMs(now: () => Date): number {
@@ -119,6 +142,33 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
       embeddingModel: deps.transcripts?.embeddingModel,
     })
   const requestScope = defaultScopeFor(request)
+  const catalogRegistry = deps.catalog?.registry ?? {
+    async catalog_get(payload: { sku: string }) {
+      const sku = String(payload.sku ?? '').trim().toUpperCase()
+      return { sku, found: false, record: null, citation: `[catalog:sku=${sku}]` }
+    },
+    async catalog_list(payload: {
+      product_line?: string
+      sub_category?: string
+      brand?: string
+      min_sales?: number
+      sort_by?: string
+      top_n?: number
+    }) {
+      return {
+        filters: {
+          product_line: payload.product_line,
+          sub_category: payload.sub_category,
+          brand: payload.brand,
+          min_sales: payload.min_sales,
+          sort_by: payload.sort_by,
+          top_n: Math.max(1, Math.min(200, Math.trunc(Number(payload.top_n) || 25))),
+        },
+        total: 0,
+        rows: [],
+      }
+    },
+  }
 
   return {
     async graph_search(payload): Promise<GraphSearchResult> {
@@ -140,6 +190,12 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     },
     async read_transcript(payload): Promise<TranscriptReadResult> {
       return transcriptRegistry.read_transcript({ ...payload, scope: payload.scope ?? requestScope })
+    },
+    async catalog_get(payload): Promise<CatalogGetResult> {
+      return catalogRegistry.catalog_get(payload)
+    },
+    async catalog_list(payload): Promise<CatalogListResult> {
+      return catalogRegistry.catalog_list(payload)
     },
   }
 }

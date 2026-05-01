@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { runOzChatLoop, type OzChatStreamEvent } from '../../../../backend/oz/chatRuntime'
+import { createOzToolSurface, runOzChatLoop, type OzChatStreamEvent } from '../../../../backend/oz/chatRuntime'
 
 async function collectEvents(stream: AsyncGenerator<OzChatStreamEvent>): Promise<OzChatStreamEvent[]> {
   const events: OzChatStreamEvent[] = []
@@ -158,5 +158,32 @@ describe('oz chat transcript tools runtime', () => {
       (event) => event.type === 'trace' && event.stage === 'runtime_summary' && event.decision === 'complete',
     )
     expect(summary && 'details' in summary ? summary.details?.tools_failed : undefined).toBe(1)
+  })
+
+  it('exposes catalog_get and catalog_list in tool surface', async () => {
+    const tools = createOzToolSurface(
+      { message: 'catalog please' },
+      {
+        catalog: {
+          registry: {
+            async catalog_get(args) {
+              return { sku: args.sku, found: true, record: { sku: args.sku }, citation: `[catalog:sku=${args.sku}]` }
+            },
+            async catalog_list() {
+              return {
+                filters: { top_n: 25 },
+                total: 1,
+                rows: [{ record: { sku: 'SKU-001' }, citation: '[catalog:sku=SKU-001]' }],
+              }
+            },
+          },
+        },
+      },
+    )
+
+    const one = await tools.catalog_get({ sku: 'SKU-001' })
+    const many = await tools.catalog_list({ top_n: 1 })
+    expect(one.found).toBe(true)
+    expect(many.total).toBe(1)
   })
 })

@@ -144,6 +144,16 @@ export function ozChatApiPlugin() {
           openAiApiKey: openAiKey(),
           dbQuery,
         },
+        catalog: {
+          registry: {
+            async catalog_get(payload) {
+              return trackCScaffold.catalog_get(payload.sku)
+            },
+            async catalog_list(payload) {
+              return trackCScaffold.catalog_list(payload)
+            },
+          },
+        },
       })) {
         writeSseFrame(res, event)
       }

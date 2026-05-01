@@ -20,6 +20,35 @@ type TrackCScaffoldDeps = {
 type ScopedDbQuery = <T>(sql: string, params: unknown[]) => Promise<{ rows: T[] }>
 type QueryPool = { query: ScopedDbQuery }
 
+export type CatalogGetResult = {
+  sku: string
+  found: boolean
+  record: JsonRecord | null
+  citation: string
+}
+
+export type CatalogListArgs = {
+  product_line?: string
+  sub_category?: string
+  brand?: string
+  min_sales?: number
+  sort_by?: string
+  top_n?: number
+}
+
+export type CatalogListResult = {
+  filters: {
+    product_line?: string
+    sub_category?: string
+    brand?: string
+    min_sales?: number
+    sort_by?: string
+    top_n: number
+  }
+  total: number
+  rows: Array<{ record: JsonRecord; citation: string }>
+}
+
 export type TrackCScaffoldSnapshot = {
   loaded_at: string
   catalog: {
@@ -76,6 +105,7 @@ export class TrackCToolScaffold {
   private recommendationsState: JsonRuntimeState<JsonRecord>
   private pool: QueryPool | null = null
   private inFlightRefresh: Promise<void> | null = null
+  private catalogBySku: Map<string, JsonRecord> = new Map()
 
   constructor(deps: TrackCScaffoldDeps = {}) {
     this.readEnv = deps.readEnv ?? (() => process.env as unknown as Record<string, string>)
@@ -118,6 +148,77 @@ export class TrackCToolScaffold {
     }
   }
 
+  catalog_get(sku: string): CatalogGetResult {
+    const normalizedSku = String(sku ?? '').trim().toUpperCase()
+    if (!normalizedSku) {
+      return { sku: normalizedSku, found: false, record: null, citation: '[catalog:sku=]' }
+    }
+    const record = this.catalogBySku.get(normalizedSku) ?? null
+    return {
+      sku: normalizedSku,
+      found: Boolean(record),
+      record,
+      citation: `[catalog:sku=${normalizedSku}]`,
+    }
+  }
+
+  catalog_list(args: CatalogListArgs = {}): CatalogListResult {
+    const productLine = normalizedFilter(args.product_line)
+    const subCategory = normalizedFilter(args.sub_category)
+    const brand = normalizedFilter(args.brand)
+    const minSales = Number.isFinite(Number(args.min_sales)) ? Number(args.min_sales) : undefined
+    const sortBy = normalizedFilter(args.sort_by)
+    const topN = Math.max(1, Math.min(200, Math.trunc(Number(args.top_n) || 25)))
+
+    const filtered = this.catalogState.records.filter((record) => {
+      if (productLine && normalizedFilter(readText(record, ['product_line', 'productLine', 'line_code'])) !== productLine) {
+        return false
+      }
+      if (subCategory && normalizedFilter(readText(record, ['sub_category', 'subCategory'])) !== subCategory) {
+        return false
+      }
+      if (brand && normalizedFilter(readText(record, ['brand'])) !== brand) {
+        return false
+      }
+      if (minSales != null) {
+        const sales = readNumber(record, ['sales', 'sales_total', 'total_sales'])
+        if (sales == null || sales < minSales) return false
+      }
+      return true
+    })
+
+    const sorted = [...filtered]
+    if (sortBy) {
+      sorted.sort((a, b) => {
+        const av = readNumber(a, [sortBy])
+        const bv = readNumber(b, [sortBy])
+        if (av == null && bv == null) return 0
+        if (av == null) return 1
+        if (bv == null) return -1
+        return bv - av
+      })
+    }
+
+    return {
+      filters: {
+        product_line: productLine,
+        sub_category: subCategory,
+        brand,
+        min_sales: minSales,
+        sort_by: sortBy,
+        top_n: topN,
+      },
+      total: sorted.length,
+      rows: sorted.slice(0, topN).map((record) => {
+        const sku = String(readText(record, ['sku', 'item_sku', 'product_sku']) ?? '').trim().toUpperCase()
+        return {
+          record,
+          citation: sku ? `[catalog:sku=${sku}]` : '[catalog:row]',
+        }
+      }),
+    }
+  }
+
   readOnlyDbQuery(): ScopedDbQuery | undefined {
     const env = this.readEnv()
     const url = String(env.DATABASE_READONLY_URL || env.DATABASE_URL || '').trim()
@@ -139,11 +240,13 @@ export class TrackCToolScaffold {
   private async refreshAll(): Promise<void> {
     this.catalogState = await this.loadJsonState(this.catalogPath, this.catalogState)
     this.recommendationsState = await this.loadJsonState(this.recommendationsPath, this.recommendationsState)
+    this.rebuildCatalogIndex()
   }
 
   private async refreshIfChanged(): Promise<void> {
     this.catalogState = await this.reloadIfChanged(this.catalogState)
     this.recommendationsState = await this.reloadIfChanged(this.recommendationsState)
+    this.rebuildCatalogIndex()
   }
 
   private async reloadIfChanged<T extends JsonRecord>(current: JsonRuntimeState<T>): Promise<JsonRuntimeState<T>> {
@@ -176,4 +279,34 @@ export class TrackCToolScaffold {
       return fallback
     }
   }
+
+  private rebuildCatalogIndex(): void {
+    this.catalogBySku = new Map()
+    for (const record of this.catalogState.records) {
+      const sku = String(readText(record, ['sku', 'item_sku', 'product_sku']) ?? '').trim().toUpperCase()
+      if (!sku) continue
+      this.catalogBySku.set(sku, record)
+    }
+  }
+}
+
+function readText(record: JsonRecord, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === 'string' && value.trim()) return value
+  }
+  return undefined
+}
+
+function readNumber(record: JsonRecord, keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = Number(record[key])
+    if (Number.isFinite(value)) return value
+  }
+  return undefined
+}
+
+function normalizedFilter(value: unknown): string | undefined {
+  const text = String(value ?? '').trim().toLowerCase()
+  return text || undefined
 }

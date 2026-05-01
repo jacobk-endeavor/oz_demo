@@ -29,7 +29,7 @@ describe('track C tool scaffold', () => {
     const catalogPath = path.join(tmpDir, 'product_catalog.json')
     const recommendationsPath = path.join(tmpDir, 'recommendations.json')
 
-    await fs.writeFile(catalogPath, JSON.stringify([{ sku: 'SKU-001' }]), 'utf8')
+    await fs.writeFile(catalogPath, JSON.stringify([{ sku: 'SKU-001', sales: 30 }]), 'utf8')
     await fs.writeFile(recommendationsPath, JSON.stringify([{ sku: 'SKU-001', kind: 'upsell' }]), 'utf8')
 
     const scaffold = new TrackCToolScaffold({
@@ -45,11 +45,19 @@ describe('track C tool scaffold', () => {
     expect(first.recommendations.records).toBe(1)
 
     await new Promise((resolve) => setTimeout(resolve, 12))
-    await fs.writeFile(catalogPath, JSON.stringify([{ sku: 'SKU-001' }, { sku: 'SKU-002' }]), 'utf8')
+    await fs.writeFile(catalogPath, JSON.stringify([{ sku: 'SKU-001', sales: 30 }, { sku: 'SKU-002', sales: 5 }]), 'utf8')
 
     await scaffold.refreshBetweenTurns()
     const second = scaffold.getSnapshot()
     expect(second.catalog.records).toBe(2)
     expect(second.catalog.mtime_ms).toBeGreaterThanOrEqual(first.catalog.mtime_ms)
+
+    const getHit = scaffold.catalog_get('sku-002')
+    expect(getHit.found).toBe(true)
+    expect(getHit.citation).toBe('[catalog:sku=SKU-002]')
+
+    const list = scaffold.catalog_list({ min_sales: 10, sort_by: 'sales', top_n: 5 })
+    expect(list.total).toBe(1)
+    expect(list.rows[0]?.citation).toBe('[catalog:sku=SKU-001]')
   })
 })
