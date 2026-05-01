@@ -33,7 +33,6 @@ flowchart TD
   K --> Z
 
   %% Constraints
-  L["Sauron/* is reference-only"]:::note
   M["CI guardrails enforce architecture boundaries"]:::note
   G -. constrained by .-> M
   H -. constrained by .-> M
@@ -55,7 +54,6 @@ Rule of thumb: if behavior is a known, repeatable UI transition with no open-end
 
 ## Constraints (runtime + architecture)
 
-- **Scope boundary**: `Sauron/*` is reference-only and not modified for Oz runtime work.
 - **Ownership boundary**:
   - frontend owns rendering, local UI state, and deterministic transitions,
   - backend/oz owns policy gating, prompt/tool orchestration, retrieval, memory, and graph traversal.
@@ -89,4 +87,4 @@ These checks are meant to keep the system on the new design path as the codebase
 - Deterministic UX remains first for known hardcoded actions.
 - Non-hardcoded turns route through one canonical backend path: `/api/oz/chat`.
 - Runtime streams structured events (`trace`, `tool_call`, `tool_result`, `token`, `done`) back to the client.
-- Tooling is Oz-scoped (`backend/oz/**`), and `Sauron/**` remains read-only/reference.
+- Tooling is Oz-scoped (`backend/oz/**`).

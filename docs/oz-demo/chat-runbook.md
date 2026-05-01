@@ -77,7 +77,7 @@ Read the **You type** column verbatim. The matchers are case-insensitive but the
 - **Customer demand dashboard** — [`productRequestDashboardIntent.ts`](../../frontend/src/features/dashboardGenerator/productRequestDashboardIntent.ts).
 - **Profit-by-product / warehouse backfill P&L** — [`profitGraphIntent.ts`](../../frontend/src/features/dashboardGenerator/profitGraphIntent.ts) (`matchProfitByProductGraphIntent`, `matchWarehouseBackfillPnlIntent`).
 - **Background agents** — [`backgroundAgentModel.ts`](../../frontend/src/features/backgroundAgents/backgroundAgentModel.ts) (`matchBackgroundAgentIntent`, storage key `oz-demo-background-agents`).
-- **Optional API keys** — `OPENAI_API_KEY` (lumberyard analytics replies), `BRAVE_API_KEY` (real competitor web links). Documented in [`10-environment-and-assets.md`](./10-environment-and-assets.md).
+- **Optional API keys** — `OPENAI_API_KEY` (lumberyard analytics replies), `BRAVE_API_KEY` (real competitor web links). Set them in the repo root `.env`.
 
 To rewrite a reply, edit the canned string next to the matching intent's branch in `App.tsx`. To add a new intent, write a `match…Intent` predicate beside an existing one and append a new branch in the `onUserMessage` switch — order matters because the first match wins.
 

@@ -2,10 +2,9 @@
 
 This policy defines what should be committed to git versus treated as reproducible runtime/build artifacts for the Oz Demo repository.
 
-## Scope and ownership
+## Scope
 
-- This policy applies to Oz-owned paths in this repository (`frontend/`, `backend/`, `lumberyard-calls/`, `sauron-calls/`, and root-level config/docs).
-- `Sauron/**` is governed separately and is explicitly out of scope for this cleanup pass.
+This policy applies to all paths in this repository: `frontend/`, `backend/`, `lumberyard-calls/`, `sauron-calls/` (the data ingestion folder), `scripts/`, and root-level config/docs.
 
 ## Retain in git
 

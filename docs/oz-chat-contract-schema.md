@@ -1,8 +1,6 @@
 # Oz Chat Contract Schema (`/api/oz/chat`)
 
-Status: canonical contract for Wave 1 task `Oz-Demo-0vl.2`.
-
-This document defines the request payload and server-sent event (SSE) stream protocol for the unified `POST /api/oz/chat` endpoint.
+This document defines the request payload and server-sent event (SSE) stream protocol for the unified `POST /api/oz/chat` endpoint. The runtime that emits these events is [`backend/oz/chatRuntime.ts`](../backend/oz/chatRuntime.ts).
 
 ## Goals
 
@@ -127,9 +125,9 @@ Operational decision details for diagnostics and explainability.
 {
   "type": "trace",
   "stage": "policy_gate",
-  "decision": "agent_path",
+  "decision": "agent",
   "details": {
-    "reason": "no deterministic hardcoded intent matched"
+    "reason": "fallback to runtime loop"
   }
 }
 ```

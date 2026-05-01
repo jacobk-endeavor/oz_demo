@@ -32,11 +32,11 @@ npm run validate
 
 ## Documentation
 
-- Docs hub: `docs/README.md`
-- Migration tracker: `docs/oz-demo/migration-status-tracker.md`
-- Handoff status/run instructions: `docs/oz-demo/handoff-status.md`
-- Contributor change map: `docs/oz-demo/contributor-change-map.md`
-- Ownership boundaries: `docs/module-ownership-map.md`
+- Docs hub: [`docs/README.md`](docs/README.md)
+- Chat internals + adding a new knowledge base: [`docs/oz-chat-internals-and-knowledge-base-extension.md`](docs/oz-chat-internals-and-knowledge-base-extension.md)
+- Chat flow diagram: [`docs/oz-new-chat-flow-diagram.md`](docs/oz-new-chat-flow-diagram.md)
+- Chat contract schema (`/api/oz/chat`): [`docs/oz-chat-contract-schema.md`](docs/oz-chat-contract-schema.md)
+- CI guardrails: [`docs/oz-demo/ci-guardrails.md`](docs/oz-demo/ci-guardrails.md)
 
 ## DigitalOcean Prep
 

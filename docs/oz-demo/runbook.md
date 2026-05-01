@@ -2,7 +2,7 @@
 
 ## Prompt cookbook — what the system answers well
 
-Routes are decided in order (special intents first, then lead-table interpretation, then transcript RAG on conversational fallback). See `docs/chat-routing-oz-demo-and-sauron.md` for detail.
+Routes are decided in order (special intents first, then lead-table interpretation, then transcript RAG on conversational fallback). See [`docs/oz-chat-internals-and-knowledge-base-extension.md`](../oz-chat-internals-and-knowledge-base-extension.md) for the full chat-flow walkthrough.
 
 ### A — Transcript **RAG** (Russin call excerpts, pgvector)
 
@@ -60,15 +60,6 @@ Oz then **polishes** replies using the table snapshot + distributor context (`bu
 ---
 
 ## Chat — `#/oz`
-
-### Runtime graph adapters (stubbed)
-
-- Oz runtime now exposes a tool surface with `graph_search` and `graph_neighbors` adapter boundaries under `backend/oz`.
-- Traversal requests are capped before adapter execution:
-  - `depth` is clamped to configured `maxDepth`.
-  - `size` is clamped to `maxResultSize` (`graph_search`) or `maxNeighborsPerNode` (`graph_neighbors`).
-  - `scope` is constrained to configured `allowedScopes` (falls back to request `ragScope`, then first allowed scope).
-- Current adapters are stubs that return empty graph payloads plus limit metadata, so downstream orchestration can integrate safely without opening unrestricted traversals.
 
 1. **You type:** *what have my customers been requesting*
    **Oz says:** *The call log is open on the right. Set `OPENAI_API_KEY` in your `.env` to ask about products, revenue mix (synthetic), and competitor listings on the web (when a search key is set).*

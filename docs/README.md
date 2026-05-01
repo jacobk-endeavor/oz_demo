@@ -1,22 +1,18 @@
 # Oz Demo documentation hub
 
-This hub is the fastest way to find migration status, handoff notes, and "where to change what" guidance during the repo cleanup + architecture breakup.
+## Architecture and chat
 
-## Start here (migration + onboarding)
+- [Oz chat internals + adding a new knowledge base](./oz-chat-internals-and-knowledge-base-extension.md) — how a chat turn flows through `/api/oz/chat`, what the runtime tools are, and where to plug in a new KB.
+- [Oz chat flow diagram](./oz-new-chat-flow-diagram.md) — Mermaid diagram of the end-to-end path.
+- [Oz chat contract schema](./oz-chat-contract-schema.md) — request payload + SSE event protocol for `/api/oz/chat`.
 
-- [Migration status tracker](./oz-demo/migration-status-tracker.md)
-- [Handoff status and run instructions](./oz-demo/handoff-status.md)
-- [Contributor change map](./oz-demo/contributor-change-map.md)
+## Operations
 
-## Core architecture docs
+- [Oz CI guardrails](./oz-demo/ci-guardrails.md) — what `npm run guardrails:arch` enforces.
+- [Data retention and artifact policy](./data-retention-and-artifact-policy.md) — what belongs in git vs. regenerated locally.
 
-- [Module ownership map and boundaries](./module-ownership-map.md)
-- [Chat routing: Oz Demo vs Sauron](./chat-routing-oz-demo-and-sauron.md)
-- [Oz CI guardrails](./oz-demo/ci-guardrails.md)
-- [Deprecation ledger](./oz-demo/deprecation-ledger.md)
+## Operator / demo runbooks
 
-## Operator/demo runbooks
-
-- [Oz demo runbook (Q&A only)](./oz-demo/runbook.md)
-- [Oz chat runbook](./oz-demo/chat-runbook.md)
-- [Oz demo runbook](./oz-demo/demo-runbook.md)
+- [Oz chat demo runbook](./oz-demo/chat-runbook.md) — `#/oz` chat scripts, intents, and reset mechanics.
+- [Voice + chat demo runbook](./oz-demo/demo-runbook.md) — Field App orb scripts and the Home chat paste-list.
+- [Prompt cookbook (`#/oz` Q&A)](./oz-demo/runbook.md) — what the system answers well and what falls through.
