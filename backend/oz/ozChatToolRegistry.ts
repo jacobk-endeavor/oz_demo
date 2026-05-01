@@ -3,7 +3,7 @@
  * Spec: docs/wiki-kb/track-c-chat-integration.md — descriptions act as routing logic; no separate classifier.
  */
 
-export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-wave3-pc4' as const
+export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-track-c-0aw' as const
 
 /** Full system prompt appended before tool definitions in an OpenAI-style chat completion. */
 export const OZ_CHAT_SYSTEM_PROMPT = [
@@ -34,7 +34,7 @@ export type OzOpenAiStyleTool = {
   }
 }
 
-/** OpenAI-compatible tool list covering the full OzToolSurface (Layers 1–2 + graph/memory stubs). */
+/** OpenAI-compatible tool list covering OzToolSurface (Layers 1–2 + Layer 3 stubs + graph/memory stubs). */
 export function ozChatOpenAiToolDefinitions(): OzOpenAiStyleTool[] {
   return [
     {
@@ -280,6 +280,71 @@ export function ozChatOpenAiToolDefinitions(): OzOpenAiStyleTool[] {
         description:
           'Load an extracted figure/diagram from kb_extracts for vision or detailed explanation.',
         parameters: jsonParameters({ path: { type: 'string' } }, ['path']),
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'product_dossier',
+        description:
+          'Bundled fan-out for “everything about SKU / product line” (catalog + wiki + kb + recs + calls). Prefer composing catalog_get, wiki_lookup, kb_search, recommendations_for yourself unless you need one-shot latency; this runtime may return a stub until Oz-Demo-rx1 lands.',
+        parameters: jsonParameters({ target: { type: 'string', description: 'SKU, product-line code, or line name.' } }, [
+          'target',
+        ]),
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'compare',
+        description:
+          'Bundled multi-target comparison across catalog + wiki + optional kb_search. Prefer catalog_compare + wiki_lookup/wiki_read unless you need a packaged matrix; stub until Oz-Demo-6eb.',
+        parameters: {
+          type: 'object',
+          properties: {
+            targets: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Two or more SKUs, product lines, or entity slugs to compare.',
+            },
+            dimensions: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional comparison axes; bundled handler may ignore when stubbed.',
+            },
+          },
+          required: ['targets'],
+          additionalProperties: false,
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'wiki_compare',
+        description:
+          'Bundled wiki-only diff across multiple entity pages. Prefer wiki_read per page until Oz-Demo-6eb ships the composite.',
+        parameters: {
+          type: 'object',
+          properties: {
+            slugs: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Wiki paths or slugs (e.g. entities/products/voyage).',
+            },
+          },
+          required: ['slugs'],
+          additionalProperties: false,
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'drift_check',
+        description:
+          'Bundled inconsistency scan across catalog, wiki, documents, and calls. Compose primitives for now; full composite tracks Oz-Demo-coh.',
+        parameters: jsonParameters({ target: { type: 'string', description: 'SKU or entity name.' } }, ['target']),
       },
     },
   ]
