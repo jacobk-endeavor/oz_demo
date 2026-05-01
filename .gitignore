@@ -17,8 +17,7 @@ coverage/
 .DS_Store
 lumberyard-calls/audio/
 lumberyard-calls/tools/temp-*/
-sauron-calls/audio/
-sauron-calls/tools/temp-*/
+sauron-calls/
 
 # Oz frontend build artifacts
 frontend/dist/
@@ -35,3 +34,10 @@ backend/__pycache__/
 .dolt/
 *.db
 .beads-credential-key
+
+ALTERNATE_SALES_ANALYTICS_Endeavorai_Data (4).csv
+
+product_catalog_flat.json
+
+product_catalog.json
+recommendations.json
