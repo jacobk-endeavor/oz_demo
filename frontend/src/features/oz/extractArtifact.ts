@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto'
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import * as XLSX from 'xlsx'
+import { tabularFromText } from './knowledgeBaseTabular'
 
 export type ExtractDocKind =
   | 'marketing'
@@ -59,6 +61,31 @@ export type WriteExtractArtifactInput = {
   distributorBranded?: boolean
 }
 
+export type BuildExcelExtractUnitsInput = {
+  sourceId: string
+  workbook: ArrayBuffer | Uint8Array
+  rowChunkSize?: number
+}
+
+export type BuildExcelExtractUnitsResult = {
+  units: ExtractUnitInput[]
+  sheetCount: number
+  failedSheets: string[]
+}
+
+export type WriteExcelExtractArtifactInput = {
+  repoRoot: string
+  sourceId: string
+  title: string
+  workbook: ArrayBuffer | Uint8Array
+  docKind?: ExtractDocKind
+  rowChunkSize?: number
+  brand?: string
+  productLine?: string
+  year?: number
+  distributorBranded?: boolean
+}
+
 const FULL_TEXT_DOC_KINDS = new Set<ExtractDocKind>([
   'marketing',
   'install',
@@ -67,6 +94,7 @@ const FULL_TEXT_DOC_KINDS = new Set<ExtractDocKind>([
   'order-guide',
   'presentation',
 ])
+const DEFAULT_EXCEL_BODY_ROWS_PER_CHUNK = 20
 
 function safeRelativePath(fileName: string): string {
   const normalized = fileName.replaceAll('\\', '/').trim()
@@ -92,6 +120,79 @@ function sortedUnique(values: string[]): string[] {
 
 function contentHash(body: string): string {
   return createHash('sha256').update(body, 'utf8').digest('hex')
+}
+
+function slugifySheetName(sheetName: string): string {
+  const slug = sheetName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return slug.length > 0 ? slug : 'sheet'
+}
+
+function csvEscapeCell(cell: string): string {
+  if (!/[",\n]/.test(cell)) return cell
+  return `"${cell.replaceAll('"', '""')}"`
+}
+
+function rowToCsv(row: string[]): string {
+  return row.map(csvEscapeCell).join(',')
+}
+
+function padRow(row: string[], width: number): string[] {
+  const out = [...row]
+  while (out.length < width) out.push('')
+  return out
+}
+
+export function buildExcelExtractUnits(input: BuildExcelExtractUnitsInput): BuildExcelExtractUnitsResult {
+  const sourceId = normalizeSourceId(input.sourceId)
+  const rowChunkSize = input.rowChunkSize ?? DEFAULT_EXCEL_BODY_ROWS_PER_CHUNK
+  if (!Number.isInteger(rowChunkSize) || rowChunkSize < 1) {
+    throw new Error('rowChunkSize must be a positive integer')
+  }
+
+  const workbookData = input.workbook instanceof Uint8Array ? input.workbook : new Uint8Array(input.workbook)
+  const workbook = XLSX.read(workbookData, { type: 'array' })
+  const units: ExtractUnitInput[] = []
+  const failedSheets: string[] = []
+
+  for (const sheetName of workbook.SheetNames) {
+    try {
+      const sheet = workbook.Sheets[sheetName]
+      if (sheet == null) {
+        failedSheets.push(sheetName)
+        continue
+      }
+
+      // Keep extraction format aligned with UI preview: sheet -> CSV -> table parser.
+      const csv = XLSX.utils.sheet_to_csv(sheet, { FS: ',' })
+      const table = tabularFromText(`${sheetName}.csv`, csv)
+      const headers = table.headers.length > 0 ? table.headers : ['Column 1']
+      const headerLine = rowToCsv(headers)
+      const width = headers.length
+      const sheetSlug = slugifySheetName(sheetName)
+
+      for (let rowIndex = 0; rowIndex < table.rows.length; rowIndex += rowChunkSize) {
+        const start = rowIndex + 1
+        const end = Math.min(rowIndex + rowChunkSize, table.rows.length)
+        const bodyRows = table.rows.slice(rowIndex, end).map((row) => rowToCsv(padRow(row, width)))
+        const body = [headerLine, ...bodyRows].join('\n')
+        const rangeSuffix = `r${String(start).padStart(5, '0')}_${String(end).padStart(5, '0')}`
+        units.push({
+          locator: `sheet=${sheetName} rows=${start}-${end}`,
+          fileName: `unit-sheet-${sheetSlug}-${rangeSuffix}.csv`,
+          body,
+          chunkIds: [`${sourceId}_${sheetSlug}_${rangeSuffix}`],
+        })
+      }
+    } catch {
+      failedSheets.push(sheetName)
+    }
+  }
+
+  return { units, sheetCount: workbook.SheetNames.length, failedSheets }
 }
 
 export function shouldEmitFullText(docKind: ExtractDocKind): boolean {
@@ -169,4 +270,31 @@ export async function writeExtractArtifact(input: WriteExtractArtifactInput): Pr
   await rename(stagingDir, outputDir)
 
   return { outputDir, manifest }
+}
+
+export async function writeExcelExtractArtifact(
+  input: WriteExcelExtractArtifactInput,
+): Promise<{
+  outputDir: string
+  manifest: ExtractManifest
+  sheetCount: number
+  failedSheets: string[]
+}> {
+  const { units, sheetCount, failedSheets } = buildExcelExtractUnits({
+    sourceId: input.sourceId,
+    workbook: input.workbook,
+    rowChunkSize: input.rowChunkSize,
+  })
+  const result = await writeExtractArtifact({
+    repoRoot: input.repoRoot,
+    sourceId: input.sourceId,
+    title: input.title,
+    docKind: input.docKind ?? 'tabular-reference',
+    units,
+    brand: input.brand,
+    productLine: input.productLine,
+    year: input.year,
+    distributorBranded: input.distributorBranded,
+  })
+  return { ...result, sheetCount, failedSheets }
 }
