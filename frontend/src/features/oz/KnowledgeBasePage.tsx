@@ -49,6 +49,8 @@ type KbListEntry =
       wikiWarning?: string
       /** Present when wiki scaffold was intentionally skipped (unchanged file or missing kb_extracts bundle). */
       wikiNote?: string
+      /** Present when cloud pgvector ingest failed but upload/local wiki may have succeeded. */
+      pgvectorNote?: string
     }
   | {
       id: string
@@ -393,6 +395,7 @@ export function KnowledgeBasePage() {
         detail?: string
         hint?: string
         wiki?: { ok?: boolean; detail?: string; skipped?: boolean }
+        pgvector?: { ok?: boolean; detail?: string }
       } = {}
       try {
         parsed = JSON.parse(raw) as typeof parsed
@@ -425,6 +428,11 @@ export function KnowledgeBasePage() {
         wiki.detail.length > 0
           ? wiki.detail
           : undefined
+      const pg = parsed.pgvector
+      const pgvectorNote =
+        pg && pg.ok === false && typeof pg.detail === 'string' && pg.detail.length > 0
+          ? pg.detail
+          : undefined
       setRows((prev) =>
         prev.map((e) =>
           e.id === id && e.entryKind === 'file'
@@ -434,6 +442,7 @@ export function KnowledgeBasePage() {
                 sourceId: typeof parsed.source_id === 'string' ? parsed.source_id : undefined,
                 wikiWarning,
                 wikiNote,
+                pgvectorNote,
               }
             : e,
         ),
@@ -625,6 +634,11 @@ export function KnowledgeBasePage() {
           {row.wikiNote != null && row.wikiNote.length > 0 ? (
             <p className="shrink-0 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-xs text-zinc-800">
               Wiki scaffold skipped: {row.wikiNote}
+            </p>
+          ) : null}
+          {row.pgvectorNote != null && row.pgvectorNote.length > 0 ? (
+            <p className="shrink-0 rounded-md border border-sky-200 bg-sky-50 px-2 py-1.5 text-xs text-sky-950">
+              Cloud pgvector ingest failed (local kb_extracts/wiki may still be OK): {row.pgvectorNote}
             </p>
           ) : null}
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

@@ -206,6 +206,44 @@ function parseKbIngestStdout(stdout: string): KbIngestStdoutParse {
   return last
 }
 
+/** Local kb_extracts + wiki; no Postgres or OpenAI (see ingest_kb.py --extract-bundle-only). */
+function execKbExtractBundleOnly(params: {
+  py: string
+  env: NodeJS.ProcessEnv
+  rawPath: string
+  password?: string
+}): Promise<string> {
+  const args = [
+    KB_INGEST_SCRIPT,
+    params.rawPath,
+    '--scope',
+    'global',
+    '--extract-bundle-only',
+    '--on-success',
+    'emit-event',
+    ...(params.password ? ['--password', params.password] : []),
+  ]
+  return new Promise((resolve, reject) => {
+    execFile(
+      params.py,
+      args,
+      {
+        cwd: REPO_ROOT,
+        env: params.env,
+        maxBuffer: 24 * 1024 * 1024,
+        timeout: 600_000,
+      },
+      (err, out, stderr) => {
+        if (err) {
+          reject(new Error(String(stderr || '') || String(out || '') || (err as Error).message))
+          return
+        }
+        resolve(String(out || ''))
+      },
+    )
+  })
+}
+
 function execKbIngest(params: {
   py: string
   env: NodeJS.ProcessEnv
@@ -313,9 +351,11 @@ export function kbIngestApiPlugin() {
 
     const py = resolvePython()
     const env = mergeEnv()
-    let stdout = ''
+
+    /** 1) Local kb_extracts + wiki — independent of cloud pgvector / embeddings. */
+    let extractStdout = ''
     try {
-      stdout = await execKbIngest({ py, env, rawPath, password, reembed: wikiFullPath })
+      extractStdout = await execKbExtractBundleOnly({ py, env, rawPath, password })
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e)
       const hint = hintForIngestFailure(detail)
@@ -324,7 +364,7 @@ export function kbIngestApiPlugin() {
       res.end(
         JSON.stringify({
           ok: false,
-          error: 'ingest_kb.py failed',
+          error: 'Local kb_extracts failed (--extract-bundle-only)',
           detail,
           ...(hint ? { hint } : {}),
         }),
@@ -333,46 +373,58 @@ export function kbIngestApiPlugin() {
     }
 
     const shaFallback12 = sha256Hex.slice(0, 12).toLowerCase()
-
-    let parsed = parseKbIngestStdout(stdout)
-    let sourceId = (parsed.source_id ?? shaFallback12).toLowerCase()
+    let parsedLocal = parseKbIngestStdout(extractStdout)
+    let sourceId = (parsedLocal.source_id ?? shaFallback12).toLowerCase()
     let manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
 
-    if (!wikiFullPath && !existsSync(manifestPath)) {
-      try {
-        stdout = await execKbIngest({ py, env, rawPath, password, reembed: true })
-      } catch (e) {
-        const detail = e instanceof Error ? e.message : String(e)
-        const hint = hintForIngestFailure(detail)
-        res.statusCode = 502
-        res.setHeader('Content-Type', 'application/json; charset=utf-8')
-        res.end(
-          JSON.stringify({
-            ok: false,
-            error: 'ingest_kb.py failed during kb_extracts recovery (--reembed)',
-            detail,
-            ...(hint ? { hint } : {}),
-          }),
-        )
-        return
-      }
-      parsed = parseKbIngestStdout(stdout)
-      sourceId = (parsed.source_id ?? shaFallback12).toLowerCase()
-      manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
-    }
-
     let wiki: { ok: boolean; detail?: string; skipped?: boolean }
+    let wikiCompletedOk = false
     if (existsSync(manifestPath)) {
       wiki = runWikiIngest(REPO_ROOT, sourceId)
-      if (wiki.ok) wiki = { ...wiki, skipped: false }
+      if (wiki.ok) {
+        wiki = { ...wiki, skipped: false }
+        wikiCompletedOk = true
+      }
     } else {
       wiki = {
         ok: true,
         skipped: true,
         detail:
-          `Could not create kb_extracts/${sourceId}/manifest.json after ingest and a --reembed retry (wiki scaffold skipped). Check embedding spend limits, disk permissions, or run calls/kb/scripts/ingest_kb.py on this file with --reembed.`,
+          'Local kb_extracts bundle missing after --extract-bundle-only (wiki scaffold skipped). Check PDF encryption/OCR needs or file type.',
       }
     }
+
+    /** 2) Cloud / remote pgvector ingest (OpenAI + Postgres) — optional failure for wiki. */
+    let pgvector: { ok: true } | { ok: false; detail: string } = { ok: true }
+    let vectorStdout = ''
+    try {
+      vectorStdout = await execKbIngest({ py, env, rawPath, password, reembed: wikiFullPath })
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e)
+      pgvector = { ok: false, detail }
+    }
+
+    if (!wikiFullPath && pgvector.ok && !existsSync(manifestPath)) {
+      try {
+        vectorStdout = await execKbIngest({ py, env, rawPath, password, reembed: true })
+        pgvector = { ok: true }
+      } catch (e) {
+        const detail = e instanceof Error ? e.message : String(e)
+        pgvector = { ok: false, detail }
+      }
+    }
+
+    if (pgvector.ok) {
+      const pv = parseKbIngestStdout(vectorStdout)
+      if (pv.source_id) sourceId = pv.source_id.toLowerCase()
+      manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
+      if (existsSync(manifestPath) && !wikiCompletedOk) {
+        wiki = runWikiIngest(REPO_ROOT, sourceId)
+        if (wiki.ok) wiki = { ...wiki, skipped: false }
+      }
+    }
+
+    const kbExtractsLocal = existsSync(path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json'))
 
     res.statusCode = 200
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -385,6 +437,8 @@ export function kbIngestApiPlugin() {
         bytes_written: bytesWritten,
         raw_path: rawRelative.replace(/\\/g, '/'),
         wiki,
+        pgvector,
+        kb_extracts_local: kbExtractsLocal,
         ...(wikiFullPath ? { wiki_full_path: true } : {}),
       }),
     )

@@ -26,6 +26,15 @@ from pathlib import Path
 from typing import Any, Iterable, Literal
 from urllib.parse import quote_plus
 
+from kb_extract_artifacts import (
+    excel_manifest_units,
+    pdf_manifest_units,
+    pptx_manifest_units,
+    publish_kb_extract_bundle,
+    structured_manifest_units,
+    text_manifest_units,
+)
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 CALLS_DIR = SCRIPT_DIR.parent.parent
 REPO_ROOT = CALLS_DIR.parent
@@ -495,6 +504,44 @@ def extract_excel_units(source_id: str, data: bytes) -> tuple[list[dict[str, Any
         wb.close()
 
 
+def build_excel_sheet_artifacts_for_bundle(
+    data: bytes,
+) -> tuple[list[str], dict[str, tuple[str, str]]]:
+    """
+    Full-sheet CSV artifacts for kb_extracts (one file per sheet).
+    Keys: sheet display name -> (artifact_filename, csv_body).
+    """
+    import openpyxl
+
+    wb = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+    try:
+        order: list[str] = []
+        artifacts: dict[str, tuple[str, str]] = {}
+        for sheet_name in wb.sheetnames:
+            order.append(sheet_name)
+            ws = wb[sheet_name]
+            rows_iter = ws.iter_rows(values_only=True)
+            table_rows: list[list[str]] = []
+            for row in rows_iter:
+                table_rows.append(["" if c is None else str(c) for c in row])
+            if not table_rows:
+                csv_body = ""
+            else:
+                headers = table_rows[0]
+                body = table_rows[1:]
+                width = max(len(headers), max((len(r) for r in body), default=0))
+                headers = pad_row(list(headers), width)
+                lines = [row_to_csv(headers)]
+                for r in body:
+                    lines.append(row_to_csv(pad_row(list(r), width)))
+                csv_body = "\n".join(lines)
+            fn = f"unit-sheet-{slugify_sheet_name(sheet_name)}.csv"
+            artifacts[sheet_name] = (fn, csv_body)
+        return order, artifacts
+    finally:
+        wb.close()
+
+
 def extract_pptx_slides(data: bytes) -> list[tuple[int, str]]:
     from pptx import Presentation
 
@@ -807,6 +854,225 @@ def write_extract_bundle(
     return output_dir
 
 
+def materialize_kb_extract_bundle(
+    file_path: Path,
+    *,
+    scope: str,
+    type_arg: TypeFilter,
+    password: str | None,
+    repo_root: Path,
+    emit_event: bool,
+) -> tuple[str, Path | None]:
+    """
+    Write kb_extracts/<source_id>/ from local parsing only (no Postgres, no embeddings).
+    Use when the wiki lives on this machine and pgvector is remote or ingest fails downstream.
+    """
+    data = file_path.read_bytes()
+    if len(data) == 0:
+        print(f"skip empty file: {file_path}", flush=True)
+        return "", None
+
+    mime = guess_mime(file_path)
+    asset = classify_asset_kind(file_path, mime, type_arg)
+    if asset is None:
+        print(f"skip (type filter): {file_path}", flush=True)
+        return "", None
+
+    sha = sha256_file(file_path)
+    sid = source_id_from_sha256(sha)
+    title = title_from_path(file_path)
+
+    first_page_text = ""
+    if asset == "pdf":
+        pages_peek, st_peek = extract_pdf_pages(data, password)
+        if st_peek != "encrypted" and pages_peek:
+            first_page_text = pages_peek[0]
+
+    dk = classify_doc_kind(file_path, mime, first_page_text)
+
+    chunk_rows: list[dict[str, Any]] = []
+    pdf_pages_extract: list[str] | None = None
+    pptx_slides_extract: list[tuple[int, str]] | None = None
+    excel_sheet_order: list[str] | None = None
+    excel_sheet_artifacts: dict[str, tuple[str, str]] | None = None
+    text_body_extract: str | None = None
+    structured_schema_nm: str | None = None
+
+    if asset == "image":
+        print(f"skip (needs_vision, no local bundle): {file_path}", flush=True)
+        return sid, None
+
+    if asset == "structured":
+        try:
+            units, schema_name = structured_units_from_json(file_path, data.decode("utf-8"))
+            structured_schema_nm = schema_name
+            for i, u in enumerate(units):
+                chunk_rows.append(
+                    {
+                        "chunk_id": u["chunk_id"],
+                        "source_id": sid,
+                        "scope": scope,
+                        "locator": u["locator"],
+                        "chunk_index": i,
+                        "content": u["body"],
+                        "meta": {"kind": "structured"},
+                    }
+                )
+        except Exception as e:
+            print(f"FAILED {file_path}: {e}", flush=True)
+            raise SystemExit(1) from e
+
+    elif asset == "pdf":
+        pages, st = extract_pdf_pages(data, password)
+        if st == "encrypted":
+            print(f"FAILED {file_path}: encrypted", flush=True)
+            raise SystemExit(1)
+        if st == "needs_ocr":
+            print(f"FAILED {file_path}: needs_ocr", flush=True)
+            raise SystemExit(1)
+        chunk_rows = build_pdf_chunk_rows(source_id=sid, title=title, pages=pages, scope=scope)
+        pdf_pages_extract = pages
+
+    elif asset == "excel":
+        excel_sheet_order, excel_sheet_artifacts = build_excel_sheet_artifacts_for_bundle(data)
+        units, sheet_count, failed_sheets = extract_excel_units(sid, data)
+        chunk_index = 0
+        for u in units:
+            header = f"[source={title}][locator={u['locator']}]\n\n"
+            chunk_rows.append(
+                {
+                    "chunk_id": u["chunk_id"],
+                    "source_id": sid,
+                    "scope": scope,
+                    "locator": u["locator"],
+                    "chunk_index": chunk_index,
+                    "content": header + u["body"],
+                    "meta": {**u["meta"], "failed_sheets": failed_sheets},
+                }
+            )
+            chunk_index += 1
+        _ = sheet_count
+
+    elif asset == "pptx":
+        slides = extract_pptx_slides(data)
+        pptx_slides_extract = slides
+        chunk_rows = build_pptx_chunk_rows(source_id=sid, title=title, slides=slides, scope=scope)
+
+    else:
+        text = data.decode("utf-8", errors="replace")
+        strategy = "section-aware" if dk.doc_kind == "master-spec" else "char-window"
+        if strategy == "section-aware":
+            sections = [s.strip() for s in re.split(r"\n(?=\s*(?:#{1,6}\s+|\d+(?:\.\d+)*\s+[A-Z]))", text) if s.strip()]
+            if not sections:
+                sections = [text.strip()]
+            parts: list[str] = []
+            for sec in sections:
+                parts.extend(chunk_transcript(sec, CHUNK_CHARS, CHUNK_OVERLAP))
+        else:
+            parts = chunk_transcript(text, CHUNK_CHARS, CHUNK_OVERLAP)
+        text_body_extract = text
+        for i, part in enumerate(parts):
+            header = f"[source={title}]\n\n"
+            chunk_rows.append(
+                {
+                    "chunk_id": f"{sid}_{i:05d}",
+                    "source_id": sid,
+                    "scope": scope,
+                    "locator": "",
+                    "chunk_index": i,
+                    "content": header + part,
+                    "meta": {"kind": "text"},
+                }
+            )
+
+    if not chunk_rows:
+        print(f"FAILED {file_path}: empty_extract", flush=True)
+        raise SystemExit(1)
+
+    has_full = dk.doc_kind in FULL_TEXT_DOC_KINDS
+    mf_extra: dict[str, Any] = {}
+    if dk.brand:
+        mf_extra["brand"] = dk.brand
+    if dk.product_line:
+        mf_extra["product_line"] = dk.product_line
+    if dk.year is not None:
+        mf_extra["year"] = dk.year
+    if dk.distributor_branded:
+        mf_extra["distributor_branded"] = True
+
+    unit_files: dict[str, str] = {}
+    units_manifest: list[dict[str, Any]] = []
+    full_text_file: str | None = None
+    full_text_body: str | None = None
+
+    if asset == "pdf" and pdf_pages_extract is not None:
+        for i, pt in enumerate(pdf_pages_extract, start=1):
+            unit_files[f"unit-page-{i:03d}.txt"] = pt
+        units_manifest = pdf_manifest_units(pdf_pages_extract, chunk_rows)
+        if has_full:
+            full_text_file = "full.txt"
+            full_text_body = "\n\n".join(pdf_pages_extract)
+
+    elif asset == "pptx" and pptx_slides_extract is not None:
+        for n, txt in pptx_slides_extract:
+            unit_files[f"unit-slide-{n:03d}.txt"] = txt
+        units_manifest = pptx_manifest_units(len(pptx_slides_extract), chunk_rows)
+        if has_full:
+            full_text_file = "full.txt"
+            full_text_body = "\n\n".join(t for _, t in pptx_slides_extract)
+
+    elif asset == "excel" and excel_sheet_order is not None and excel_sheet_artifacts is not None:
+        sheet_fn_map = {sn: excel_sheet_artifacts[sn][0] for sn in excel_sheet_order if sn in excel_sheet_artifacts}
+        for sn in excel_sheet_order:
+            if sn not in excel_sheet_artifacts:
+                continue
+            fn, csv_c = excel_sheet_artifacts[sn]
+            unit_files[fn] = csv_c
+        units_manifest = excel_manifest_units(excel_sheet_order, chunk_rows, sheet_fn_map)
+
+    elif asset == "structured":
+        for i, r in enumerate(chunk_rows):
+            unit_files[f"unit-record-{i:04d}.txt"] = str(r["content"])
+        units_manifest = structured_manifest_units(chunk_rows)
+
+    else:
+        if text_body_extract is not None:
+            unit_files["unit-full.txt"] = text_body_extract
+        units_manifest = text_manifest_units(chunk_rows)
+        if has_full and text_body_extract is not None:
+            full_text_file = "full.txt"
+            full_text_body = text_body_extract
+
+    extract_path = publish_kb_extract_bundle(
+        repo_root,
+        source_id=sid,
+        title=title,
+        doc_kind=dk.doc_kind,
+        manifest_version=1,
+        units=units_manifest,
+        has_full_text=bool(has_full and full_text_body),
+        full_text_file=full_text_file if (has_full and full_text_body) else None,
+        full_text_content=full_text_body if (has_full and full_text_body) else None,
+        unit_files=unit_files,
+        manifest_fields=mf_extra or None,
+        structured_schema=structured_schema_nm if asset == "structured" else None,
+    )
+
+    if emit_event:
+        evt = {
+            "event": "kb.ingested",
+            "event_version": 1,
+            "source_id": sid,
+            "title": title,
+            "chunk_ids": [r["chunk_id"] for r in chunk_rows],
+            "locators": sorted({str(r.get("locator") or "") for r in chunk_rows}),
+            "extracted_text_path": str(extract_path / "full.txt") if extract_path and has_full else "",
+        }
+        print(json.dumps(evt), flush=True)
+
+    return sid, extract_path
+
+
 def process_one_file(
     *,
     file_path: Path,
@@ -917,6 +1183,12 @@ def process_one_file(
     chunk_rows: list[dict[str, Any]] = []
     failure_reason: str | None = None
 
+    pdf_pages_extract: list[str] | None = None
+    pptx_slides_extract: list[tuple[int, str]] | None = None
+    excel_sheet_order: list[str] | None = None
+    excel_sheet_artifacts: dict[str, tuple[str, str]] | None = None
+    text_body_extract: str | None = None
+
     try:
         if asset == "image":
             failure_reason = "needs_vision"
@@ -1017,6 +1289,7 @@ def process_one_file(
                     return False
                 return True
             chunk_rows = build_pdf_chunk_rows(source_id=sid, title=title, pages=pages, scope=scope)
+            pdf_pages_extract = pages
             upsert_source_row(
                 cur,
                 source_id=sid,
@@ -1032,6 +1305,7 @@ def process_one_file(
             )
 
         elif asset == "excel":
+            excel_sheet_order, excel_sheet_artifacts = build_excel_sheet_artifacts_for_bundle(data)
             units, sheet_count, failed_sheets = extract_excel_units(sid, data)
             chunk_index = 0
             for u in units:
@@ -1355,6 +1629,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Skip writing kb_extracts/<source_id>/ artifacts",
     )
+    p.add_argument(
+        "--extract-bundle-only",
+        action="store_true",
+        help="Write kb_extracts/ from the file only (no Postgres, no embeddings). For local wiki when pgvector is remote.",
+    )
     return p.parse_args(argv)
 
 
@@ -1379,6 +1658,19 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit(f"Path not found: {root}")
 
     embed_dim = int(os.environ.get("PGVECTOR_DIMENSION", str(EMBED_DIM)))
+
+    if args.extract_bundle_only:
+        if not root.is_file():
+            raise SystemExit("--extract-bundle-only requires a single file path (not a directory)")
+        materialize_kb_extract_bundle(
+            root,
+            scope=args.scope,
+            type_arg=args.file_type,
+            password=args.password,
+            repo_root=REPO_ROOT,
+            emit_event=args.on_success == "emit-event",
+        )
+        return
 
     if args.dry_run:
         for f in sorted(iter_files(root)):
