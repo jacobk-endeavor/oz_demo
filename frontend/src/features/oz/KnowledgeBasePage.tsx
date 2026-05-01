@@ -21,6 +21,15 @@ import {
   type ProcessedKnowledgeResult,
 } from './knowledgeBaseIngest'
 import { tabularFromText, type TabularResult } from './knowledgeBaseTabular'
+import {
+  fileFromPersisted,
+  loadPersistedFileBlob,
+  loadPersistedIndex,
+  persistIngestedFile,
+  persistIngestedFolder,
+  removePersistedEntry,
+  type PersistedFileEntry,
+} from './knowledgeBaseLibraryPersistence'
 
 const KnowledgeBasePdfView = lazy(() => import('./KnowledgeBasePdfView'))
 
@@ -370,6 +379,45 @@ export function KnowledgeBasePage() {
     )
   }, [])
 
+  const restoreLocalPreviewAfterPersist = useCallback(
+    async (
+      id: string,
+      file: File,
+      kind: KnowledgeAssetKind,
+      meta: Pick<
+        KbFileRow,
+        'sourceId' | 'wikiWarning' | 'wikiNote' | 'pgvectorNote'
+      >,
+    ) => {
+      setEntry(id, (e) => ({ ...e, ingest: 'processing' }))
+      try {
+        const result = await processKnowledgeFile(file, { kind })
+        const { preview, revoke } = demoNormalizeProcessResult(file, result)
+        setEntry(id, (e) => ({
+          ...e,
+          ...meta,
+          ingest: 'ingested' as const,
+          preview,
+          revokeObjectUrl: revoke,
+        }))
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Could not process file'
+        const { preview, revoke } = demoNormalizeProcessResult(file, {
+          type: 'error',
+          message: msg,
+        })
+        setEntry(id, (e) => ({
+          ...e,
+          ...meta,
+          ingest: 'ingested' as const,
+          preview,
+          revokeObjectUrl: revoke,
+        }))
+      }
+    },
+    [setEntry],
+  )
+
   const runServerIngest = useCallback(async (id: string, file: File) => {
     setRows((prev) =>
       prev.map((e) =>
@@ -433,13 +481,14 @@ export function KnowledgeBasePage() {
         pg && pg.ok === false && typeof pg.detail === 'string' && pg.detail.length > 0
           ? pg.detail
           : undefined
+      const sourceId = typeof parsed.source_id === 'string' ? parsed.source_id : undefined
       setRows((prev) =>
         prev.map((e) =>
           e.id === id && e.entryKind === 'file'
             ? {
                 ...e,
                 ingest: 'ingested' as const,
-                sourceId: typeof parsed.source_id === 'string' ? parsed.source_id : undefined,
+                sourceId,
                 wikiWarning,
                 wikiNote,
                 pgvectorNote,
@@ -447,6 +496,23 @@ export function KnowledgeBasePage() {
             : e,
         ),
       )
+      const rowNow = rowsRef.current.find((r) => r.id === id && r.entryKind === 'file')
+      if (rowNow && rowNow.entryKind === 'file') {
+        const persistPayload: Omit<PersistedFileEntry, 'kind'> = {
+          id,
+          displayName: rowNow.displayName,
+          sizeLabel: rowNow.sizeLabel,
+          assetKind: rowNow.kind,
+          mimeType: file.type || 'application/octet-stream',
+          lastModified: file.lastModified,
+          byteLength: buf.byteLength,
+          sourceId,
+          wikiWarning,
+          wikiNote,
+          pgvectorNote,
+        }
+        void persistIngestedFile(persistPayload, buf.slice(0))
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       setRows((prev) =>
@@ -545,6 +611,7 @@ export function KnowledgeBasePage() {
           return
         }
         setFolderIngest(id, 'ingested')
+        void persistIngestedFolder({ id, displayName: name })
       }, folderIngestMs)
       setAddModalOpen(false)
     },
@@ -559,9 +626,69 @@ export function KnowledgeBasePage() {
         return prev.filter((e) => e.id !== id)
       })
       setSelectedId((s) => (s === id ? null : s))
+      void removePersistedEntry(id)
     },
     [],
   )
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const index = await loadPersistedIndex()
+      if (cancelled || index.length === 0) return
+      const restored: KbListEntry[] = []
+      for (const ent of index) {
+        if (ent.kind === 'folder') {
+          restored.push({
+            id: ent.id,
+            entryKind: 'folder',
+            displayName: ent.displayName,
+            sizeLabel: 'Folder',
+            ingest: 'ingested',
+            revokeObjectUrl: noopRevoke,
+          })
+          continue
+        }
+        const raw = await loadPersistedFileBlob(ent.id)
+        if (!raw || raw.byteLength !== ent.byteLength) continue
+        const file = fileFromPersisted(ent, raw)
+        restored.push({
+          id: ent.id,
+          entryKind: 'file',
+          file,
+          displayName: ent.displayName,
+          sizeLabel: ent.sizeLabel,
+          kind: ent.assetKind,
+          ingest: 'ingested',
+          preview: null,
+          revokeObjectUrl: noopRevoke,
+          sourceId: ent.sourceId,
+          wikiWarning: ent.wikiWarning,
+          wikiNote: ent.wikiNote,
+          pgvectorNote: ent.pgvectorNote,
+        })
+      }
+      if (cancelled || restored.length === 0) return
+      setRows((prev) => {
+        const have = new Set(prev.map((r) => r.id))
+        const prefix = restored.filter((r) => !have.has(r.id))
+        if (prefix.length === 0) return prev
+        return [...prefix, ...prev]
+      })
+      for (const r of restored) {
+        if (r.entryKind !== 'file') continue
+        void restoreLocalPreviewAfterPersist(r.id, r.file, r.kind, {
+          sourceId: r.sourceId,
+          wikiWarning: r.wikiWarning,
+          wikiNote: r.wikiNote,
+          pgvectorNote: r.pgvectorNote,
+        })
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [restoreLocalPreviewAfterPersist])
 
   const displayedRows = useMemo(() => {
     let list = rows.filter((e) => {
