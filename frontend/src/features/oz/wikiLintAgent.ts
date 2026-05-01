@@ -3,7 +3,13 @@ import path from 'node:path'
 import { extractCitations, resolveCitation, type CitationLookupTables } from './wikiCitationResolver'
 
 type LintFinding = {
-  kind: 'broken_citation' | 'dead_wiki_link' | 'schema_violation' | 'orphan_page'
+  kind:
+    | 'broken_citation'
+    | 'dead_wiki_link'
+    | 'schema_violation'
+    | 'orphan_page'
+    | 'stub_debt'
+    | 'novel_frontmatter_key'
   page: string
   detail: string
 }
@@ -14,6 +20,29 @@ export type RunWikiStructuralLintResult = {
 }
 
 const REQUIRED_FRONTMATTER = ['type', 'slug', 'title', 'created', 'updated', 'source_count', 'related', 'tags', 'confidence']
+
+/** Keys recognized by WIKI.md / Track B — anything else appearing ≥5 times is reported for Schema review. */
+const FRONTMATTER_KEY_ALLOWLIST = new Set([
+  ...REQUIRED_FRONTMATTER,
+  'entity_kind',
+  'concept_kind',
+  'source_id',
+  'doc_kind',
+  'brand',
+  'product_line',
+  'year',
+  'distributor_branded',
+  'product_line_code',
+  'sub_categories',
+  'sku_count',
+  'total_sales_year',
+  'catalog_refresh',
+  'merged_from',
+  'methodology_version',
+  'supersedes',
+])
+
+const STUB_DEBT_DAYS = 56
 
 function parseFrontmatter(markdown: string): Record<string, string> {
   if (!markdown.startsWith('---\n')) return {}
@@ -58,6 +87,7 @@ export async function runWikiStructuralLint(
   const inboundRefs = new Map<string, number>()
   const pageSlugs = new Set<string>()
   const pageBySlug = new Map<string, string>()
+  const frontmatterKeyHits = new Map<string, number>()
 
   for (const file of files) {
     const rel = path.relative(wikiRoot, file).replaceAll('\\', '/')
@@ -77,9 +107,31 @@ export async function runWikiStructuralLint(
     if (rel.startsWith('_lint/')) continue
     const markdown = await readFile(file, 'utf8')
     const frontmatter = parseFrontmatter(markdown)
+    for (const key of Object.keys(frontmatter)) {
+      frontmatterKeyHits.set(key, (frontmatterKeyHits.get(key) ?? 0) + 1)
+    }
     for (const key of REQUIRED_FRONTMATTER) {
       if (frontmatter[key] == null || frontmatter[key].length === 0) {
         findings.push({ kind: 'schema_violation', page: rel, detail: `missing frontmatter key: ${key}` })
+      }
+    }
+
+    const updatedRaw = frontmatter.updated
+    const sourceCountRaw = frontmatter.source_count
+    if (updatedRaw != null && sourceCountRaw != null) {
+      const updatedAt = new Date(updatedRaw)
+      const sourceCount = Number.parseInt(sourceCountRaw, 10)
+      if (
+        Number.isFinite(sourceCount) &&
+        sourceCount <= 1 &&
+        !Number.isNaN(updatedAt.getTime()) &&
+        (now.getTime() - updatedAt.getTime()) / 86400000 >= STUB_DEBT_DAYS
+      ) {
+        findings.push({
+          kind: 'stub_debt',
+          page: rel,
+          detail: `source_count=${sourceCount} after ${STUB_DEBT_DAYS}+ days since ${updatedRaw} — enrich or archive`,
+        })
       }
     }
 
@@ -103,6 +155,16 @@ export async function runWikiStructuralLint(
     if (page != null) findings.push({ kind: 'orphan_page', page, detail: 'no inbound wiki links' })
   }
 
+  for (const [key, hits] of frontmatterKeyHits.entries()) {
+    if (hits >= 5 && !FRONTMATTER_KEY_ALLOWLIST.has(key)) {
+      findings.push({
+        kind: 'novel_frontmatter_key',
+        page: '(aggregate)',
+        detail: `frontmatter key "${key}" appears on ${hits} pages but is not listed in WIKI.md allowlist`,
+      })
+    }
+  }
+
   const lintDir = path.join(wikiRoot, '_lint')
   await mkdir(lintDir, { recursive: true })
   const reportPath = path.join(lintDir, `${reportStamp(now)}-report.md`)
@@ -124,6 +186,8 @@ export async function runWikiStructuralLint(
     section('dead_wiki_link', 'Dead wiki links'),
     section('schema_violation', 'Schema violations'),
     section('orphan_page', 'Orphan pages'),
+    section('stub_debt', 'Stub debt / low evidence (drift)'),
+    section('novel_frontmatter_key', 'Novel frontmatter keys (drift)'),
   ].join('\n')
   await writeFile(reportPath, `${report}\n`, 'utf8')
   return { reportPath, findings }

@@ -64,4 +64,40 @@ No links out.
     expect(report).toContain('Broken citations')
     expect(report).toContain('Orphan pages')
   })
+
+  it('flags stub debt and novel frontmatter keys (drift)', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'wiki-lint-drift-'))
+    tempRoots.push(root)
+    await mkdir(path.join(root, 'wiki', 'entities', 'stale'), { recursive: true })
+    for (let i = 0; i < 5; i += 1) {
+      await writeFile(
+        path.join(root, 'wiki', 'entities', 'stale', `p${i}.md`),
+        `---
+type: entity
+slug: entities/stale/p${i}
+title: S${i}
+created: 2025-01-01
+updated: 2025-01-01
+source_count: 1
+related: []
+tags: []
+confidence: low
+noisy_custom_key: "x"
+entity_kind: product-line
+---
+
+## Summary
+x
+`,
+        'utf8',
+      )
+    }
+    const result = await runWikiStructuralLint(
+      root,
+      { docChunks: {} },
+      new Date('2026-08-01T00:00:00.000Z'),
+    )
+    expect(result.findings.some((f) => f.kind === 'stub_debt')).toBe(true)
+    expect(result.findings.some((f) => f.kind === 'novel_frontmatter_key')).toBe(true)
+  })
 })

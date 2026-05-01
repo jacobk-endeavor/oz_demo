@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 export type LinkerCandidate = {
@@ -108,6 +108,125 @@ async function exists(target: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+const WIKI_LINK_RE = /\[\[wiki:([^\]]+)\]\]/g
+
+async function listMarkdownFilesRecursive(root: string): Promise<string[]> {
+  const entries = await readdir(root, { withFileTypes: true })
+  const files: string[] = []
+  for (const entry of entries) {
+    const absolute = path.join(root, entry.name)
+    if (entry.isDirectory()) {
+      if (entry.name.startsWith('_')) continue
+      files.push(...(await listMarkdownFilesRecursive(absolute)))
+    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+      files.push(absolute)
+    }
+  }
+  return files
+}
+
+function splitWikiBody(markdown: string): { frontmatter: string; body: string } {
+  if (!markdown.startsWith('---\n')) return { frontmatter: '', body: markdown }
+  const end = markdown.indexOf('\n---\n', 4)
+  if (end < 0) return { frontmatter: '', body: markdown }
+  return { frontmatter: markdown.slice(4, end), body: markdown.slice(end + 5) }
+}
+
+function mergeFrontmatterPage(frontmatter: string, body: string): string {
+  if (frontmatter.length === 0) return body
+  return `---\n${frontmatter}\n---\n${body}`
+}
+
+function upsertSection(body: string, sectionTitle: string, inner: string): string {
+  const header = `## ${sectionTitle}`
+  const idx = body.indexOf(header)
+  const innerTrim = inner.trim()
+  if (idx < 0) {
+    const base = body.trimEnd()
+    return `${base}\n\n${header}\n\n${innerTrim}\n`
+  }
+  const afterHeader = idx + header.length
+  const rest = body.slice(afterHeader)
+  const nextSection = rest.search(/^##\s+/m)
+  const before = body.slice(0, idx)
+  const tail = nextSection >= 0 ? body.slice(afterHeader + nextSection) : ''
+  return `${before}${header}\n\n${innerTrim}\n${tail}`
+}
+
+export type RunLinkerBacklinkInput = {
+  repoRoot: string
+  /** Defaults to 50 — spill long lists into `<page>.backlinks.md`. */
+  collapseThreshold?: number
+}
+
+export type RunLinkerBacklinkResult = {
+  updatedPages: string[]
+  companionPages: string[]
+}
+
+export async function runLinkerBacklinkMaintenance(input: RunLinkerBacklinkInput): Promise<RunLinkerBacklinkResult> {
+  const wikiRoot = path.join(input.repoRoot, 'wiki')
+  const threshold = input.collapseThreshold ?? 50
+  const files = await listMarkdownFilesRecursive(wikiRoot)
+  const inbound = new Map<string, Set<string>>()
+
+  for (const file of files) {
+    const rel = path.relative(wikiRoot, file).replaceAll('\\', '/')
+    if (rel.startsWith('_drafts/') || rel.startsWith('_lint/')) continue
+    const text = await readFile(file, 'utf8')
+    WIKI_LINK_RE.lastIndex = 0
+    let match: RegExpExecArray | null
+    while ((match = WIKI_LINK_RE.exec(text)) != null) {
+      const targetSlug = match[1]?.trim()
+      if (targetSlug == null || targetSlug.length === 0) continue
+      const slugPath = targetSlug.replace(/^\//, '')
+      const withoutMd = slugPath.endsWith('.md') ? slugPath.slice(0, -3) : slugPath
+      const set = inbound.get(withoutMd) ?? new Set<string>()
+      const fromSlug = rel.replace(/\.md$/i, '')
+      set.add(fromSlug)
+      inbound.set(withoutMd, set)
+    }
+  }
+
+  const updatedPages: string[] = []
+  const companionPages: string[] = []
+
+  for (const [slugKey, sources] of inbound.entries()) {
+    const targetPath = path.join(wikiRoot, `${slugKey}.md`)
+    if (!(await exists(targetPath))) continue
+
+    const sorted = [...sources].sort((a, b) => a.localeCompare(b))
+    const bullets = sorted.map((s) => `- [[wiki:${s}]]`)
+
+    let mentionedInner: string
+    if (sorted.length > threshold) {
+      const companionPath = targetPath.replace(/\.md$/i, '.backlinks.md')
+      const companionBody = [`# Backlinks for [[wiki:${slugKey}]]`, '', ...bullets].join('\n')
+      await mkdir(path.dirname(companionPath), { recursive: true })
+      await writeFile(companionPath, `${companionBody}\n`, 'utf8')
+      companionPages.push(companionPath)
+      const preview = sorted.slice(0, 10).map((s) => `- [[wiki:${s}]]`).join('\n')
+      const companionRel = path.relative(wikiRoot, companionPath).replaceAll('\\', '/').replace(/\.md$/i, '')
+      mentionedInner = [
+        `High backlink volume (${sorted.length} inbound pages). Full list: [[wiki:${companionRel}]].`,
+        '',
+        '### Recent inbound (sample)',
+        preview,
+      ].join('\n')
+    } else {
+      mentionedInner = bullets.join('\n')
+    }
+
+    const original = await readFile(targetPath, 'utf8')
+    const { frontmatter, body } = splitWikiBody(original)
+    const nextBody = upsertSection(body, 'Mentioned in', mentionedInner)
+    await writeFile(targetPath, mergeFrontmatterPage(frontmatter, nextBody), 'utf8')
+    updatedPages.push(targetPath)
+  }
+
+  return { updatedPages, companionPages }
 }
 
 export async function runLinkerAgent(input: RunLinkerInput): Promise<RunLinkerResult> {

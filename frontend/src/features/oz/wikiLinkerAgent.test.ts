@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { normalizeAliasSlug, runLinkerAgent } from './wikiLinkerAgent'
+import { normalizeAliasSlug, runLinkerAgent, runLinkerBacklinkMaintenance } from './wikiLinkerAgent'
 
 const tempRoots: string[] = []
 
@@ -38,6 +38,61 @@ describe('normalizeAliasSlug', () => {
   it('normalizes and reuses alias maps', () => {
     expect(normalizeAliasSlug('Timber Tech', { 'timber-tech': 'timbertech' })).toBe('timbertech')
     expect(normalizeAliasSlug('Deckorators', {})).toBe('deckorators')
+  })
+})
+
+describe('runLinkerBacklinkMaintenance', () => {
+  it('rewrites Mentioned in from inbound [[wiki:…]] references', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'wiki-linker-backlinks-'))
+    tempRoots.push(root)
+    await mkdir(path.join(root, 'wiki', 'sources'), { recursive: true })
+    await mkdir(path.join(root, 'wiki', 'entities', 'products'), { recursive: true })
+    await writeFile(
+      path.join(root, 'wiki', 'entities', 'products', 'voyage.md'),
+      `---
+type: entity
+slug: entities/products/voyage
+title: Voyage
+created: 2026-05-01
+updated: 2026-05-01
+source_count: 1
+related: []
+tags: []
+confidence: low
+entity_kind: product-line
+---
+
+## Summary
+target
+`,
+      'utf8',
+    )
+    await writeFile(
+      path.join(root, 'wiki', 'sources', 'a.md'),
+      `---
+type: source
+slug: sources/a
+title: A
+created: 2026-05-01
+updated: 2026-05-01
+source_count: 1
+related: []
+tags: []
+confidence: medium
+source_id: x
+doc_kind: marketing
+---
+
+[[wiki:entities/products/voyage]]
+`,
+      'utf8',
+    )
+
+    const result = await runLinkerBacklinkMaintenance({ repoRoot: root })
+    expect(result.updatedPages.length).toBe(1)
+    const page = await readFile(path.join(root, 'wiki', 'entities', 'products', 'voyage.md'), 'utf8')
+    expect(page).toContain('## Mentioned in')
+    expect(page).toContain('[[wiki:sources/a]]')
   })
 })
 
