@@ -516,7 +516,7 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     },
     async product_dossier(payload) {
       if (tc) {
-        return tc.layer3ProductDossier(String(payload.target ?? '')) as OzBundledLayer3OkResult
+        return (await tc.layer3ProductDossier(String(payload.target ?? ''))) as OzBundledLayer3OkResult
       }
       return layer3BundledStub(
         'product_dossier',
@@ -528,7 +528,7 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     async compare(payload) {
       const targets = Array.isArray(payload.targets) ? payload.targets.map((t) => String(t ?? '')) : []
       if (tc) {
-        return tc.layer3Compare(targets) as OzBundledLayer3OkResult
+        return (await tc.layer3Compare(targets)) as OzBundledLayer3OkResult
       }
       return layer3BundledStub(
         'compare',
@@ -540,7 +540,7 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     async wiki_compare(payload) {
       const slugs = Array.isArray(payload.slugs) ? payload.slugs.map((s) => String(s ?? '')) : []
       if (tc) {
-        return tc.layer3WikiCompare(slugs) as OzBundledLayer3OkResult
+        return (await tc.layer3WikiCompare(slugs)) as OzBundledLayer3OkResult
       }
       return layer3BundledStub(
         'wiki_compare',
@@ -551,7 +551,7 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     },
     async drift_check(payload) {
       if (tc) {
-        return tc.layer3DriftCheck(String(payload.target ?? '')) as OzBundledLayer3OkResult
+        return (await tc.layer3DriftCheck(String(payload.target ?? ''))) as OzBundledLayer3OkResult
       }
       return layer3BundledStub(
         'drift_check',

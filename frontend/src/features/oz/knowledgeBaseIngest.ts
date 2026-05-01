@@ -14,7 +14,7 @@ function fileExt(name: string): string {
   return i >= 0 ? name.slice(i).toLowerCase() : ''
 }
 
-export type KnowledgeAssetKind = 'text' | 'image' | 'pdf' | 'excel'
+export type KnowledgeAssetKind = 'text' | 'image' | 'pdf' | 'excel' | 'pptx'
 
 /**
  * How to show this file: spreadsheet → excel; else routing by type / extension.
@@ -43,6 +43,7 @@ export function classifyKnowledgeFile(file: File): KnowledgeAssetKind {
     return 'excel'
   }
   if (e === '.pdf') return 'pdf'
+  if (e === '.pptx' || t.includes('presentationml') || t.includes('powerpoint')) return 'pptx'
   return 'text'
 }
 
@@ -153,6 +154,19 @@ export async function processKnowledgeFile(
   file: File,
   opts: { kind: KnowledgeAssetKind; password?: string },
 ): Promise<ProcessedKnowledgeResult> {
+  if (opts.kind === 'pptx') {
+    return {
+      type: 'ready',
+      preview: {
+        kind: 'table',
+        table: tabularFromText(
+          file.name,
+          'PowerPoint\n\nIn-browser preview is not extracted. The dev server will run slide text ingest when you commit to the knowledge base.',
+        ),
+      },
+      revoke: () => {},
+    }
+  }
   if (opts.kind === 'image') {
     if (file.size > KNOWLEDGE_IMAGE_MAX_BYTES) {
       return { type: 'error', message: `Image is too large (max ${formatMb(KNOWLEDGE_IMAGE_MAX_BYTES)}).` }

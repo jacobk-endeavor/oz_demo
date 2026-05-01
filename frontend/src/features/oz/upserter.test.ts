@@ -51,15 +51,16 @@ describe('upserter', () => {
   it('soft-removes chunks by source with removed_at metadata', async () => {
     let queryArgs: { sql: string; params?: unknown[] } | null = null
     const client: KbUpsertClient = {
-      query: async (sql, params) => {
+      query: async (sql: string, params?: unknown[]) => {
         queryArgs = { sql, params }
         return { rowCount: 3 }
       },
     }
     const out = await softRemoveSourceChunks(client, 'abcdef123456', '2026-05-01T20:00:00Z')
     expect(out).toEqual({ updatedCount: 3, removedAt: '2026-05-01T20:00:00Z' })
-    expect(queryArgs?.sql).toContain("status = 'removed'")
-    expect(queryArgs?.sql).toContain("jsonb_set(COALESCE(meta, '{}'::jsonb), '{removed_at}'")
+    expect(queryArgs).not.toBeNull()
+    expect(queryArgs!.sql).toContain("status = 'removed'")
+    expect(queryArgs!.sql).toContain("jsonb_set(COALESCE(meta, '{}'::jsonb), '{removed_at}'")
   })
 
   it('warns non-fatally if HNSW index creation fails', async () => {

@@ -27,44 +27,9 @@ const KnowledgeBasePdfView = lazy(() => import('./KnowledgeBasePdfView'))
 const PREVIEW_MAX_COLS = 64
 const PREVIEW_MAX_BODY_ROWS = 500
 
-/**
- * Bytes used for delay heuristics (mirrors read caps in ingest for excel/pdf/image).
- */
-function effectiveScanBytes(file: File, kind: KnowledgeAssetKind): number {
-  const s = file.size
-  if (kind === 'excel') return Math.min(s, KNOWLEDGE_EXCEL_MAX_BYTES)
-  if (kind === 'pdf') return Math.min(s, KNOWLEDGE_PDF_MAX_BYTES)
-  if (kind === 'image') return Math.min(s, KNOWLEDGE_IMAGE_MAX_BYTES)
-  return s
-}
+const KB_SERVER_INGEST_PATH = '/api/oz/knowledge-base/ingest'
 
-/**
- * Perceived “scan / ingest” time before we attach a preview. Scales with file size, slower for big files.
- */
-function ingestionSimulatedDelayMs(file: File, kind: KnowledgeAssetKind): number {
-  const mb = effectiveScanBytes(file, kind) / (1024 * 1024)
-  // ~2.2s at ~0, ramps with sublinear growth; cap ~50s
-  const base = 2200 + mb ** 0.72 * 10_200
-  const kindBoost = kind === 'pdf' || kind === 'excel' ? 1.2 : kind === 'text' ? 1.08 : 1.1
-  const jitter = 0.92 + Math.random() * 0.16
-  return Math.round(Math.max(2_200, Math.min(50_000, base * kindBoost * jitter)))
-}
-
-/**
- * How long a row stays “ready” before we mark it “ingested” in the list (does not revoke previews).
- */
-function readyToIngestedDelayMs(file: File, kind: KnowledgeAssetKind): number {
-  const mb = effectiveScanBytes(file, kind) / (1024 * 1024)
-  const t = 900 + mb ** 0.85 * 2_200
-  const jitter = 0.9 + Math.random() * 0.2
-  return Math.round(Math.max(800, Math.min(20_000, t * jitter)))
-}
-
-function waitMs(ms: number) {
-  return new Promise<void>((r) => setTimeout(r, ms))
-}
-
-type IngestState = 'staged' | 'processing' | 'ready' | 'ingested'
+type IngestState = 'staged' | 'processing' | 'ready' | 'uploading' | 'ingested' | 'failed'
 
 type KbListEntry =
   | {
@@ -77,6 +42,11 @@ type KbListEntry =
       ingest: IngestState
       preview: ProcessedKnowledgePreview | null
       revokeObjectUrl: () => void
+      /** Set after successful server ingest (sha-based source id). */
+      sourceId?: string
+      errorMessage?: string
+      /** Present when pgvector ingest succeeded but wiki scaffold reported an error. */
+      wikiWarning?: string
     }
   | {
       id: string
@@ -110,21 +80,23 @@ function folderNameFromDirectoryPicker(fileList: FileList | null): string | null
   return seg.length > 0 ? seg : f.name
 }
 
-type TypeBucket = 'folder' | 'excel' | 'pdf' | 'image' | 'text'
+type TypeBucket = 'folder' | 'excel' | 'pdf' | 'pptx' | 'image' | 'text'
 
 function typeBucketForEntry(e: KbListEntry): TypeBucket {
   if (e.entryKind === 'folder') return 'folder'
   if (e.kind === 'pdf') return 'pdf'
+  if (e.kind === 'pptx') return 'pptx'
   if (e.kind === 'image') return 'image'
   if (e.kind === 'excel') return 'excel'
   return 'text'
 }
 
-const TYPE_ORDER: TypeBucket[] = ['folder', 'excel', 'pdf', 'image', 'text']
+const TYPE_ORDER: TypeBucket[] = ['folder', 'excel', 'pdf', 'pptx', 'image', 'text']
 const typeLabel: Record<TypeBucket, string> = {
   folder: 'Folder',
   excel: 'Excel / sheet',
   pdf: 'PDF',
+  pptx: 'PowerPoint',
   image: 'Image',
   text: 'Text / other',
 }
@@ -139,7 +111,14 @@ function ingestRank(e: KbListEntry): number {
   if (e.entryKind === 'folder') {
     return e.ingest === 'staged' ? 0 : 3
   }
-  const m: Record<IngestState, number> = { staged: 0, processing: 1, ready: 2, ingested: 3 }
+  const m: Record<IngestState, number> = {
+    staged: 0,
+    processing: 1,
+    ready: 2,
+    uploading: 2,
+    failed: 2,
+    ingested: 3,
+  }
   return m[e.ingest]
 }
 
@@ -149,7 +128,13 @@ function isIngested(e: KbListEntry): boolean {
 
 function isInQueue(e: KbListEntry): boolean {
   if (e.entryKind === 'folder') return e.ingest === 'staged'
-  return e.ingest === 'staged' || e.ingest === 'processing' || e.ingest === 'ready'
+  return (
+    e.ingest === 'staged' ||
+    e.ingest === 'processing' ||
+    e.ingest === 'ready' ||
+    e.ingest === 'uploading' ||
+    e.ingest === 'failed'
+  )
 }
 
 function statusLabel(e: KbListEntry): string {
@@ -160,11 +145,17 @@ function statusLabel(e: KbListEntry): string {
     case 'staged':
       return 'Staged'
     case 'processing':
-      return 'Processing'
+      return 'Processing local preview'
     case 'ready':
       return 'Ready'
+    case 'uploading':
+      return 'Uploading to server…'
+    case 'failed': {
+      const m = e.errorMessage ?? 'Unknown error'
+      return m.length > 56 ? `Failed — ${m.slice(0, 52)}…` : `Failed — ${m}`
+    }
     case 'ingested':
-      return 'Ingested'
+      return e.sourceId ? `Ingested (${e.sourceId})` : 'Ingested'
   }
 }
 
@@ -349,7 +340,6 @@ export function KnowledgeBasePage() {
   const [sortBy, setSortBy] = useState<SortBy>('type')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const filesForUnmountRef = useRef<KbListEntry[]>([])
-  const pendingIngestTimerRef = useRef<Map<string, number>>(new Map())
   const rowsRef = useRef(rows)
   rowsRef.current = rows
 
@@ -374,41 +364,77 @@ export function KnowledgeBasePage() {
     )
   }, [])
 
-  const clearIngestTimer = useCallback((id: string) => {
-    const t = pendingIngestTimerRef.current.get(id)
-    if (t != null) {
-      window.clearTimeout(t)
-      pendingIngestTimerRef.current.delete(id)
+  const runServerIngest = useCallback(async (id: string, file: File) => {
+    setRows((prev) =>
+      prev.map((e) =>
+        e.id === id && e.entryKind === 'file' ? { ...e, ingest: 'uploading' as const } : e,
+      ),
+    )
+    try {
+      const buf = await file.arrayBuffer()
+      const res = await fetch(KB_SERVER_INGEST_PATH, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-File-Name': encodeURIComponent(file.name),
+        },
+        body: buf,
+      })
+      const raw = await res.text()
+      let parsed: {
+        ok?: boolean
+        source_id?: string
+        error?: string
+        detail?: string
+        wiki?: { ok?: boolean; detail?: string }
+      } = {}
+      try {
+        parsed = JSON.parse(raw) as typeof parsed
+      } catch {
+        /* ignore */
+      }
+      if (!res.ok) {
+        const errLine = parsed.detail || parsed.error || raw || res.statusText || 'Server ingest failed'
+        setRows((prev) =>
+          prev.map((e) =>
+            e.id === id && e.entryKind === 'file'
+              ? { ...e, ingest: 'failed' as const, errorMessage: errLine }
+              : e,
+          ),
+        )
+        return
+      }
+      const wiki = parsed.wiki
+      const wikiWarning =
+        wiki && wiki.ok === false && typeof wiki.detail === 'string' ? wiki.detail : undefined
+      setRows((prev) =>
+        prev.map((e) =>
+          e.id === id && e.entryKind === 'file'
+            ? {
+                ...e,
+                ingest: 'ingested' as const,
+                sourceId: typeof parsed.source_id === 'string' ? parsed.source_id : undefined,
+                wikiWarning,
+              }
+            : e,
+        ),
+      )
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setRows((prev) =>
+        prev.map((e) =>
+          e.id === id && e.entryKind === 'file'
+            ? { ...e, ingest: 'failed' as const, errorMessage: msg }
+            : e,
+        ),
+      )
     }
   }, [])
-
-  const scheduleIngested = useCallback(
-    (id: string, file: File, kind: KnowledgeAssetKind) => {
-      clearIngestTimer(id)
-      const delay = readyToIngestedDelayMs(file, kind)
-      const t = window.setTimeout(() => {
-        // Do not use setEntry here: it would revoke() blob URLs while the row still
-        // holds the same preview, which breaks PDF/image viewers.
-        setRows((prev) =>
-          prev.map((e) => {
-            if (e.id !== id) return e
-            if (e.entryKind !== 'file' || e.ingest !== 'ready') return e
-            return { ...e, ingest: 'ingested' as const }
-          }),
-        )
-        pendingIngestTimerRef.current.delete(id)
-      }, delay)
-      pendingIngestTimerRef.current.set(id, t)
-    },
-    [clearIngestTimer],
-  )
 
   const loadFilePreview = useCallback(
     async (id: string, file: File, kind: KnowledgeAssetKind) => {
       setEntry(id, (e) => ({ ...e, ingest: 'processing' }))
-      const simulated = ingestionSimulatedDelayMs(file, kind)
       try {
-        await waitMs(simulated)
         const result = await processKnowledgeFile(file, { kind })
         const { preview, revoke } = demoNormalizeProcessResult(file, result)
         setEntry(id, (e) => ({
@@ -417,7 +443,7 @@ export function KnowledgeBasePage() {
           preview,
           revokeObjectUrl: revoke,
         }))
-        scheduleIngested(id, file, kind)
+        void runServerIngest(id, file)
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Could not process file'
         const { preview, revoke } = demoNormalizeProcessResult(file, {
@@ -430,10 +456,10 @@ export function KnowledgeBasePage() {
           preview,
           revokeObjectUrl: revoke,
         }))
-        scheduleIngested(id, file, kind)
+        void runServerIngest(id, file)
       }
     },
-    [setEntry, scheduleIngested],
+    [setEntry, runServerIngest],
   )
 
   const addFiles = useCallback(
@@ -499,7 +525,6 @@ export function KnowledgeBasePage() {
 
   const deleteById = useCallback(
     (id: string) => {
-      clearIngestTimer(id)
       setRows((prev) => {
         const target = prev.find((e) => e.id === id)
         if (target) target.revokeObjectUrl()
@@ -507,7 +532,7 @@ export function KnowledgeBasePage() {
       })
       setSelectedId((s) => (s === id ? null : s))
     },
-    [clearIngestTimer],
+    [],
   )
 
   const displayedRows = useMemo(() => {
@@ -546,10 +571,6 @@ export function KnowledgeBasePage() {
       for (const f of filesForUnmountRef.current) {
         f.revokeObjectUrl()
       }
-      for (const t of pendingIngestTimerRef.current.values()) {
-        window.clearTimeout(t)
-      }
-      pendingIngestTimerRef.current.clear()
     },
     [],
   )
@@ -576,8 +597,15 @@ export function KnowledgeBasePage() {
     }
     return (
       <PanelFrame title={row.displayName} onClose={closePanel}>
-        <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
-          <PreviewBody preview={row.preview} fileName={row.displayName} />
+        <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2 overflow-hidden">
+          {row.wikiWarning != null && row.wikiWarning.length > 0 ? (
+            <p className="shrink-0 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-950">
+              Wiki scaffold warning (chunks are still in pgvector): {row.wikiWarning}
+            </p>
+          ) : null}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <PreviewBody preview={row.preview} fileName={row.displayName} />
+          </div>
         </div>
       </PanelFrame>
     )
@@ -588,9 +616,10 @@ export function KnowledgeBasePage() {
     return joinClasses(
       'group cursor-pointer border-b border-zinc-100',
       inQueue && e.entryKind === 'file' && e.ingest === 'staged' ? 'bg-amber-50/70' : '',
-      inQueue && e.entryKind === 'file' && (e.ingest === 'processing' || e.ingest === 'ready')
+      inQueue && e.entryKind === 'file' && (e.ingest === 'processing' || e.ingest === 'ready' || e.ingest === 'uploading')
         ? 'bg-sky-50/50'
         : '',
+      e.entryKind === 'file' && e.ingest === 'failed' ? 'bg-rose-50/40' : '',
       e.entryKind === 'folder' && e.ingest === 'staged' ? 'bg-amber-50/50' : '',
       selectedId === e.id ? 'ring-1 ring-inset ring-sky-300' : 'hover:bg-zinc-50/80',
     )
@@ -748,7 +777,7 @@ export function KnowledgeBasePage() {
                   <tr>
                     <td colSpan={5} className="px-3 py-8 text-center text-sm text-zinc-400">
                       {libraryView === 'ingested'
-                        ? 'Nothing ingested yet. Use Add, then after items become ready they move to Ingested automatically.'
+                        ? 'Nothing ingested yet. Use Add — each file is previewed locally, then uploaded to the dev server for pgvector ingest and a wiki source draft.'
                         : 'No items in this view.'}
                     </td>
                   </tr>
@@ -820,7 +849,12 @@ export function KnowledgeBasePage() {
                         {e.ingest === 'processing' ? (
                           <span className="inline-flex items-center gap-1 text-amber-800">
                             <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-                            Processing
+                            Local preview…
+                          </span>
+                        ) : e.ingest === 'uploading' ? (
+                          <span className="inline-flex items-center gap-1 text-sky-900">
+                            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-sky-500" />
+                            Server ingest…
                           </span>
                         ) : (
                           statusLabel(e)

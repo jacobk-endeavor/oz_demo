@@ -43,4 +43,7 @@ product_catalog.json
 recommendations.json
 raw/*
 
+# KB UI upload staging (dev server)
+.kb-upload-tmp/
+
 docs/palantir-ontology/

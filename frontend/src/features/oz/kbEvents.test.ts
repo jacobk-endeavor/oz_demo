@@ -49,7 +49,7 @@ describe('kbEvents', () => {
         title: 'Doc',
         chunk_ids: ['c1'],
         locators: ['page=1'],
-      },
+      } as Omit<import('./kbEvents').KbEvent, 'event_version'>,
       maxAttempts: 3,
     })
     expect(delivered.attempts).toBe(3)
@@ -69,7 +69,7 @@ describe('kbEvents', () => {
           source_id: 'abcdef123456',
           summary: { added: 1, modified: 0, removed: 0 },
           replay: true,
-        },
+        } as Omit<import('./kbEvents').KbEvent, 'event_version'>,
         maxAttempts: 2,
       }),
     ).rejects.toThrow('failed to deliver kb.refreshed after 2 attempts')

@@ -8,6 +8,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { ozLumberyardApiPlugin } from './vite.ozLumberyardApi'
 import { ozEmailApiPlugin } from './vite.ozEmailApi'
 import { ozRagCallsApiPlugin } from './vite.ozRagCallsApi'
+import { kbIngestApiPlugin } from '../backend/oz/viteKbIngestApi'
 import { ozChatApiPlugin } from '../backend/oz/viteOzChatApi'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -222,7 +223,7 @@ function ozElevenLabsTtsProxy(mode: string) {
   }
 }
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }: { mode: string }) => ({
   /** Load Vite env from repo root so `OPENAI_API_KEY` and `VITE_*` match `/Users/.../Oz-Demo/.env`. */
   envDir: ENV_DIR,
   server: {
@@ -241,6 +242,7 @@ export default defineConfig(({ mode }) => ({
   /** One pdfjs build for `react-pdf` main thread + our worker `?url` import. */
   resolve: { dedupe: ['pdfjs-dist'] },
   plugins: [
+    kbIngestApiPlugin(),
     ozChatApiPlugin(),
     ozRagCallsApiPlugin(mode),
     react(),
