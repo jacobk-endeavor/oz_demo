@@ -2,7 +2,12 @@ import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { buildExtractManifest, shouldEmitFullText, writeExtractArtifact } from './extractArtifact'
+import {
+  buildExtractManifest,
+  shouldEmitFullText,
+  writeExtractArtifact,
+  writePdfExtractArtifact,
+} from './extractArtifact'
 
 const cleanupDirs: string[] = []
 
@@ -99,5 +104,55 @@ describe('shouldEmitFullText', () => {
     expect(shouldEmitFullText('presentation')).toBe(true)
     expect(shouldEmitFullText('structured-data')).toBe(false)
     expect(shouldEmitFullText('tabular-reference')).toBe(false)
+  })
+})
+
+describe('writePdfExtractArtifact', () => {
+  it('writes per-page PDF units using fallback extractor when primary is sparse', async () => {
+    const repoRoot = await mkdtemp(path.join(os.tmpdir(), 'extract-pdf-artifact-'))
+    cleanupDirs.push(repoRoot)
+
+    const result = await writePdfExtractArtifact({
+      repoRoot,
+      sourceId: 'abcdef123456',
+      title: 'PDF Doc',
+      docKind: 'tech-bulletin',
+      pdfBytes: new Uint8Array([1, 2, 3]),
+      primaryExtractor: async () => ['short'],
+      fallbackExtractor: async () => ['A'.repeat(60), 'B'.repeat(80)],
+    })
+
+    expect(result.status).toBe('ok')
+    if (result.status !== 'ok') throw new Error('expected ok result')
+    expect(result.extractor).toBe('pdfminer')
+    expect(result.pageCount).toBe(2)
+    expect(await stat(path.join(result.outputDir, 'unit-page-001.txt'))).toBeDefined()
+    expect(await stat(path.join(result.outputDir, 'unit-page-002.txt'))).toBeDefined()
+    const manifestText = await readFile(path.join(result.outputDir, 'manifest.json'), 'utf8')
+    const manifest = JSON.parse(manifestText) as { units: Array<{ locator: string; file: string }> }
+    expect(manifest.units.map((u) => u.locator)).toEqual(['page=1', 'page=2'])
+    expect(manifest.units.map((u) => u.file)).toEqual(['unit-page-001.txt', 'unit-page-002.txt'])
+  })
+
+  it('returns needs_ocr when both extractors produce low text', async () => {
+    const repoRoot = await mkdtemp(path.join(os.tmpdir(), 'extract-pdf-needs-ocr-'))
+    cleanupDirs.push(repoRoot)
+
+    const result = await writePdfExtractArtifact({
+      repoRoot,
+      sourceId: 'abcdef123456',
+      title: 'Image PDF',
+      docKind: 'tech-bulletin',
+      pdfBytes: new Uint8Array([4, 5, 6]),
+      primaryExtractor: async () => [''],
+      fallbackExtractor: async () => ['still too short'],
+    })
+
+    expect(result).toEqual({
+      status: 'needs_ocr',
+      reason: 'needs_ocr',
+      pageCount: 1,
+      attemptedExtractors: ['pypdf', 'pdfminer'],
+    })
   })
 })
