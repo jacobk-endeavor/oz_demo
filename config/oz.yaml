@@ -1,0 +1,15 @@
+# Oz runtime configuration
+# Read by backend/oz/ozConfig.ts on every chat request (no restart needed).
+#
+# chat.runtime selects which chat backend handles /api/oz/chat:
+#   scaffold = hardcoded sequence (search_transcripts → read_transcript → kb_search,
+#              templated reply). Deterministic, no API costs, fast (~50ms).
+#   agentic  = Claude-driven tool-use loop with the same OzToolSurface tools.
+#              Requires ANTHROPIC_API_KEY in .env. ~$0.005-0.02 / turn, 3-8s.
+#
+# Switch between them by editing this file and saving — no server restart required.
+
+chat:
+  runtime: scaffold
+  agentic:
+    model: claude-sonnet-4-6

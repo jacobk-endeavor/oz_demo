@@ -6,12 +6,16 @@ import { loadEnv } from 'vite'
 import pg from 'pg'
 import { buildOzChatAgentManifest } from './ozChatAgentManifest'
 import { OZ_CHAT_CONTRACT_VERSION, runOzChatLoop, type OzChatRequest, type OzChatStreamEvent } from './chatRuntime'
+import { runOzChatLoopAgentic } from './chatRuntimeAgentic'
+import { loadOzConfig, type OzChatRuntimeKind } from './ozConfig'
 import { TrackCToolScaffold } from './trackCToolScaffold'
 
 // Canonical API route for the unified Oz runtime.
 const OZ_CHAT_PATH = '/api/oz/chat'
 /** GET JSON manifest (system prompt + OpenAI-style tool defs) for external agents / consumers. */
 const OZ_CHAT_MANIFEST_PATH = '/api/oz/chat/manifest'
+/** GET JSON snapshot of current chat-runtime defaults from config/oz.yaml; UI toggle reads it. */
+const OZ_CHAT_CONFIG_PATH = '/api/oz/chat/config'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // `backend/oz` lives under repo root; env is loaded from root to match existing project behavior.
 const REPO_ROOT = path.resolve(__dirname, '../..')
@@ -45,6 +49,12 @@ function isOzChatManifestGet(req: IncomingMessage): boolean {
   if (req.method !== 'GET') return false
   const path = normalizedUrlPath(req.url)
   return path === OZ_CHAT_MANIFEST_PATH || path.endsWith(OZ_CHAT_MANIFEST_PATH)
+}
+
+function isOzChatConfigGet(req: IncomingMessage): boolean {
+  if (req.method !== 'GET') return false
+  const path = normalizedUrlPath(req.url)
+  return path === OZ_CHAT_CONFIG_PATH || path.endsWith(OZ_CHAT_CONFIG_PATH)
 }
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -101,6 +111,21 @@ function openAiKey(): string | undefined {
   return (process.env.OPENAI_API_KEY || env.OPENAI_API_KEY || env.VITE_OPENAI_API_KEY)?.trim()
 }
 
+function anthropicKey(): string | undefined {
+  const env = readEnv()
+  return (process.env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_KEY || env.VITE_ANTHROPIC_API_KEY)?.trim()
+}
+
+function resolveRuntimeKind(
+  bodyMode: unknown,
+  configured: OzChatRuntimeKind,
+): { kind: OzChatRuntimeKind; source: 'request' | 'config' } {
+  if (bodyMode === 'scaffold' || bodyMode === 'agentic') {
+    return { kind: bodyMode, source: 'request' }
+  }
+  return { kind: configured, source: 'config' }
+}
+
 export function ozChatApiPlugin() {
   async function handler(req: IncomingMessage, res: ServerResponse, next: () => void) {
     if (isOzChatManifestGet(req)) {
@@ -112,6 +137,29 @@ export function ozChatApiPlugin() {
         res.setHeader('x-oz-chat-contract-version', manifest.contract_version)
         res.setHeader('x-oz-registry-prompt-version', manifest.registry_prompt_version)
         res.end(JSON.stringify(manifest))
+      } catch (error) {
+        res.statusCode = 500
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }))
+      }
+      return
+    }
+
+    if (isOzChatConfigGet(req)) {
+      try {
+        const config = await loadOzConfig(REPO_ROOT)
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-store')
+        res.end(
+          JSON.stringify({
+            chat: {
+              runtime: config.chat.runtime,
+              agentic: config.chat.agentic ?? null,
+            },
+            agentic_available: Boolean(anthropicKey()),
+          }),
+        )
       } catch (error) {
         res.statusCode = 500
         res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -167,49 +215,90 @@ export function ozChatApiPlugin() {
       await initTrackCScaffold
       await trackCScaffold.refreshBetweenTurns()
       const dbQuery = trackCScaffold.readOnlyDbQuery()
-      // Runtime is an async generator: each yielded event is streamed to client as SSE.
-      for await (const event of runOzChatLoop(request, {
-        transcripts: {
-          openAiApiKey: openAiKey(),
-          dbQuery,
-        },
+      const config = await loadOzConfig(REPO_ROOT)
+      const resolved = resolveRuntimeKind(parsed.mode, config.chat.runtime)
+      const auditDep =
+        process.env.OZ_TOOL_AUDIT === '1'
+          ? {
+              onComplete: (payload: {
+                tool: string
+                ok: boolean
+                latency_ms: number
+                args_summary: string
+                result_summary: string
+              }) => {
+                console.error(`[oz-tool-audit] ${JSON.stringify({ ts: new Date().toISOString(), ...payload })}`)
+              },
+            }
+          : undefined
+      const sharedDeps = {
+        transcripts: { openAiApiKey: openAiKey(), dbQuery },
         catalog: {
           registry: {
-            async catalog_get(payload) {
+            async catalog_get(payload: { sku: string }) {
               return trackCScaffold.catalog_get(payload.sku)
             },
-            async catalog_list(payload) {
+            async catalog_list(payload: Parameters<TrackCToolScaffold['catalog_list']>[0]) {
               return trackCScaffold.catalog_list(payload)
             },
           },
         },
         wiki: {
           registry: {
-            async wiki_read(payload) {
+            async wiki_read(payload: { path: string }) {
               return trackCScaffold.wiki_read(payload.path)
             },
-            async wiki_grep(payload) {
+            async wiki_grep(payload: { query: string; top_n?: number }) {
               return trackCScaffold.wiki_grep(payload.query, payload.top_n)
             },
-            async wiki_log(payload) {
+            async wiki_log(payload: { kind?: string; since?: string; until?: string; top_n?: number }) {
               return trackCScaffold.wiki_log(payload)
             },
           },
         },
-        trackC: {
-          scaffold: trackCScaffold,
-        },
-        audit:
-          process.env.OZ_TOOL_AUDIT === '1'
-            ? {
-                onComplete: (payload) => {
-                  console.error(
-                    `[oz-tool-audit] ${JSON.stringify({ ts: new Date().toISOString(), ...payload })}`,
-                  )
-                },
-              }
-            : undefined,
-      })) {
+        trackC: { scaffold: trackCScaffold },
+        audit: auditDep,
+      }
+
+      let runtimeIter: AsyncIterable<OzChatStreamEvent>
+      if (resolved.kind === 'agentic') {
+        const apiKey = anthropicKey()
+        if (!apiKey) {
+          // Fall through to scaffold rather than failing the turn outright; emit a trace so
+          // the UI shows why the user's chosen mode didn't take effect.
+          writeSseFrame(res, {
+            contract_version: contractVersion,
+            sequence: 0,
+            timestamp: new Date().toISOString(),
+            type: 'trace',
+            stage: 'mode_resolution',
+            decision: 'fallback_scaffold',
+            details: { requested: 'agentic', source: resolved.source, reason: 'ANTHROPIC_API_KEY missing' },
+          })
+          sseFrames += 1
+          runtimeIter = runOzChatLoop(request, sharedDeps)
+        } else {
+          runtimeIter = runOzChatLoopAgentic(request, {
+            ...sharedDeps,
+            anthropic: { apiKey, model: config.chat.agentic?.model },
+          })
+        }
+      } else {
+        runtimeIter = runOzChatLoop(request, sharedDeps)
+      }
+
+      writeSseFrame(res, {
+        contract_version: contractVersion,
+        sequence: 0,
+        timestamp: new Date().toISOString(),
+        type: 'trace',
+        stage: 'mode_resolution',
+        decision: resolved.kind,
+        details: { source: resolved.source, configured: config.chat.runtime },
+      })
+      sseFrames += 1
+
+      for await (const event of runtimeIter) {
         sseFrames += 1
         writeSseFrame(res, event)
       }

@@ -50,6 +50,8 @@ export type OzChatRequest = {
   stream?: boolean
   context?: unknown
   ragScope?: string
+  /** Per-request override of config/oz.yaml's chat.runtime. UI toggle sets this. */
+  mode?: 'scaffold' | 'agentic'
 }
 
 type OzChatBaseEvent = {
