@@ -19,7 +19,7 @@ export const WORKFLOW_PAGE_META: Record<WorkflowPageId, WorkflowPageMeta> = {
     eyebrow: 'Command center',
     title: 'Oz',
     subtitle:
-      'Chat is front and center. After a competitor product search on activity, ask who is likely to buy if you stock those lines—the lead grid opens with a demo filter (not a Milwaukee-only look-up).',
+      'Chat is front and center. After a competitor product search on activity, ask who is likely to buy if you stock those lines—the lead grid opens with a demo filter (not a generic distributor search).',
   },
   search: {
     eyebrow: 'Workspace',

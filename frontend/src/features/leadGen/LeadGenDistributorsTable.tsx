@@ -2,8 +2,8 @@ import { useLayoutEffect, useState, type ReactNode } from 'react'
 import { CloseIcon } from '../../shared/ui/icons'
 import { joinClasses } from '../../shared/ui'
 import { formatCompactUsd } from './leadSpendProfiles'
-import type { DistributorRow } from './milwaukeeDistributorsMock'
-import { MILWAUKEE_LEAD_RESULT_TOTAL } from './milwaukeeDistributorsMock'
+import type { DistributorRow } from './demoDistributorRows'
+import { DEMO_LEAD_GRID_TOTAL_RESULTS } from './demoDistributorRows'
 import type { LeadTableViewState, SortColumn } from './leadGenTableModel'
 import { LeadSourcePill } from './leadSourceMeta'
 
@@ -391,7 +391,7 @@ export function LeadGenDistributorsTable({
       <div className="shrink-0 border-t border-zinc-200/90 bg-zinc-50/60 px-3 py-2.5 text-xs text-zinc-500">
         <p className="tabular-nums">
           {dataBodyReady
-            ? `Showing ${rows.length} of ${MILWAUKEE_LEAD_RESULT_TOTAL} results`
+            ? `Showing ${rows.length} of ${DEMO_LEAD_GRID_TOTAL_RESULTS} results`
             : 'Loading results…'}
         </p>
       </div>

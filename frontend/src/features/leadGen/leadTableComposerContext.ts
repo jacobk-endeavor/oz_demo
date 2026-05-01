@@ -1,5 +1,5 @@
 import type { TableRowContextAttachment } from '../../shared/tableRowContext'
-import type { DistributorRow } from './milwaukeeDistributorsMock'
+import type { DistributorRow } from './demoDistributorRows'
 import { formatCompactUsd } from './leadSpendProfiles'
 
 export function makeLeadTableAttachment(

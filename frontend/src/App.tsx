@@ -13,7 +13,7 @@ import {
 import { interpretLeadTableWithLlm } from './features/leadGen/interpretLeadTableWithLlm'
 import { buildLeadTableLlmContext } from './features/leadGen/leadTableLlmContext'
 import type { SortColumn } from './features/leadGen/leadGenTableModel'
-import { buildMilwaukeeDistributorRows } from './features/leadGen/milwaukeeDistributorsMock'
+import { buildDemoDistributorRows } from './features/leadGen/demoDistributorRows'
 import { postCompetitorOffers } from './features/lumberyard/competitorOffersClient'
 import {
   COMPETITOR_SEARCH_MIN_DISPLAY_MS,
@@ -36,7 +36,7 @@ import {
   type RagCallsScope,
 } from './features/ragCalls/ragCallsClient'
 import { SettingsPerspectiveTab } from './features/settings/SettingsPerspectiveTab'
-import type { DistributorRow } from './features/leadGen/milwaukeeDistributorsMock'
+import type { DistributorRow } from './features/leadGen/demoDistributorRows'
 import type { LumberyardCallRow } from './features/lumberyard/lumberyardTypes'
 import {
   buildOzGptSystemPrompt,
@@ -261,7 +261,7 @@ export default function App() {
   }, [])
 
   const baseRows = useMemo(
-    () => buildMilwaukeeDistributorRows(tableView.dataset),
+    () => buildDemoDistributorRows(tableView.dataset),
     [tableView.dataset],
   )
   const displayRows = useMemo(
@@ -545,7 +545,7 @@ export default function App() {
               '',
               '**Next**',
               '',
-              'Ask who is likely to **buy** if you stock those lines—I’ll open the lead grid on **engaged** accounts that match this product set (not a Milwaukee-only distributor search).',
+              'Ask who is likely to **buy** if you stock those lines—I’ll open the lead grid on **engaged** accounts that match this product set (not a generic “all distributors” search).',
               webNote,
             ].join('\n'),
             delayMs: 40
@@ -719,7 +719,7 @@ export default function App() {
         return { reply: out.reply, delayMs: out.delayMs }
       }
 
-      const baseForLlm = buildMilwaukeeDistributorRows(out.state.dataset)
+      const baseForLlm = buildDemoDistributorRows(out.state.dataset)
       const rowsForLlm = applyLeadTableView(baseForLlm, out.state)
       const tableContext = buildLeadTableLlmContext(out.state, rowsForLlm)
 

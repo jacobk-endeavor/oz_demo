@@ -23,7 +23,7 @@ function det(seed: string, salt: number): number {
 }
 
 /**
- * Labels aligned with the Milwaukee **Products requested** demo lines.
+ * Labels aligned with the **Products requested** demo lines (same seed as the lead grid).
  */
 const PRODUCT_LABELS: readonly string[] = [
   'Thermory',

@@ -2,7 +2,7 @@ import type { LeadSourceId } from './leadSourceMeta'
 import { getLeadSourceIdForIndex } from './leadSourceMeta'
 import type { LeadSpendProfile } from './leadSpendProfiles'
 import { getSpendProfileForCompanyUrl } from './leadSpendProfiles'
-import { MILWAUKEE_COMPANY_SEED } from './milwaukeeDistributors50.seed'
+import { CUSTOMER_CALLS_COMPANY_SEED } from './customerCallsCompanySeed50'
 
 export type Engagement = 'net_new' | 'engaged'
 
@@ -41,7 +41,7 @@ function detRand(seed: number) {
  */
 function engagementFromSeed(
   i: number,
-  seed: (typeof MILWAUKEE_COMPANY_SEED)[0],
+  seed: (typeof CUSTOMER_CALLS_COMPANY_SEED)[0],
 ): Engagement {
   const combined = `${seed.description} ${seed.productsRequested ?? ''}`.toLowerCase()
   if (
@@ -55,7 +55,7 @@ function engagementFromSeed(
   return (detRand(i * 1.1) > 0.45 ? 'engaged' : 'net_new') as Engagement
 }
 
-function buildRowFromSeed(i: number, seed: (typeof MILWAUKEE_COMPANY_SEED)[0]): DistributorRow {
+function buildRowFromSeed(i: number, seed: (typeof CUSTOMER_CALLS_COMPANY_SEED)[0]): DistributorRow {
   const s = getLeadSourceIdForIndex(i)
   const e = engagementFromSeed(i, seed)
   const spendProfile = getSpendProfileForCompanyUrl(seed.linkedInUrl)
@@ -78,15 +78,16 @@ function buildRowFromSeed(i: number, seed: (typeof MILWAUKEE_COMPANY_SEED)[0]): 
   }
 }
 
-const POOL: DistributorRow[] = MILWAUKEE_COMPANY_SEED.map((s, i) => buildRowFromSeed(i, s))
+const POOL: DistributorRow[] = CUSTOMER_CALLS_COMPANY_SEED.map((s, i) => buildRowFromSeed(i, s))
 
 /**
- * @param set — `standard` (first 48: 23 exterior-buyer rows + the next 25 generic Milwaukee
- *              companies) or `expanded` (all ~70). “511 results” is UI-only for scale.
+ * @param set — `standard` (first 48: 23 exterior-buyer rows + the next 25 generic accounts)
+ *              or `expanded` (all ~70). “511 results” is UI-only for scale.
  */
-export function buildMilwaukeeDistributorRows(set: 'standard' | 'expanded' = 'standard'): DistributorRow[] {
+export function buildDemoDistributorRows(set: 'standard' | 'expanded' = 'standard'): DistributorRow[] {
   const n = set === 'expanded' ? POOL.length : 48
   return POOL.slice(0, n)
 }
 
-export const MILWAUKEE_LEAD_RESULT_TOTAL = 511
+/** UI-only total for the “showing N of …” footer in the demo grid. */
+export const DEMO_LEAD_GRID_TOTAL_RESULTS = 511

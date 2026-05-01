@@ -7,13 +7,13 @@ import {
   processLeadTableChat,
 } from './leadGenTableModel'
 import { buildLeadTableLlmContext } from './leadTableLlmContext'
-import { buildMilwaukeeDistributorRows } from './milwaukeeDistributorsMock'
+import { buildDemoDistributorRows } from './demoDistributorRows'
 
-describe('processLeadTableChat (no Milwaukee chat shortcut)', () => {
-  it('does not auto-open lead context for former Milwaukee runbook phrasing', () => {
+describe('processLeadTableChat (no legacy geo chat shortcut)', () => {
+  it('does not auto-open lead context for legacy “distributors in a city” phrasing', () => {
     const prev = defaultLeadTableViewState()
     prev.dataset = 'expanded'
-    const out = processLeadTableChat('give me milwaukee distributors', prev, 'oz')
+    const out = processLeadTableChat('give me chicago distributors', prev, 'oz')
     expect(out.openLeadContext).toBe(false)
     expect(out.state.dataset).toBe('expanded')
   })
@@ -110,7 +110,7 @@ describe('parseSortColumn / sub-sort', () => {
 describe('buildLeadTableLlmContext', () => {
   it('embeds a TSV header and the current list state', () => {
     const s = defaultLeadTableViewState()
-    const rows = applyLeadTableView(buildMilwaukeeDistributorRows('standard'), s)
+    const rows = applyLeadTableView(buildDemoDistributorRows('standard'), s)
     const ctx = buildLeadTableLlmContext(s, rows, { maxRows: 5, maxChars: 50_000 })
     expect(ctx).toMatch(/```tsv/)
     expect(ctx).toMatch(/\tindustry\t/)
@@ -121,14 +121,14 @@ describe('buildLeadTableLlmContext', () => {
 describe('applyLeadTableView columnTextFilters', () => {
   it('keeps only rows where each set column cell contains the filter substring', () => {
     const s = { ...defaultLeadTableViewState(), columnTextFilters: { size: '11-50' } }
-    const rows = buildMilwaukeeDistributorRows('standard')
+    const rows = buildDemoDistributorRows('standard')
     const out = applyLeadTableView(rows, s)
     expect(out.length).toBeGreaterThan(0)
     expect(out.every((r) => r.size.toLowerCase().includes('11-50'))).toBe(true)
   })
 
   it('likely buyers (engaged + thermory on blurb/products) is never empty for the standard set', () => {
-    const rows = buildMilwaukeeDistributorRows('standard')
+    const rows = buildDemoDistributorRows('standard')
     const s = {
       ...defaultLeadTableViewState(),
       engagement: 'engaged' as const,

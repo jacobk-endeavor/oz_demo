@@ -1,8 +1,8 @@
 /**
- * Demo Milwaukee-metro company rows (synthetic / public-profile style).
- * Source: LinkedIn-style company blurbs; lead source is assigned at hydration time.
+ * Synthetic customer / account rows for the lead-grid demo (public-profile style blurbs).
+ * Lead source is assigned at hydration time.
  */
-export type MilwaukeeCompanySeed = {
+export type CustomerCallsCompanySeed = {
   name: string
   description: string
   /**
@@ -18,7 +18,7 @@ export type MilwaukeeCompanySeed = {
   linkedInUrl: string
 }
 
-export const MILWAUKEE_COMPANY_SEED: MilwaukeeCompanySeed[] = [
+export const CUSTOMER_CALLS_COMPANY_SEED: CustomerCallsCompanySeed[] = [
   {
     name: 'Hudson Valley Deck & Porch Co.',
     description:

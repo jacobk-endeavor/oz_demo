@@ -1,6 +1,6 @@
 import type { LeadSourceId } from './leadSourceMeta'
 import { LEAD_SOURCE_IDS } from './leadSourceMeta'
-import type { DistributorRow } from './milwaukeeDistributorsMock'
+import type { DistributorRow } from './demoDistributorRows'
 
 export type SortColumn =
   | 'name'

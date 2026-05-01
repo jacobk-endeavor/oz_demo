@@ -1,6 +1,6 @@
 import { sourceLabelForChat } from '../leadGen/leadGenTableModel'
 import { getLeadSourceIdForIndex } from '../leadGen/leadSourceMeta'
-import { MILWAUKEE_COMPANY_SEED } from '../leadGen/milwaukeeDistributors50.seed'
+import { CUSTOMER_CALLS_COMPANY_SEED } from '../leadGen/customerCallsCompanySeed50'
 
 const PRODUCT_LINE_DEFS: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'thermory', label: 'Thermory' },
@@ -33,7 +33,7 @@ export function buildCustomerProductRequestBars(): ProductRequestBar[] {
     PRODUCT_LINE_DEFS.map((d) => [d.label, 0]),
   ) as Record<string, number>
 
-  MILWAUKEE_COMPANY_SEED.forEach((seed, i) => {
+  CUSTOMER_CALLS_COMPANY_SEED.forEach((seed, i) => {
     const block = `${seed.description} ${seed.productsRequested ?? ''}`.toLowerCase()
     if (!seed.productsRequested && !/\b(thermory|azek|deckorator|composite|deck|siding|porch|exterior|lumber|russin)\b/.test(block)) {
       return
@@ -61,7 +61,7 @@ export function buildCustomerProductRequestBars(): ProductRequestBar[] {
 export function buildCustomerLeadSourceBars(): ProductRequestBar[] {
   const bySource: Record<string, number> = {}
 
-  MILWAUKEE_COMPANY_SEED.forEach((seed, i) => {
+  CUSTOMER_CALLS_COMPANY_SEED.forEach((seed, i) => {
     const block = `${seed.description} ${seed.productsRequested ?? ''}`.toLowerCase()
     if (!seed.productsRequested && !/\b(thermory|azek|deckorator|composite|deck|siding|porch|exterior|lumber|russin)\b/.test(block)) {
       return

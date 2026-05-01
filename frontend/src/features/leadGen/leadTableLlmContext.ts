@@ -1,5 +1,5 @@
 import { formatSpendForLlmRow } from './leadSpendProfiles'
-import type { DistributorRow } from './milwaukeeDistributorsMock'
+import type { DistributorRow } from './demoDistributorRows'
 import {
   sourceLabelForChat,
   describeTableState,

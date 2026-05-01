@@ -7,7 +7,7 @@ import { CompetitorOffersTable } from '../../features/lumberyard/CompetitorOffer
 import type { CompetitorOfferRow } from '../../features/lumberyard/competitorOffersTypes'
 import type { LumberyardCallRow } from '../../features/lumberyard/lumberyardTypes'
 import type { TableRowContextAttachment } from '../../shared/tableRowContext'
-import type { DistributorRow } from '../../features/leadGen/milwaukeeDistributorsMock'
+import type { DistributorRow } from '../../features/leadGen/demoDistributorRows'
 import type { SortColumn, LeadTableViewState } from '../../features/leadGen/leadGenTableModel'
 
 type Props = {

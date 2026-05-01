@@ -18,8 +18,8 @@ describe('matchStockUpLikelyBuyersIntent', () => {
     ).toBe(true)
   })
 
-  it('does not match generic milwaukee distributors', () => {
-    expect(matchStockUpLikelyBuyersIntent('give me milwaukee distributors')).toBe(false)
+  it('does not match generic distributor-list phrasing', () => {
+    expect(matchStockUpLikelyBuyersIntent('give me chicago distributors')).toBe(false)
   })
 
   it('does not match competitor-only search', () => {

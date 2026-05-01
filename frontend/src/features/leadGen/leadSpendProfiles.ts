@@ -1,6 +1,6 @@
 /**
  * Synthetic B2B spend + monthly history (USD) for demo Q&A.
- * Matched to the first five entries in `MILWAUKEE_COMPANY_SEED` by LinkedIn company URL.
+ * Matched to the first five entries in `CUSTOMER_CALLS_COMPANY_SEED` by LinkedIn company URL.
  */
 export type LeadSpendHistoryMonth = {
   month: string
@@ -88,7 +88,7 @@ const NORTH_RIVER_LUMBER: LeadSpendProfile = (() => {
     yoyChangePct: 7.4,
     months,
     summaryLine:
-      'Lumberyard / dealer: OSB, framing, and Russin-fulfilled specialty (composite, prefinish); contractor delivery heavy.',
+      'Dealer / pro desk: OSB, framing, and Russin-fulfilled specialty (composite, prefinish); contractor delivery heavy.',
   }
 })()
 

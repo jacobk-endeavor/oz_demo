@@ -1,7 +1,7 @@
 /**
  * After a **competitor product search**, the user can ask who would be likely to buy
  * if Russin (or the distributor) stocked those lines—opens the lead grid with
- * a demo filter, not a separate “Milwaukee distributors” look-up.
+ * a demo filter, not a separate “open the full distributor list” look-up.
  */
 
 const STOP = new Set([

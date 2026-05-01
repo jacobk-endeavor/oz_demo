@@ -201,12 +201,12 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: 'Ingest' })).not.toBeInTheDocument()
   })
 
-  it('does not open the lead table from former Milwaukee-only chat phrasing on the home route', async () => {
+  it('does not open the lead table from generic city distributors phrasing on the home route', async () => {
     const user = userEvent.setup()
     window.location.hash = '#/oz'
     render(<App />)
 
-    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'distributors in Milwaukee')
+    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'distributors in Chicago')
     await user.click(screen.getByRole('button', { name: 'Send message' }))
 
     await waitFor(() => {

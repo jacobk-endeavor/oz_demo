@@ -5,7 +5,7 @@
 import { DEMO_REP_FIRST_NAME } from '../../config/demoRep'
 
 export const KENNY_HILLS_ACCOUNT = 'Kenny Hills Custom Contracting'
-export const KENNY_HILLS_BRANCH = 'Milwaukee · contractor · Pro deck focus'
+export const KENNY_HILLS_BRANCH = 'Regional metro · contractor · Pro deck focus'
 
 /** One-line snapshot for headers and models. */
 export const KENNY_ACCOUNT_SNAPSHOT =

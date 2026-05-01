@@ -37,7 +37,7 @@ describe('matchProductRequestCustomerDashboardIntent', () => {
   })
 
   it('does not match unrelated chat', () => {
-    expect(matchProductRequestCustomerDashboardIntent('give me milwaukee distributors')).toBe(false)
+    expect(matchProductRequestCustomerDashboardIntent('give me chicago distributors')).toBe(false)
     expect(matchProductRequestCustomerDashboardIntent('hello')).toBe(false)
   })
 })

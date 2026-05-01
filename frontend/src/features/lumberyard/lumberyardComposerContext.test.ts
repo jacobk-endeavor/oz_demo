@@ -9,7 +9,7 @@ const sampleRow: LumberyardCallRow = {
   title: 'OSB load check',
   customerPersona: 'BuildCo — rep',
   customerName: 'BuildCo',
-  location: 'Milwaukee',
+  location: 'Regional hub',
   callDate: '2025-01-10',
   productTags: ['OSB'],
   tags: [],

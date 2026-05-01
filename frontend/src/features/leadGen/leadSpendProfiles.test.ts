@@ -3,11 +3,11 @@ import {
   formatCompactUsd,
   getSpendProfileForCompanyUrl,
 } from './leadSpendProfiles'
-import { buildMilwaukeeDistributorRows } from './milwaukeeDistributorsMock'
+import { buildDemoDistributorRows } from './demoDistributorRows'
 
 describe('leadSpendProfiles', () => {
   it('attaches spend only to the first five companies by seed URL', () => {
-    const rows = buildMilwaukeeDistributorRows('standard')
+    const rows = buildDemoDistributorRows('standard')
     const withSpend = rows.filter((r) => r.spendProfile != null)
     expect(withSpend).toHaveLength(5)
     expect(withSpend.map((r) => r.name)).toEqual([
