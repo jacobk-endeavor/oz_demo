@@ -59,6 +59,25 @@ describe('oz chat transcript tools runtime', () => {
               },
             },
           },
+          kb: {
+            async kb_search() {
+              return {
+                query: 'lead times',
+                surface: 'global',
+                chunks: [
+                  {
+                    chunk_id: 'kb_001',
+                    content: 'Brochure excerpt about CVG grade.',
+                    source_id: 'src1',
+                    locator: 'page=1',
+                    score: 0.9,
+                    surface: 'kb',
+                  },
+                ],
+                provenance: { source: 'postgres', retrieval: 'semantic_vector' },
+              }
+            },
+          },
         },
       ),
     )
@@ -74,7 +93,7 @@ describe('oz chat transcript tools runtime', () => {
       (event) => event.type === 'trace' && event.stage === 'runtime_summary' && event.decision === 'complete',
     )
     expect(runtimeSummary).toBeTruthy()
-    expect(runtimeSummary && 'details' in runtimeSummary ? runtimeSummary.details?.tools_ok : undefined).toBe(2)
+    expect(runtimeSummary && 'details' in runtimeSummary ? runtimeSummary.details?.tools_ok : undefined).toBe(3)
     expect(runtimeSummary && 'details' in runtimeSummary ? runtimeSummary.details?.tools_failed : undefined).toBe(0)
     const done = events.find((event) => event.type === 'done')
     expect(done).toBeTruthy()

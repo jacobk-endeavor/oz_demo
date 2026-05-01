@@ -896,6 +896,73 @@ export async function* runOzChatLoop(
     }
   }
 
+  const kbToolCallId = `tool-kb-search-${sequence}`
+  const kbArgs = {
+    query: message,
+    surface: 'global' as const,
+    k: 8,
+  }
+  yield {
+    ...base(),
+    type: 'tool_call',
+    tool_call_id: kbToolCallId,
+    name: 'kb_search',
+    arguments: kbArgs,
+  }
+
+  let kbResult: KbSearchToolResult | null = null
+  const kbStartedMs = nowMs(now)
+  try {
+    kbResult = await toolSurface.kb_search(kbArgs)
+    toolSuccessCount += 1
+    yield {
+      ...base(),
+      type: 'tool_result',
+      tool_call_id: kbToolCallId,
+      name: 'kb_search',
+      ok: true,
+      summary: `Retrieved ${kbResult.chunks.length} kb/call chunk(s) (${kbResult.surface})`,
+      result_meta: {
+        surface: kbResult.surface,
+        provenance: kbResult.provenance,
+        top_chunk_id: kbResult.chunks[0]?.chunk_id,
+      },
+    }
+    toolSequence.push({ name: 'kb_search', ok: true })
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'tool_latency',
+      decision: 'ok',
+      details: {
+        tool_name: 'kb_search',
+        latency_ms: makeLatency(kbStartedMs),
+      },
+    }
+  } catch (error) {
+    toolFailureCount += 1
+    yield {
+      ...base(),
+      type: 'tool_result',
+      tool_call_id: kbToolCallId,
+      name: 'kb_search',
+      ok: false,
+      summary: error instanceof Error ? error.message : String(error),
+    }
+    toolSequence.push({ name: 'kb_search', ok: false })
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'tool_latency',
+      decision: 'error',
+      details: {
+        tool_name: 'kb_search',
+        latency_ms: makeLatency(kbStartedMs),
+        message: error instanceof Error ? error.message : String(error),
+      },
+    }
+  }
+
   logToolSequenceForMisroute({ route_kind: route.kind, steps: toolSequence })
 
   yield {
@@ -917,7 +984,12 @@ export async function* runOzChatLoop(
   const transcriptSuffix = topHit
     ? ` Top transcript evidence: ${topHit.call_id} chunk ${topHit.chunk_index} (rep ${topHit.owner_user_id}).`
     : ' Transcript evidence lookup returned no hits for this scope.'
-  const agentReply = `Oz runtime executed transcript tools.${recallSuffix}${transcriptSuffix}`
+  const topKb = kbResult?.chunks[0]
+  const kbSuffix =
+    topKb && kbResult
+      ? ` KB search (${kbResult.surface}): ${kbResult.chunks.length} chunk(s). Top match ${topKb.chunk_id} [${topKb.locator}]: ${topKb.content.slice(0, 500).trim()}${topKb.content.length > 500 ? '…' : ''}`
+      : ' KB document search returned no chunks (configure DATABASE_URL + OPENAI_API_KEY, or ingest into kb_rag_chunks).'
+  const agentReply = `Oz runtime executed transcript + kb_search tools.${recallSuffix}${transcriptSuffix}${kbSuffix}`
   yield {
     ...base(),
     type: 'trace',
