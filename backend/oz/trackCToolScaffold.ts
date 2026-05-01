@@ -49,6 +49,39 @@ export type CatalogListResult = {
   rows: Array<{ record: JsonRecord; citation: string }>
 }
 
+export type WikiReadResult = {
+  path: string
+  found: boolean
+  content: string
+  citation: string
+}
+
+export type WikiGrepResult = {
+  query: string
+  total: number
+  hits: Array<{
+    path: string
+    snippet: string
+    citation: string
+  }>
+}
+
+export type WikiLogResult = {
+  filters: {
+    kind?: string
+    since?: string
+    until?: string
+    top_n: number
+  }
+  total: number
+  entries: Array<{
+    timestamp: string
+    kind: string
+    line: string
+    citation: string
+  }>
+}
+
 export type TrackCScaffoldSnapshot = {
   loaded_at: string
   catalog: {
@@ -65,6 +98,7 @@ export type TrackCScaffoldSnapshot = {
 
 const DEFAULT_CATALOG_PATH = path.resolve(process.cwd(), 'calls/product_catalog.json')
 const DEFAULT_RECOMMENDATIONS_PATH = path.resolve(process.cwd(), 'calls/recommendations.json')
+const DEFAULT_WIKI_ROOT = path.resolve(process.cwd(), 'wiki')
 
 function normalizePath(value: string | undefined, fallback: string): string {
   const trimmed = String(value ?? '').trim()
@@ -101,6 +135,7 @@ export class TrackCToolScaffold {
   private readonly initializedAt = new Date().toISOString()
   private readonly catalogPath: string
   private readonly recommendationsPath: string
+  private readonly wikiRoot: string
   private catalogState: JsonRuntimeState<JsonRecord>
   private recommendationsState: JsonRuntimeState<JsonRecord>
   private pool: QueryPool | null = null
@@ -116,6 +151,7 @@ export class TrackCToolScaffold {
     const env = this.readEnv()
     this.catalogPath = normalizePath(env.OZ_PRODUCT_CATALOG_PATH, DEFAULT_CATALOG_PATH)
     this.recommendationsPath = normalizePath(env.OZ_RECOMMENDATIONS_PATH, DEFAULT_RECOMMENDATIONS_PATH)
+    this.wikiRoot = normalizePath(env.OZ_WIKI_ROOT_PATH, DEFAULT_WIKI_ROOT)
     this.catalogState = emptyJsonState(this.catalogPath)
     this.recommendationsState = emptyJsonState(this.recommendationsPath)
   }
@@ -219,6 +255,77 @@ export class TrackCToolScaffold {
     }
   }
 
+  async wiki_read(pagePath: string): Promise<WikiReadResult> {
+    const safePath = this.safeWikiPath(pagePath)
+    if (!safePath) return { path: String(pagePath ?? ''), found: false, content: '', citation: '[wiki:invalid-path]' }
+    try {
+      const content = await this.readFile(safePath, 'utf8')
+      return {
+        path: toRelativeWikiPath(this.wikiRoot, safePath),
+        found: true,
+        content,
+        citation: `[wiki:${toRelativeWikiPath(this.wikiRoot, safePath)}]`,
+      }
+    } catch {
+      return {
+        path: toRelativeWikiPath(this.wikiRoot, safePath),
+        found: false,
+        content: '',
+        citation: `[wiki:${toRelativeWikiPath(this.wikiRoot, safePath)}]`,
+      }
+    }
+  }
+
+  async wiki_grep(query: string, topN = 8): Promise<WikiGrepResult> {
+    const trimmed = String(query ?? '').trim()
+    if (!trimmed) return { query: trimmed, total: 0, hits: [] }
+    const files = await listMarkdownFiles(this.wikiRoot)
+    const lowered = trimmed.toLowerCase()
+    const hits: WikiGrepResult['hits'] = []
+    for (const filePath of files) {
+      const content = await this.readFile(filePath, 'utf8').catch(() => '')
+      const lines = content.split('\n')
+      const line = lines.find((item) => item.toLowerCase().includes(lowered))
+      if (!line) continue
+      const rel = toRelativeWikiPath(this.wikiRoot, filePath)
+      hits.push({
+        path: rel,
+        snippet: line.trim(),
+        citation: `[wiki:${rel}]`,
+      })
+      if (hits.length >= Math.max(1, Math.min(50, Math.trunc(topN) || 8))) break
+    }
+    return { query: trimmed, total: hits.length, hits }
+  }
+
+  async wiki_log(args: { kind?: string; since?: string; until?: string; top_n?: number } = {}): Promise<WikiLogResult> {
+    const topN = Math.max(1, Math.min(100, Math.trunc(Number(args.top_n) || 25)))
+    const kind = normalizedFilter(args.kind)
+    const sinceMs = args.since ? Date.parse(args.since) : NaN
+    const untilMs = args.until ? Date.parse(args.until) : NaN
+    const logPath = path.join(this.wikiRoot, 'log.md')
+    const content = await this.readFile(logPath, 'utf8').catch(() => '')
+    const entries = content
+      .split('\n')
+      .filter((line) => line.startsWith('## ['))
+      .map((line) => parseWikiLogHeading(line))
+      .filter((entry): entry is { timestamp: string; kind: string; line: string } => Boolean(entry))
+      .filter((entry) => {
+        if (kind && entry.kind !== kind) return false
+        const ts = Date.parse(entry.timestamp)
+        if (Number.isFinite(sinceMs) && Number.isFinite(ts) && ts < sinceMs) return false
+        if (Number.isFinite(untilMs) && Number.isFinite(ts) && ts > untilMs) return false
+        return true
+      })
+      .slice(0, topN)
+      .map((entry) => ({ ...entry, citation: '[wiki:log.md]' }))
+    return {
+      filters: { kind, since: args.since, until: args.until, top_n: topN },
+      total: entries.length,
+      entries,
+    }
+  }
+
   readOnlyDbQuery(): ScopedDbQuery | undefined {
     const env = this.readEnv()
     const url = String(env.DATABASE_READONLY_URL || env.DATABASE_URL || '').trim()
@@ -288,6 +395,14 @@ export class TrackCToolScaffold {
       this.catalogBySku.set(sku, record)
     }
   }
+
+  private safeWikiPath(input: string): string | null {
+    const trimmed = String(input ?? '').trim()
+    if (!trimmed || trimmed.includes('..') || path.isAbsolute(trimmed)) return null
+    const candidate = path.resolve(this.wikiRoot, trimmed.endsWith('.md') ? trimmed : `${trimmed}.md`)
+    if (!candidate.startsWith(`${this.wikiRoot}${path.sep}`)) return null
+    return candidate
+  }
 }
 
 function readText(record: JsonRecord, keys: string[]): string | undefined {
@@ -309,4 +424,34 @@ function readNumber(record: JsonRecord, keys: string[]): number | undefined {
 function normalizedFilter(value: unknown): string | undefined {
   const text = String(value ?? '').trim().toLowerCase()
   return text || undefined
+}
+
+async function listMarkdownFiles(root: string): Promise<string[]> {
+  const out: string[] = []
+  const stack = [root]
+  while (stack.length) {
+    const current = stack.pop()
+    if (!current) continue
+    const entries = await fs.readdir(current, { withFileTypes: true }).catch(() => [])
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue
+      const fullPath = path.join(current, entry.name)
+      if (entry.isDirectory()) {
+        stack.push(fullPath)
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        out.push(fullPath)
+      }
+    }
+  }
+  return out
+}
+
+function toRelativeWikiPath(root: string, filePath: string): string {
+  return path.relative(root, filePath).replaceAll(path.sep, '/')
+}
+
+function parseWikiLogHeading(line: string): { timestamp: string; kind: string; line: string } | null {
+  const match = line.match(/^## \[(.+?)\]\s+([a-zA-Z0-9_-]+)/)
+  if (!match) return null
+  return { timestamp: match[1], kind: match[2].toLowerCase(), line }
 }

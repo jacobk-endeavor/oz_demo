@@ -178,12 +178,35 @@ describe('oz chat transcript tools runtime', () => {
             },
           },
         },
+        wiki: {
+          registry: {
+            async wiki_read(args) {
+              return { path: args.path, found: true, content: '# demo', citation: '[wiki:demo.md]' }
+            },
+            async wiki_grep(args) {
+              return { query: args.query, total: 1, hits: [{ path: 'demo.md', snippet: 'demo', citation: '[wiki:demo.md]' }] }
+            },
+            async wiki_log() {
+              return {
+                filters: { top_n: 25 },
+                total: 1,
+                entries: [{ timestamp: '2026-05-01 10:00', kind: 'query', line: '## [..] query', citation: '[wiki:log.md]' }],
+              }
+            },
+          },
+        },
       },
     )
 
     const one = await tools.catalog_get({ sku: 'SKU-001' })
     const many = await tools.catalog_list({ top_n: 1 })
+    const read = await tools.wiki_read({ path: 'demo' })
+    const grep = await tools.wiki_grep({ query: 'demo' })
+    const log = await tools.wiki_log({ kind: 'query' })
     expect(one.found).toBe(true)
     expect(many.total).toBe(1)
+    expect(read.found).toBe(true)
+    expect(grep.total).toBe(1)
+    expect(log.total).toBe(1)
   })
 })

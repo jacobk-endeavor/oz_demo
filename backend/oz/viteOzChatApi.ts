@@ -154,6 +154,19 @@ export function ozChatApiPlugin() {
             },
           },
         },
+        wiki: {
+          registry: {
+            async wiki_read(payload) {
+              return trackCScaffold.wiki_read(payload.path)
+            },
+            async wiki_grep(payload) {
+              return trackCScaffold.wiki_grep(payload.query, payload.top_n)
+            },
+            async wiki_log(payload) {
+              return trackCScaffold.wiki_log(payload)
+            },
+          },
+        },
       })) {
         writeSseFrame(res, event)
       }

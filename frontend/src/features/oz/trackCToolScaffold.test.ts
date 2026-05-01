@@ -28,14 +28,25 @@ describe('track C tool scaffold', () => {
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'track-c-scaffold-'))
     const catalogPath = path.join(tmpDir, 'product_catalog.json')
     const recommendationsPath = path.join(tmpDir, 'recommendations.json')
+    const wikiDir = path.join(tmpDir, 'wiki')
+    const wikiPage = path.join(wikiDir, 'entities', 'products', 'voyage.md')
+    const wikiLog = path.join(wikiDir, 'log.md')
 
     await fs.writeFile(catalogPath, JSON.stringify([{ sku: 'SKU-001', sales: 30 }]), 'utf8')
     await fs.writeFile(recommendationsPath, JSON.stringify([{ sku: 'SKU-001', kind: 'upsell' }]), 'utf8')
+    await fs.mkdir(path.dirname(wikiPage), { recursive: true })
+    await fs.writeFile(wikiPage, '# Voyage\n\nLead times vary by branch.', 'utf8')
+    await fs.writeFile(
+      wikiLog,
+      '# Wiki Log\n\n## [2026-05-01 10:00] query | source=manual\n- Asked about lead times.\n',
+      'utf8',
+    )
 
     const scaffold = new TrackCToolScaffold({
       readEnv: () => ({
         OZ_PRODUCT_CATALOG_PATH: catalogPath,
         OZ_RECOMMENDATIONS_PATH: recommendationsPath,
+        OZ_WIKI_ROOT_PATH: wikiDir,
       }),
     })
 
@@ -59,5 +70,15 @@ describe('track C tool scaffold', () => {
     const list = scaffold.catalog_list({ min_sales: 10, sort_by: 'sales', top_n: 5 })
     expect(list.total).toBe(1)
     expect(list.rows[0]?.citation).toBe('[catalog:sku=SKU-001]')
+
+    const wikiRead = await scaffold.wiki_read('entities/products/voyage')
+    expect(wikiRead.found).toBe(true)
+    expect(wikiRead.citation).toBe('[wiki:entities/products/voyage.md]')
+
+    const wikiGrep = await scaffold.wiki_grep('vary by branch', 3)
+    expect(wikiGrep.total).toBe(1)
+
+    const wikiLogResult = await scaffold.wiki_log({ kind: 'query' })
+    expect(wikiLogResult.total).toBe(1)
   })
 })

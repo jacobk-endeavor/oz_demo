@@ -22,7 +22,7 @@ import {
   type MemoryRecallAdapter,
   type MemoryWriteAdapter,
 } from './memoryAdapters'
-import type { CatalogGetResult, CatalogListResult } from './trackCToolScaffold'
+import type { CatalogGetResult, CatalogListResult, WikiGrepResult, WikiLogResult, WikiReadResult } from './trackCToolScaffold'
 import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
 
 export const OZ_CHAT_CONTRACT_VERSION = '2026-04-oz-chat-v1' as const
@@ -99,6 +99,13 @@ export type RuntimeDependencies = {
       }) => Promise<CatalogListResult>
     }
   }
+  wiki?: {
+    registry?: {
+      wiki_read: (request: { path: string }) => Promise<WikiReadResult>
+      wiki_grep: (request: { query: string; top_n?: number }) => Promise<WikiGrepResult>
+      wiki_log: (request: { kind?: string; since?: string; until?: string; top_n?: number }) => Promise<WikiLogResult>
+    }
+  }
 }
 
 export type OzToolSurface = {
@@ -120,6 +127,9 @@ export type OzToolSurface = {
     sort_by?: string
     top_n?: number
   }) => Promise<CatalogListResult>
+  wiki_read: (request: { path: string }) => Promise<WikiReadResult>
+  wiki_grep: (request: { query: string; top_n?: number }) => Promise<WikiGrepResult>
+  wiki_log: (request: { kind?: string; since?: string; until?: string; top_n?: number }) => Promise<WikiLogResult>
 }
 
 function nowMs(now: () => Date): number {
@@ -169,6 +179,21 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
       }
     },
   }
+  const wikiRegistry = deps.wiki?.registry ?? {
+    async wiki_read(payload: { path: string }) {
+      return { path: payload.path, found: false, content: '', citation: `[wiki:${payload.path}]` }
+    },
+    async wiki_grep(payload: { query: string }) {
+      return { query: String(payload.query ?? ''), total: 0, hits: [] }
+    },
+    async wiki_log(payload: { kind?: string; since?: string; until?: string; top_n?: number }) {
+      return {
+        filters: { kind: payload.kind, since: payload.since, until: payload.until, top_n: payload.top_n ?? 25 },
+        total: 0,
+        entries: [],
+      }
+    },
+  }
 
   return {
     async graph_search(payload): Promise<GraphSearchResult> {
@@ -196,6 +221,15 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     },
     async catalog_list(payload): Promise<CatalogListResult> {
       return catalogRegistry.catalog_list(payload)
+    },
+    async wiki_read(payload): Promise<WikiReadResult> {
+      return wikiRegistry.wiki_read(payload)
+    },
+    async wiki_grep(payload): Promise<WikiGrepResult> {
+      return wikiRegistry.wiki_grep(payload)
+    },
+    async wiki_log(payload): Promise<WikiLogResult> {
+      return wikiRegistry.wiki_log(payload)
     },
   }
 }
