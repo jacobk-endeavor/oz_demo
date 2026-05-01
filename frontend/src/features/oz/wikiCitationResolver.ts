@@ -1,2 +1,2 @@
-/** Re-export shared citation grammar resolver (backend canonical implementation). */
-export * from '../../../../backend/oz/citationGrammarResolver'
+/** Wiki-layer citation resolver; shared implementation (no direct backend imports). */
+export * from '../../../../shared/oz/citationGrammarResolver'
