@@ -35,6 +35,8 @@ import type {
   WikiReadResult,
 } from './trackCToolScaffold'
 import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
+import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
+import { OZ_CHAT_SYSTEM_PROMPT_VERSION, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 
 export const OZ_CHAT_CONTRACT_VERSION = '2026-04-oz-chat-v1' as const
 
@@ -451,6 +453,15 @@ function hardcodedReplyFor(message: string): string {
   return 'Hardcoded policy path selected.'
 }
 
+function logToolSequenceForMisroute(payload: { route_kind: string; steps: Array<{ name: string; ok: boolean }> }): void {
+  if (process.env.OZ_CHAT_LOG_TOOL_SEQUENCE !== '1') return
+  try {
+    console.error(`[oz-chat-tool-sequence] ${JSON.stringify({ ts: new Date().toISOString(), ...payload })}`)
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function* runOzChatLoop(
   request: OzChatRequest,
   deps: RuntimeDependencies = {},
@@ -458,8 +469,11 @@ export async function* runOzChatLoop(
   const now = deps.now ?? (() => new Date())
   const runtimeStartedMs = nowMs(now)
   const contractVersion = request.contract_version || OZ_CHAT_CONTRACT_VERSION
-  const message = String(request.message ?? '').trim()
-  const policyPath = choosePolicyPath(request)
+  const route = parseOzChatRoutePrefix(String(request.message ?? ''))
+  const message = route.bareMessage.trim()
+  const policyPath = choosePolicyPath({ ...request, message: route.bareMessage })
+  const toolSequence: Array<{ name: string; ok: boolean }> = []
+  const registrySnapshot = ozChatOpenAiToolDefinitions()
   let sequence = 0
   let toolFailureCount = 0
   let toolSuccessCount = 0
@@ -507,7 +521,31 @@ export async function* runOzChatLoop(
   const recallAdapter = deps.memory?.recallAdapter ?? noopMemoryRecall
   const writeAdapter = deps.memory?.writeAdapter ?? noopMemoryWrite
 
-  // Runtime loop scaffold with tool registry wiring.
+  yield {
+    ...base(),
+    type: 'trace',
+    stage: 'route_prefix',
+    decision: route.kind,
+    details: {
+      stripped_prefix: route.kind !== 'none',
+      registry_prompt_version: OZ_CHAT_SYSTEM_PROMPT_VERSION,
+      openai_tool_defs_count: registrySnapshot.length,
+    },
+  }
+
+  if (route.systemNote) {
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'route_system_note',
+      decision: 'append',
+      details: {
+        note: route.systemNote,
+      },
+    }
+  }
+
+  // Runtime loop scaffold with tool registry wiring (OpenAI tool schemas authored in ozChatToolRegistry.ts).
   yield {
     ...base(),
     type: 'trace',
@@ -631,6 +669,7 @@ export async function* runOzChatLoop(
         citations: searchResult.citations,
       },
     }
+    toolSequence.push({ name: 'search_transcripts', ok: true })
     yield {
       ...base(),
       type: 'trace',
@@ -651,6 +690,7 @@ export async function* runOzChatLoop(
       ok: false,
       summary: error instanceof Error ? error.message : String(error),
     }
+    toolSequence.push({ name: 'search_transcripts', ok: false })
     yield {
       ...base(),
       type: 'trace',
@@ -693,6 +733,7 @@ export async function* runOzChatLoop(
           citations: readResult.citations,
         },
       }
+      toolSequence.push({ name: 'read_transcript', ok: true })
       yield {
         ...base(),
         type: 'trace',
@@ -713,6 +754,7 @@ export async function* runOzChatLoop(
         ok: false,
         summary: error instanceof Error ? error.message : String(error),
       }
+      toolSequence.push({ name: 'read_transcript', ok: false })
       yield {
         ...base(),
         type: 'trace',
@@ -725,6 +767,20 @@ export async function* runOzChatLoop(
         },
       }
     }
+  }
+
+  logToolSequenceForMisroute({ route_kind: route.kind, steps: toolSequence })
+
+  yield {
+    ...base(),
+    type: 'trace',
+    stage: 'tool_sequence',
+    decision: 'complete',
+    details: {
+      route_kind: route.kind,
+      steps: toolSequence,
+      registry_prompt_version: OZ_CHAT_SYSTEM_PROMPT_VERSION,
+    },
   }
 
   const recallSuffix = recalledCount
