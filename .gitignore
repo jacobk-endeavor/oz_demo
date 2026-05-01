@@ -42,3 +42,5 @@ product_catalog_flat.json
 product_catalog.json
 recommendations.json
 raw/*
+
+docs/palantir-ontology/
