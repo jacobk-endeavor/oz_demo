@@ -2,12 +2,32 @@ import type { OzChatTurnContext } from '../../shared/ui'
 
 // Single canonical transport path for non-hardcoded Oz chat turns.
 const OZ_CHAT_PATH = '/api/oz/chat'
+const OZ_CHAT_CONFIG_PATH = '/api/oz/chat/config'
+
+export type OzChatRuntimeKind = 'scaffold' | 'agentic'
+
+export type OzChatRuntimeConfig = {
+  chat: { runtime: OzChatRuntimeKind; agentic: { model?: string } | null }
+  agentic_available: boolean
+}
+
+export async function fetchOzChatConfig(): Promise<OzChatRuntimeConfig | null> {
+  try {
+    const response = await fetch(OZ_CHAT_CONFIG_PATH, { headers: { Accept: 'application/json' } })
+    if (!response.ok) return null
+    return (await response.json()) as OzChatRuntimeConfig
+  } catch {
+    return null
+  }
+}
 
 export type OzChatClientRequest = {
   text: string
   context: OzChatTurnContext
   ragScope?: string
   traceId?: string
+  /** Per-turn override of server-side YAML default. */
+  mode?: OzChatRuntimeKind
 }
 
 export type OzChatClientResponse = {
@@ -177,6 +197,7 @@ export async function postOzChat(request: OzChatClientRequest): Promise<OzChatCl
       trace_id: traceId,
       stream: true,
       contract_version: '2026-04-oz-chat-v1',
+      ...(request.mode === 'scaffold' || request.mode === 'agentic' ? { mode: request.mode } : {}),
     }),
   })
 

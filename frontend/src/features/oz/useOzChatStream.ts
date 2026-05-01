@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react'
 import type { OzChatTurnContext } from '../../shared/ui'
 import { postOzChat } from './ozChatClient'
+import { readOzChatRuntimeOverride } from './ozChatRuntimeToggle'
 
 type FallbackReply = { reply: string; delayMs?: number }
 
@@ -19,10 +20,13 @@ export function useOzChatStream({
       if (shouldTryUnified && !skipUnifiedRef.current) {
         try {
           // Preferred path: unified backend runtime (`/api/oz/chat`).
+          // Pull per-turn runtime override from localStorage (set by the UI toggle).
+          const mode = readOzChatRuntimeOverride()
           const result = await postOzChat({
             text: args.text,
             context: args.context,
             ragScope: args.ragScope,
+            ...(mode ? { mode } : {}),
           })
           return { reply: result.reply, delayMs: 0 }
         } catch (error) {

@@ -61,6 +61,7 @@ import { BackgroundAgentsPage } from './features/backgroundAgents/BackgroundAgen
 import { KnowledgeBasePage } from './features/oz/KnowledgeBasePage'
 import { NebulaHubPage } from './features/oz/NebulaHubPage'
 import { useOzChatStream } from './features/oz/useOzChatStream'
+import { OzChatRuntimeTogglePanel } from './features/oz/OzChatRuntimeTogglePanel'
 import { DashboardGeneratorPage } from './features/dashboardGenerator/DashboardGeneratorPage'
 import { FieldNotesPage } from './features/fieldNotes/FieldNotesPage'
 import { QuotesReadyForReviewPage } from './features/quotesReady/QuotesReadyForReviewPage'
@@ -954,6 +955,17 @@ export default function App() {
       : 'rail'
   return (
     <>
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 12,
+          right: 12,
+          zIndex: 1000,
+          pointerEvents: 'auto',
+        }}
+      >
+        <OzChatRuntimeTogglePanel />
+      </div>
       <OzWorkflowShell
       activeNavItem={page}
       onNavItemChange={(id) => navigate(id as Page)}
