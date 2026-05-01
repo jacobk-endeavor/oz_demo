@@ -34,6 +34,7 @@ describe('SourceRegistry', () => {
     expect(second.record.meta).toEqual({
       doc_kind: 'tech-bulletin',
       brand: 'Deckorators',
+      near_duplicates: [],
     })
   })
 
@@ -74,5 +75,81 @@ describe('SourceRegistry', () => {
     registry.setStatus(created.record.sourceId, 'pending')
     const row = registry.setStatus(created.record.sourceId, 'extracting')
     expect(row.status).toBe('extracting')
+  })
+
+  it('flags near-duplicates when normalized filenames match', () => {
+    const registry = new SourceRegistry()
+    registry.register({
+      path: 'raw/2023 Azek-Deckorators Color Comparison U.S. 11.21.2022.pdf',
+      sha256: SHA_A,
+      mime: 'application/pdf',
+    })
+    const second = registry.register({
+      path: 'raw/2023+Azek-Deckorators+Color+Comparison+U.S..pdf',
+      sha256: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+      mime: 'application/pdf',
+    })
+    expect(second.record.meta.near_duplicates).toEqual(['aaaaaaaaaaaa'])
+  })
+
+  it('flags near-duplicates for same brand/line/year/doc_kind tuple', () => {
+    const registry = new SourceRegistry()
+    registry.register({
+      path: 'raw/guide-alpha.pdf',
+      sha256: SHA_A,
+      mime: 'application/pdf',
+      meta: {
+        brand: 'Deckorators',
+        product_line: 'Voyage',
+        year: 2026,
+        doc_kind: 'tech-bulletin',
+      },
+    })
+    const second = registry.register({
+      path: 'raw/guide-beta.pdf',
+      sha256: 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
+      mime: 'application/pdf',
+      meta: {
+        brand: 'deckorators',
+        line: 'voyage',
+        year: '2026',
+        doc_kind: 'tech-bulletin',
+      },
+    })
+    expect(second.record.meta.near_duplicates).toEqual(['aaaaaaaaaaaa'])
+  })
+
+  it('flags near-duplicates by first-page minhash similarity and ignores dissimilar pages', () => {
+    const registry = new SourceRegistry()
+    registry.register({
+      path: 'raw/doc-1.pdf',
+      sha256: SHA_A,
+      mime: 'application/pdf',
+      meta: {
+        first_page_text:
+          'Decking install guidance for Voyage line. Step one clean the joists and place starter clips with spacing.',
+      },
+    })
+    const near = registry.register({
+      path: 'raw/doc-2.pdf',
+      sha256: 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      mime: 'application/pdf',
+      meta: {
+        firstPageText:
+          'Decking install guidance for Voyage line. Step one clean the joists and place starter clips with spacing.',
+      },
+    })
+    expect(near.record.meta.near_duplicates).toEqual(['aaaaaaaaaaaa'])
+
+    const far = registry.register({
+      path: 'raw/doc-3.pdf',
+      sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+      mime: 'application/pdf',
+      meta: {
+        first_page_text:
+          'Quarterly sales analytics for rail fasteners and hidden clips with invoice trend pivots and margin deltas.',
+      },
+    })
+    expect(far.record.meta.near_duplicates).toEqual([])
   })
 })

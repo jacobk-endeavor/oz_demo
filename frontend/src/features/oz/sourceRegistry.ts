@@ -36,6 +36,8 @@ export type RegisterSourceResult = {
 
 const SOURCE_ID_HEX_LEN = 12
 const SHA256_HEX_LEN = 64
+const FIRST_PAGE_MINHASH_THRESHOLD = 0.95
+const MINHASH_SIGNATURE_SIZE = 64
 
 const ALLOWED_TRANSITIONS: Record<SourceStatus, Set<SourceStatus>> = {
   pending: new Set(['extracting']),
@@ -84,6 +86,104 @@ function assertTransition(from: SourceStatus, to: SourceStatus) {
   }
 }
 
+function asTrimmedString(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed.length === 0 ? null : trimmed
+}
+
+function asNormalizedNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return null
+}
+
+function normalizeFilenameStem(path: string): string {
+  const filename = path.split(/[\\/]/).pop() ?? path
+  const withoutExtension = filename.replace(/\.[^.]+$/, '')
+  const withoutParens = withoutExtension.replace(/\([^)]*\)\s*$/g, '')
+  const withoutTrailingDate = withoutParens.replace(
+    /(?:[-_\s]+)?(?:\d{1,2}[._-]\d{1,2}[._-]\d{2,4}|\d{8}|\d{4}[._-]\d{1,2}[._-]\d{1,2})\s*$/g,
+    '',
+  )
+  return withoutTrailingDate.toLowerCase().replace(/[+\s]/g, '')
+}
+
+function fnv1a32(input: string, seed = 0): number {
+  let hash = (0x811c9dc5 ^ seed) >>> 0
+  for (let idx = 0; idx < input.length; idx += 1) {
+    hash ^= input.charCodeAt(idx)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return hash >>> 0
+}
+
+function tokenShingles(text: string): string[] {
+  const tokens = text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter((token) => token.length > 0)
+  if (tokens.length === 0) return []
+  if (tokens.length < 3) return [tokens.join(' ')]
+  const shingles: string[] = []
+  for (let idx = 0; idx <= tokens.length - 3; idx += 1) {
+    shingles.push(`${tokens[idx]} ${tokens[idx + 1]} ${tokens[idx + 2]}`)
+  }
+  return shingles
+}
+
+function minhashSignature(text: string): number[] {
+  const shingles = tokenShingles(text)
+  if (shingles.length === 0) return []
+  const signature = new Array<number>(MINHASH_SIGNATURE_SIZE).fill(Number.POSITIVE_INFINITY)
+  for (const shingle of shingles) {
+    for (let seed = 0; seed < MINHASH_SIGNATURE_SIZE; seed += 1) {
+      const hashed = fnv1a32(shingle, seed)
+      if (hashed < signature[seed]) {
+        signature[seed] = hashed
+      }
+    }
+  }
+  return signature
+}
+
+function minhashSimilarity(left: string, right: string): number {
+  const leftSig = minhashSignature(left)
+  const rightSig = minhashSignature(right)
+  if (leftSig.length === 0 || rightSig.length === 0 || leftSig.length !== rightSig.length) {
+    return 0
+  }
+  let equal = 0
+  for (let idx = 0; idx < leftSig.length; idx += 1) {
+    if (leftSig[idx] === rightSig[idx]) equal += 1
+  }
+  return equal / leftSig.length
+}
+
+function firstPageTextFromMeta(meta: SourceMeta): string | null {
+  const direct = asTrimmedString(meta.first_page_text)
+  if (direct != null) return direct
+  const alternate = asTrimmedString(meta.firstPageText)
+  if (alternate != null) return alternate
+  return null
+}
+
+function duplicateTupleFromMeta(meta: SourceMeta): string | null {
+  const brand = asTrimmedString(meta.brand)?.toLowerCase()
+  const productLine = asTrimmedString(meta.product_line ?? meta.line)?.toLowerCase()
+  const year = asNormalizedNumber(meta.year)
+  const docKind = asTrimmedString(meta.doc_kind)?.toLowerCase()
+  if (brand == null || productLine == null || year == null || docKind == null) {
+    return null
+  }
+  return `${brand}::${productLine}::${year}::${docKind}`
+}
+
 export function sourceIdFromSha256(sha256: string): string {
   const norm = normalizeSha256(sha256)
   return norm.slice(0, SOURCE_ID_HEX_LEN)
@@ -97,6 +197,63 @@ export class SourceRegistry {
   private readonly bySourceId = new Map<string, SourceRecord>()
 
   private readonly sourceIdBySha = new Map<string, string>()
+
+  private annotateNearDuplicatesForSource(sourceId: string): SourceRecord {
+    const current = this.bySourceId.get(sourceId)
+    if (current == null) {
+      throw new Error(`source not found: ${sourceId}`)
+    }
+    const currentNormalizedFilename = normalizeFilenameStem(current.path)
+    const currentTuple = duplicateTupleFromMeta(current.meta)
+    const currentFirstPage = firstPageTextFromMeta(current.meta)
+
+    const matches = new Set<string>()
+    for (const candidate of this.bySourceId.values()) {
+      if (candidate.sourceId === sourceId) continue
+
+      const candidateNormalizedFilename = normalizeFilenameStem(candidate.path)
+      if (
+        currentNormalizedFilename.length > 0 &&
+        currentNormalizedFilename === candidateNormalizedFilename
+      ) {
+        matches.add(candidate.sourceId)
+      }
+
+      const candidateTuple = duplicateTupleFromMeta(candidate.meta)
+      if (currentTuple != null && candidateTuple != null && currentTuple === candidateTuple) {
+        matches.add(candidate.sourceId)
+      }
+
+      const candidateFirstPage = firstPageTextFromMeta(candidate.meta)
+      if (currentFirstPage != null && candidateFirstPage != null) {
+        if (minhashSimilarity(currentFirstPage, candidateFirstPage) >= FIRST_PAGE_MINHASH_THRESHOLD) {
+          matches.add(candidate.sourceId)
+        }
+      }
+    }
+
+    const nearDuplicates = [...matches].sort()
+    const updated: SourceRecord = {
+      ...current,
+      meta: {
+        ...current.meta,
+        near_duplicates: nearDuplicates,
+      },
+    }
+    this.bySourceId.set(sourceId, updated)
+    return updated
+  }
+
+  private tryAnnotateNearDuplicates(sourceId: string): SourceRecord {
+    try {
+      return this.annotateNearDuplicatesForSource(sourceId)
+    } catch {
+      // Duplicate heuristics are advisory and should never block ingest flow.
+      const existing = this.bySourceId.get(sourceId)
+      if (existing == null) throw new Error(`source not found: ${sourceId}`)
+      return existing
+    }
+  }
 
   register(input: RegisterSourceInput): RegisterSourceResult {
     const sha256 = normalizeSha256(input.sha256)
@@ -120,10 +277,11 @@ export class SourceRegistry {
         meta: input.meta == null ? { ...existing.meta } : { ...existing.meta, ...input.meta },
       }
       this.bySourceId.set(existingId, updated)
+      const annotated = this.tryAnnotateNearDuplicates(existingId)
       return {
         created: false,
-        alreadyReady: existing.status === 'ready',
-        record: cloneRecord(updated),
+        alreadyReady: annotated.status === 'ready',
+        record: cloneRecord(annotated),
       }
     }
 
@@ -145,7 +303,8 @@ export class SourceRegistry {
 
     this.bySourceId.set(sourceId, record)
     this.sourceIdBySha.set(sha256, sourceId)
-    return { created: true, alreadyReady: false, record: cloneRecord(record) }
+    const annotated = this.tryAnnotateNearDuplicates(sourceId)
+    return { created: true, alreadyReady: false, record: cloneRecord(annotated) }
   }
 
   getBySourceId(sourceId: string): SourceRecord | null {
@@ -195,4 +354,5 @@ export class SourceRegistry {
 export const sourceRegistryConstants = {
   SOURCE_ID_HEX_LEN,
   SHA256_HEX_LEN,
+  FIRST_PAGE_MINHASH_THRESHOLD,
 } as const
