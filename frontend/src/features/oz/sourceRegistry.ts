@@ -1,3 +1,5 @@
+import { classifyDocKind } from './docKindClassifier'
+
 export type SourceStatus = 'pending' | 'extracting' | 'embedding' | 'ready' | 'failed' | 'removed'
 
 export type SourceMeta = Record<string, unknown>
@@ -20,6 +22,7 @@ export type RegisterSourceInput = {
   path: string
   sha256: string
   mime: string
+  firstPageText?: string
   bytes?: number
   pageCount?: number
   sheetCount?: number
@@ -84,6 +87,17 @@ function assertTransition(from: SourceStatus, to: SourceStatus) {
   }
 }
 
+function omitDocKindInference(meta: SourceMeta): SourceMeta {
+  const {
+    doc_kind: _docKind,
+    doc_kind_confidence: _docKindConfidence,
+    doc_kind_matched_by: _docKindMatchedBy,
+    doc_kind_signals: _docKindSignals,
+    ...rest
+  } = meta
+  return rest
+}
+
 export function sourceIdFromSha256(sha256: string): string {
   const norm = normalizeSha256(sha256)
   return norm.slice(0, SOURCE_ID_HEX_LEN)
@@ -104,12 +118,42 @@ export class SourceRegistry {
     const mime = normalizeMime(input.mime)
     const sourceId = sourceIdFromSha256(sha256)
 
+    const classification = classifyDocKind({
+      path,
+      mime,
+      firstPageText: input.firstPageText,
+      docKindOverride: typeof input.meta?.doc_kind_override === 'string' ? input.meta.doc_kind_override : undefined,
+    })
+    const inferredMetaFull: SourceMeta = {
+      doc_kind: classification.doc_kind,
+      doc_kind_confidence: classification.confidence,
+      doc_kind_matched_by: classification.matched_by,
+      doc_kind_signals: classification.signals,
+      ...(classification.brand != null ? { brand: classification.brand } : {}),
+      ...(classification.product_line != null ? { product_line: classification.product_line } : {}),
+      ...(classification.year != null ? { year: classification.year } : {}),
+      ...(classification.distributor_branded != null
+        ? { distributor_branded: classification.distributor_branded }
+        : {}),
+    }
+    const inputMeta = input.meta ?? {}
+    const inferredMeta =
+      inputMeta.doc_kind == null
+        ? inferredMetaFull
+        : omitDocKindInference(inferredMetaFull)
+
     const existingId = this.sourceIdBySha.get(sha256)
     if (existingId != null) {
       const existing = this.bySourceId.get(existingId)
       if (existing == null) {
         throw new Error(`registry invariant violated for source_id=${existingId}`)
       }
+      const inferredMetaForExisting =
+        classification.doc_kind === 'unknown' &&
+        input.firstPageText == null &&
+        inputMeta.doc_kind == null
+          ? omitDocKindInference(inferredMeta)
+          : inferredMeta
       const updated: SourceRecord = {
         ...existing,
         path,
@@ -117,7 +161,7 @@ export class SourceRegistry {
         bytes: input.bytes ?? existing.bytes,
         pageCount: input.pageCount ?? existing.pageCount,
         sheetCount: input.sheetCount ?? existing.sheetCount,
-        meta: input.meta == null ? { ...existing.meta } : { ...existing.meta, ...input.meta },
+        meta: { ...existing.meta, ...inferredMetaForExisting, ...inputMeta },
       }
       this.bySourceId.set(existingId, updated)
       return {
@@ -140,7 +184,7 @@ export class SourceRegistry {
       sheetCount: input.sheetCount,
       ingestedAt,
       status,
-      meta: { ...(input.meta ?? {}) },
+      meta: { ...inferredMeta, ...inputMeta },
     }
 
     this.bySourceId.set(sourceId, record)
