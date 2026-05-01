@@ -1,23 +1,17 @@
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import type { ExtractManifest } from './extractArtifact'
+import {
+  buildLazySkuSection,
+  buildNearDuplicateSection,
+  buildPlaybookPlanSection,
+  normalizeIngestManifest,
+  runStructuredDataWikiBootstrap,
+  tryReadFullExtractText,
+  tryReadRepoJson,
+} from './wikiIngestPlaybooks'
 
 type SupportedEvent = 'kb.ingested' | 'kb.refreshed'
-
-type ManifestUnit = {
-  locator: string
-  chunk_ids: string[]
-}
-
-type ExtractManifest = {
-  source_id: string
-  title: string
-  doc_kind: string
-  brand?: string
-  product_line?: string
-  year?: number
-  distributor_branded?: boolean
-  units: ManifestUnit[]
-}
 
 export type WikiIngestEvent = {
   event_version: 1
@@ -30,6 +24,10 @@ export type WikiIngestEvent = {
     product_line?: string
     year?: number
   }
+  /** Registry-derived near-duplicate candidates (source_ids); Curator review, no auto-merge. */
+  near_duplicate_source_ids?: string[]
+  /** When a newer ingested source supersedes an older wiki slug (frontmatter `supersedes`). */
+  supersedes_slug?: string
 }
 
 export type RunIngestScaffoldInput = {
@@ -43,6 +41,7 @@ export type RunIngestScaffoldResult = {
   slug: string
   logEntry: string
   classificationMismatches: string[]
+  bootstrappedWikiPaths: string[]
 }
 
 function toSlug(input: string): string {
@@ -85,7 +84,17 @@ function buildClassificationMismatches(manifest: ExtractManifest, event: WikiIng
   return mismatches
 }
 
-function buildSourcePage(manifest: ExtractManifest, slug: string, now: Date, mismatches: string[]): string {
+function buildSourcePage(input: {
+  manifest: ExtractManifest
+  slug: string
+  now: Date
+  mismatches: string[]
+  playbookSection: string
+  lazySkuSection: string
+  nearDuplicateSection: string
+  event: WikiIngestEvent
+}): string {
+  const { manifest, slug, now, mismatches, playbookSection, lazySkuSection, nearDuplicateSection, event } = input
   const created = dayStamp(now)
   const chunkIds = manifest.units.flatMap((unit) => unit.chunk_ids).filter((id) => id.trim().length > 0)
   const citation = chunkIds[0] != null ? `[doc:${chunkIds[0]}]` : ''
@@ -93,6 +102,10 @@ function buildSourcePage(manifest: ExtractManifest, slug: string, now: Date, mis
     mismatches.length === 0
       ? '- none'
       : mismatches.map((item) => `- ${item}`).join('\n')
+  const supersedesLine =
+    event.supersedes_slug != null && event.supersedes_slug.trim().length > 0
+      ? `supersedes: ${quoteYamlString(event.supersedes_slug.trim())}\n`
+      : ''
   return `---
 type: source
 slug: ${quoteYamlString(`sources/${slug}`)}
@@ -105,17 +118,27 @@ tags: []
 confidence: medium
 source_id: ${manifest.source_id}
 doc_kind: ${manifest.doc_kind}
-${manifest.brand != null ? `brand: ${quoteYamlString(manifest.brand)}\n` : ''}${manifest.product_line != null ? `product_line: ${quoteYamlString(manifest.product_line)}\n` : ''}${manifest.year != null ? `year: ${String(manifest.year)}\n` : ''}${manifest.distributor_branded != null ? `distributor_branded: ${String(manifest.distributor_branded)}\n` : ''}---
+${manifest.brand != null ? `brand: ${quoteYamlString(manifest.brand)}\n` : ''}${manifest.product_line != null ? `product_line: ${quoteYamlString(manifest.product_line)}\n` : ''}${manifest.year != null ? `year: ${String(manifest.year)}\n` : ''}${manifest.distributor_branded != null ? `distributor_branded: ${String(manifest.distributor_branded)}\n` : ''}${supersedesLine}---
 
 ## Summary
-- Initial ingest scaffold for this source. Playbook-specific enrichment follows in downstream tasks. ${citation}
+- Playbook-guided ingest scaffold. Primary citation: ${citation || '(none yet)'}
 
+${playbookSection}${manifest.doc_kind === 'structured-data' ? buildStructuredArtifactsSection() : ''}${lazySkuSection}${nearDuplicateSection}
 ## Classification Check
 ${mismatchLine}
 
 ## Candidate Links
 - To be populated by Linker Agent based on this source draft.
 `
+}
+
+function buildStructuredArtifactsSection(): string {
+  return [
+    '## Structured-data artifacts',
+    '- Product line entities and recommendation concept stubs are created idempotently (skip when files already exist).',
+    '- Refresh deltas are handled via `kb.refreshed` — Diff updates structured fields on existing pages.',
+    '',
+  ].join('\n')
 }
 
 function buildLogEntry(event: WikiIngestEvent, manifest: ExtractManifest, now: Date): string {
@@ -127,15 +150,47 @@ export async function runIngestAgentScaffold(input: RunIngestScaffoldInput): Pro
   const now = input.now ?? new Date()
   const manifestPath = path.join(input.repoRoot, 'kb_extracts', input.event.source_id, 'manifest.json')
   const manifestRaw = await readFile(manifestPath, 'utf8')
-  const manifest = JSON.parse(manifestRaw) as ExtractManifest
+  const manifest = normalizeIngestManifest(JSON.parse(manifestRaw))
   const slug = `${toSlug(manifest.title)}-${manifest.source_id}`
   const sourcePagePath = path.join(input.repoRoot, 'wiki', 'sources', `${slug}.md`)
   const logPath = path.join(input.repoRoot, 'wiki', 'log.md')
   const mismatches = buildClassificationMismatches(manifest, input.event)
-  const sourcePage = buildSourcePage(manifest, slug, now, mismatches)
+
+  const fullText = await tryReadFullExtractText(input.repoRoot, manifest)
+  const catalogPayload =
+    manifest.doc_kind === 'catalog' || manifest.doc_kind === 'structured-data'
+      ? await tryReadRepoJson(input.repoRoot, 'product_catalog.json')
+      : null
+
+  let bootstrappedWikiPaths: string[] = []
+  if (manifest.doc_kind === 'structured-data') {
+    const boot = await runStructuredDataWikiBootstrap({ repoRoot: input.repoRoot, manifest, now })
+    bootstrappedWikiPaths = boot.writtenPaths
+  }
+
+  const playbookSection = buildPlaybookPlanSection({ manifest, fullText, catalogPayload })
+  const lazySkuSection = manifest.doc_kind === 'structured-data' ? buildLazySkuSection(manifest) : ''
+  const nearDuplicateSection = buildNearDuplicateSection({
+    nearDuplicateSourceIds: input.event.near_duplicate_source_ids ?? [],
+    supersedesSlug: input.event.supersedes_slug,
+    distributorBranded: manifest.distributor_branded,
+  })
+
+  const sourcePage = buildSourcePage({
+    manifest,
+    slug,
+    now,
+    mismatches,
+    playbookSection,
+    lazySkuSection,
+    nearDuplicateSection,
+    event: input.event,
+  })
   const logEntry = buildLogEntry(input.event, manifest, now)
 
   await mkdir(path.dirname(sourcePagePath), { recursive: true })
+  await mkdir(path.join(input.repoRoot, 'wiki', 'entities', 'products'), { recursive: true })
+  await mkdir(path.join(input.repoRoot, 'wiki', 'concepts', 'recommendations'), { recursive: true })
   await writeFile(sourcePagePath, sourcePage, 'utf8')
   await appendFile(logPath, `\n${logEntry}`, 'utf8')
 
@@ -144,5 +199,6 @@ export async function runIngestAgentScaffold(input: RunIngestScaffoldInput): Pro
     slug,
     logEntry,
     classificationMismatches: mismatches,
+    bootstrappedWikiPaths,
   }
 }
