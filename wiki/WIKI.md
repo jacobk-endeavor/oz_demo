@@ -84,6 +84,7 @@ Use contradiction blocks instead of destructive rewrites:
 - Index rewrites `index.md` from frontmatter
 - Synthesizer edits `synthesis.md` only
 - Lint writes reports to `wiki/_lint/` only
+- Schema (scaffold) writes schema-review reports to `wiki/_lint/` only; proposes `WIKI.md` + allowlist updates for human approval
 - Curator proposes structural changes before applying
 
 ## Operational Notes
