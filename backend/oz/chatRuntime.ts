@@ -144,6 +144,18 @@ export type RuntimeDependencies = {
   }
 }
 
+/** Layer 3 bundled helpers — stubbed here; full composites track Oz-Demo-rx1 / Oz-Demo-6eb / Oz-Demo-coh. */
+export type OzBundledLayer3StubResult = {
+  status: 'stub'
+  bundled_tool: 'product_dossier' | 'compare' | 'wiki_compare' | 'drift_check'
+  message: string
+  tracking_issue: string
+  substrates_consulted: Record<'catalog' | 'wiki' | 'kb' | 'recommendations' | 'calls', 'skipped'>
+  target?: string
+  targets?: string[]
+  slugs?: string[]
+}
+
 export type OzToolSurface = {
   graph_search: (request: { query: string; depth?: number; size?: number; scope?: string }) => Promise<GraphSearchResult>
   graph_neighbors: (request: {
@@ -194,6 +206,10 @@ export type OzToolSurface = {
   }) => Promise<Awaited<ReturnType<TrackCToolScaffold['catalog_neighbors']>>>
   wiki_lookup: (request: { query: string; top_n?: number }) => Promise<WikiLookupResult>
   image_view: (request: { path: string }) => Promise<ImageViewResult>
+  product_dossier: (request: { target: string }) => Promise<OzBundledLayer3StubResult>
+  compare: (request: { targets: string[]; dimensions?: string[] }) => Promise<OzBundledLayer3StubResult>
+  wiki_compare: (request: { slugs: string[] }) => Promise<OzBundledLayer3StubResult>
+  drift_check: (request: { target: string }) => Promise<OzBundledLayer3StubResult>
 }
 
 function nowMs(now: () => Date): number {
@@ -202,6 +218,30 @@ function nowMs(now: () => Date): number {
 
 function defaultScopeFor(request: OzChatRequest): string | undefined {
   return request.ragScope?.trim() || undefined
+}
+
+const LAYER3_STUB_SUBSTRATES: OzBundledLayer3StubResult['substrates_consulted'] = {
+  catalog: 'skipped',
+  wiki: 'skipped',
+  kb: 'skipped',
+  recommendations: 'skipped',
+  calls: 'skipped',
+}
+
+function layer3BundledStub(
+  bundled_tool: OzBundledLayer3StubResult['bundled_tool'],
+  tracking_issue: string,
+  message: string,
+  fields?: { target?: string; targets?: string[]; slugs?: string[] },
+): OzBundledLayer3StubResult {
+  return {
+    status: 'stub',
+    bundled_tool,
+    tracking_issue,
+    message,
+    substrates_consulted: LAYER3_STUB_SUBSTRATES,
+    ...fields,
+  }
 }
 
 function redactToolArgs(args: unknown): string {
@@ -432,6 +472,40 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     async image_view(payload) {
       if (!tc) return { ok: false, path: String(payload.path ?? ''), error: 'stub' }
       return tc.image_view(payload.path)
+    },
+    async product_dossier(payload) {
+      return layer3BundledStub(
+        'product_dossier',
+        'Oz-Demo-rx1',
+        'Bundled product_dossier is not implemented in this Oz runtime; compose catalog_get, wiki_lookup, kb_search, recommendations_for, and call-scoped kb_search in parallel.',
+        { target: String(payload.target ?? '') },
+      )
+    },
+    async compare(payload) {
+      const targets = Array.isArray(payload.targets) ? payload.targets.map((t) => String(t ?? '')) : []
+      return layer3BundledStub(
+        'compare',
+        'Oz-Demo-6eb',
+        'Bundled compare is not implemented; compose catalog_compare, wiki_lookup/wiki_read, and kb_search instead.',
+        { targets },
+      )
+    },
+    async wiki_compare(payload) {
+      const slugs = Array.isArray(payload.slugs) ? payload.slugs.map((s) => String(s ?? '')) : []
+      return layer3BundledStub(
+        'wiki_compare',
+        'Oz-Demo-6eb',
+        'Bundled wiki_compare is not implemented; call wiki_read per slug and compare sections in prose.',
+        { slugs },
+      )
+    },
+    async drift_check(payload) {
+      return layer3BundledStub(
+        'drift_check',
+        'Oz-Demo-coh',
+        'Bundled drift_check is not implemented; contrast catalog rows, wiki entity pages, and kb_search quotes manually.',
+        { target: String(payload.target ?? '') },
+      )
     },
   }
 

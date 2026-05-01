@@ -18,6 +18,8 @@ describe('ozChatToolRegistry', () => {
     expect(names).toContain('wiki_lookup')
     expect(names).toContain('catalog_get')
     expect(names).toContain('search_transcripts')
+    expect(names).toContain('product_dossier')
+    expect(names).toContain('wiki_compare')
     expect(new Set(names).size).toBe(names.length)
   })
 })
