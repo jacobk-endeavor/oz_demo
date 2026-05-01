@@ -105,7 +105,6 @@ export function buildExtractManifest(input: WriteExtractArtifactInput): ExtractM
     const file = safeRelativePath(unit.fileName)
     const images = unit.images?.map(safeRelativePath)
     const normalizedLocator = unit.locator.trim()
-    if (normalizedLocator.length === 0) throw new Error('unit locator cannot be empty')
     return {
       locator: normalizedLocator,
       file,
