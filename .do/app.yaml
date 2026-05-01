@@ -25,7 +25,9 @@ services:
       branch: main
       deploy_on_push: true
     source_dir: /
-    build_command: npm run build
+    # Frontend bundle + Python venv for Knowledge Base upload → ingest_kb.py (POST /api/oz/knowledge-base/ingest).
+    # Requires python3 on the build image (Ubuntu buildpack includes it). Set SKIP_KB_INGEST_SETUP=1 to skip venv.
+    build_command: npm run build && bash scripts/deploy-setup-kb-ingest.sh
     run_command: npm start
     http_port: 8080
     instance_count: 1

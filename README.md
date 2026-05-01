@@ -51,10 +51,18 @@ Then ensure repo-root `.env` has `DATABASE_URL` and `OPENAI_API_KEY` as in `.env
 Use **one Web Service** for this repo root (not a static site only). Vite’s `vite preview` serves `dist/` **and** the `/api/oz/*` proxies defined in `frontend/vite.config.ts` (voice, OpenAI, etc.); a static component cannot run those routes.
 
 - **Source directory:** `/` (repository root)
-- **Build command:** `npm run build`
+- **Build command:** `npm run build && bash scripts/deploy-setup-kb-ingest.sh` — the second step creates `calls/kb/scripts/.venv` on the build worker so **Knowledge Base file ingest** works in production (same as local). If your build image has no `python3`, set **`SKIP_KB_INGEST_SETUP=1`** in App Platform envs to skip (ingest endpoint will keep failing until you use an image with Python; see `Dockerfile` in-repo optional path below).
 - **Run command:** `npm start` (uses `vite preview --host 0.0.0.0` and `$PORT`; set **HTTP port** to **8080** unless your app uses a different `PORT`)
 - **Health check:** path `/`
 
+**Environment variables (production):** set at least **ELEVENLABS_API_KEY** (voice), **OPENAI_API_KEY** (embeddings + chat), **DATABASE_URL** (or discrete **PG\*** fields) for transcript RAG and **KB document ingest** (`kb_rag_chunks`). Same contract as [`.env.example`](.env.example).
+
+**Raw uploads** land under `incoming/kb-ui-raw/` on the instance filesystem (ephemeral on App Platform unless you attach a **volume**). For durable originals, plan object storage or a DB-backed pipeline later.
+
 An example App Spec lives in [`.do/app.yaml`](.do/app.yaml). Point **GitHub** and **region** there to match your account if you fork or move the repo.
 
-Keep real API keys in `.env` locally and set **ELEVENLABS_API_KEY** (and **OPENAI_API_KEY** if you use transcription) under the component’s environment variables in App Platform. Do not commit `.env`.
+### Docker (alternative if `python3` is missing on the buildpack)
+
+The repo includes a [`Dockerfile`](Dockerfile) with Node + Python so `deploy-setup-kb-ingest.sh` always runs. Point App Platform (or any host) at **Dockerfile** build instead of the default Node buildpack when KB ingest must work and the stock image lacks Python.
+
+Keep real API keys in `.env` locally and set component environment variables in App Platform. Do not commit `.env`.
