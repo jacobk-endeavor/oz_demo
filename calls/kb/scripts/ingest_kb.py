@@ -1060,6 +1060,7 @@ def process_one_file(
 
         elif asset == "pptx":
             slides = extract_pptx_slides(data)
+            pptx_slides_extract = slides
             chunk_rows = build_pptx_chunk_rows(source_id=sid, title=title, slides=slides, scope=scope)
             upsert_source_row(
                 cur,
@@ -1088,6 +1089,7 @@ def process_one_file(
                     parts.extend(chunk_transcript(sec, CHUNK_CHARS, CHUNK_OVERLAP))
             else:
                 parts = chunk_transcript(text, CHUNK_CHARS, CHUNK_OVERLAP)
+            text_body_extract = text
             for i, part in enumerate(parts):
                 header = f"[source={title}]\n\n"
                 chunk_rows.append(
@@ -1214,13 +1216,73 @@ def process_one_file(
         has_full = dk.doc_kind in FULL_TEXT_DOC_KINDS
         extract_path: Path | None = None
         if not skip_extract_write:
-            extract_path = write_extract_bundle(
+            mf_extra: dict[str, Any] = {}
+            if dk.brand:
+                mf_extra["brand"] = dk.brand
+            if dk.product_line:
+                mf_extra["product_line"] = dk.product_line
+            if dk.year is not None:
+                mf_extra["year"] = dk.year
+            if dk.distributor_branded:
+                mf_extra["distributor_branded"] = True
+
+            unit_files: dict[str, str] = {}
+            units_manifest: list[dict[str, Any]] = []
+            full_text_file: str | None = None
+            full_text_body: str | None = None
+            structured_schema_nm = meta_base.get("structured_schema")
+
+            if asset == "pdf" and pdf_pages_extract is not None:
+                for i, pt in enumerate(pdf_pages_extract, start=1):
+                    unit_files[f"unit-page-{i:03d}.txt"] = pt
+                units_manifest = pdf_manifest_units(pdf_pages_extract, chunk_rows)
+                if has_full:
+                    full_text_file = "full.txt"
+                    full_text_body = "\n\n".join(pdf_pages_extract)
+
+            elif asset == "pptx" and pptx_slides_extract is not None:
+                for n, txt in pptx_slides_extract:
+                    unit_files[f"unit-slide-{n:03d}.txt"] = txt
+                units_manifest = pptx_manifest_units(len(pptx_slides_extract), chunk_rows)
+                if has_full:
+                    full_text_file = "full.txt"
+                    full_text_body = "\n\n".join(t for _, t in pptx_slides_extract)
+
+            elif asset == "excel" and excel_sheet_order is not None and excel_sheet_artifacts is not None:
+                sheet_fn_map = {sn: excel_sheet_artifacts[sn][0] for sn in excel_sheet_order if sn in excel_sheet_artifacts}
+                for sn in excel_sheet_order:
+                    if sn not in excel_sheet_artifacts:
+                        continue
+                    fn, csv_c = excel_sheet_artifacts[sn]
+                    unit_files[fn] = csv_c
+                units_manifest = excel_manifest_units(excel_sheet_order, chunk_rows, sheet_fn_map)
+
+            elif asset == "structured":
+                for i, r in enumerate(chunk_rows):
+                    unit_files[f"unit-record-{i:04d}.txt"] = str(r["content"])
+                units_manifest = structured_manifest_units(chunk_rows)
+
+            else:
+                if text_body_extract is not None:
+                    unit_files["unit-full.txt"] = text_body_extract
+                units_manifest = text_manifest_units(chunk_rows)
+                if has_full and text_body_extract is not None:
+                    full_text_file = "full.txt"
+                    full_text_body = text_body_extract
+
+            extract_path = publish_kb_extract_bundle(
                 repo_root,
                 source_id=sid,
                 title=title,
                 doc_kind=dk.doc_kind,
-                chunk_rows=chunk_rows,
-                has_full_text=has_full,
+                manifest_version=1,
+                units=units_manifest,
+                has_full_text=bool(has_full and full_text_body),
+                full_text_file=full_text_file if (has_full and full_text_body) else None,
+                full_text_content=full_text_body if (has_full and full_text_body) else None,
+                unit_files=unit_files,
+                manifest_fields=mf_extra or None,
+                structured_schema=structured_schema_nm if asset == "structured" else None,
             )
 
         if emit_event:

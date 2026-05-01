@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -11,6 +13,11 @@ from ingest_kb import (
     classify_doc_kind,
     slug_part,
     source_id_from_sha256,
+)
+from kb_extract_artifacts import (
+    excel_manifest_units,
+    pdf_manifest_units,
+    publish_kb_extract_bundle,
 )
 
 
@@ -49,6 +56,59 @@ class TestIds(unittest.TestCase):
 
     def test_slug(self) -> None:
         self.assertEqual(slug_part("PG-FGD"), "PG-FGD")
+
+
+class TestExtractArtifacts(unittest.TestCase):
+    def test_pdf_manifest_groups_chunk_ids(self) -> None:
+        pages = ["hello", "world"]
+        rows = [
+            {"chunk_id": "x_p001_00000", "locator": "page=1"},
+            {"chunk_id": "x_p001_00001", "locator": "page=1"},
+            {"chunk_id": "x_p002_00000", "locator": "page=2"},
+        ]
+        units = pdf_manifest_units(pages, rows)
+        self.assertEqual(units[0]["chunk_ids"], ["x_p001_00000", "x_p001_00001"])
+        self.assertEqual(units[1]["chunk_ids"], ["x_p002_00000"])
+        self.assertEqual(units[0]["file"], "unit-page-001.txt")
+
+    def test_excel_manifest_sheet_locator(self) -> None:
+        rows = [
+            {"chunk_id": "a", "locator": "sheet=Pricing rows=1-20"},
+            {"chunk_id": "b", "locator": "sheet=Pricing rows=21-40"},
+        ]
+        sheet_fn = {"Pricing": "unit-sheet-pricing.csv"}
+        units = excel_manifest_units(["Pricing"], rows, sheet_fn)
+        self.assertEqual(units[0]["locator"], "sheet=Pricing")
+        self.assertEqual(units[0]["chunk_ids"], ["a", "b"])
+
+    def test_publish_bundle_atomic(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            out = publish_kb_extract_bundle(
+                root,
+                source_id="abc123def456",
+                title="T",
+                doc_kind="marketing",
+                manifest_version=1,
+                units=[
+                    {
+                        "locator": "page=1",
+                        "file": "unit-page-001.txt",
+                        "chunk_ids": ["abc123def456_p001_00000"],
+                        "images": [],
+                    }
+                ],
+                has_full_text=True,
+                full_text_file="full.txt",
+                full_text_content="full body",
+                unit_files={"unit-page-001.txt": "page one"},
+            )
+            self.assertTrue((out / "manifest.json").is_file())
+            self.assertEqual((out / "unit-page-001.txt").read_text(encoding="utf-8"), "page one")
+            self.assertEqual((out / "full.txt").read_text(encoding="utf-8"), "full body")
+            man = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(man["manifest_version"], 1)
+            self.assertTrue(man["has_full_text"])
 
 
 if __name__ == "__main__":
