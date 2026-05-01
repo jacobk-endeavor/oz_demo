@@ -2,6 +2,11 @@ import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { ExtractManifest } from './extractArtifact'
 import {
+  buildDenseSourcePageBlocks,
+  detectEntityMentions,
+  readUnitTexts,
+} from './wikiIngestDense'
+import {
   buildLazySkuSection,
   buildNearDuplicateSection,
   buildPlaybookPlanSection,
@@ -84,6 +89,12 @@ function buildClassificationMismatches(manifest: ExtractManifest, event: WikiIng
   return mismatches
 }
 
+function renderTagsLine(tags: string[]): string {
+  if (tags.length === 0) return 'tags: []'
+  const quoted = tags.map((t) => quoteYamlString(t)).join(', ')
+  return `tags: [${quoted}]`
+}
+
 function buildSourcePage(input: {
   manifest: ExtractManifest
   slug: string
@@ -92,9 +103,22 @@ function buildSourcePage(input: {
   playbookSection: string
   lazySkuSection: string
   nearDuplicateSection: string
+  densityBlocks: string
+  tags: string[]
   event: WikiIngestEvent
 }): string {
-  const { manifest, slug, now, mismatches, playbookSection, lazySkuSection, nearDuplicateSection, event } = input
+  const {
+    manifest,
+    slug,
+    now,
+    mismatches,
+    playbookSection,
+    lazySkuSection,
+    nearDuplicateSection,
+    densityBlocks,
+    tags,
+    event,
+  } = input
   const created = dayStamp(now)
   const chunkIds = manifest.units.flatMap((unit) => unit.chunk_ids).filter((id) => id.trim().length > 0)
   const citation = chunkIds[0] != null ? `[doc:${chunkIds[0]}]` : ''
@@ -114,7 +138,7 @@ created: ${created}
 updated: ${created}
 source_count: 1
 related: []
-tags: []
+${renderTagsLine(tags)}
 confidence: medium
 source_id: ${manifest.source_id}
 doc_kind: ${manifest.doc_kind}
@@ -123,7 +147,7 @@ ${manifest.brand != null ? `brand: ${quoteYamlString(manifest.brand)}\n` : ''}${
 ## Summary
 - Playbook-guided ingest scaffold. Primary citation: ${citation || '(none yet)'}
 
-${playbookSection}${manifest.doc_kind === 'structured-data' ? buildStructuredArtifactsSection() : ''}${lazySkuSection}${nearDuplicateSection}
+${densityBlocks}${playbookSection}${manifest.doc_kind === 'structured-data' ? buildStructuredArtifactsSection() : ''}${lazySkuSection}${nearDuplicateSection}
 ## Classification Check
 ${mismatchLine}
 
@@ -176,6 +200,11 @@ export async function runIngestAgentScaffold(input: RunIngestScaffoldInput): Pro
     distributorBranded: manifest.distributor_branded,
   })
 
+  const unitTexts = await readUnitTexts(input.repoRoot, manifest)
+  const fullCorpus = unitTexts.length > 0 ? unitTexts.map((u) => u.body).join('\n\n') : (fullText ?? '')
+  const detected = detectEntityMentions(fullCorpus, manifest)
+  const { densityBlocks, tags } = buildDenseSourcePageBlocks({ unitTexts, detected, manifest })
+
   const sourcePage = buildSourcePage({
     manifest,
     slug,
@@ -184,6 +213,8 @@ export async function runIngestAgentScaffold(input: RunIngestScaffoldInput): Pro
     playbookSection,
     lazySkuSection,
     nearDuplicateSection,
+    densityBlocks,
+    tags,
     event: input.event,
   })
   const logEntry = buildLogEntry(input.event, manifest, now)
