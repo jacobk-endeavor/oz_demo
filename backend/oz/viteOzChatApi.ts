@@ -20,6 +20,46 @@ const OZ_CHAT_CONFIG_PATH = '/api/oz/chat/config'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // `backend/oz` lives under repo root; env is loaded from root to match existing project behavior.
 const REPO_ROOT = path.resolve(__dirname, '../..')
+
+// Anchor TrackCToolScaffold paths to REPO_ROOT regardless of where vite is launched from
+// (its cwd is `frontend/`, so process.cwd()-relative defaults inside the scaffold land in
+// the wrong directory and every wiki/catalog tool returns "not found"). Only set what's
+// not already overridden so users can still customize via .env if needed.
+function ensureOzPathDefault(envKey: string, fallback: string): void {
+  if (!process.env[envKey]) process.env[envKey] = fallback
+}
+ensureOzPathDefault('OZ_REPO_ROOT', REPO_ROOT)
+ensureOzPathDefault('OZ_WIKI_ROOT_PATH', path.join(REPO_ROOT, 'wiki'))
+ensureOzPathDefault('OZ_KB_EXTRACTS_ROOT', path.join(REPO_ROOT, 'kb_extracts'))
+ensureOzPathDefault('OZ_PRODUCT_CATALOG_PATH', path.join(REPO_ROOT, 'product_catalog.json'))
+ensureOzPathDefault('OZ_RECOMMENDATIONS_PATH', path.join(REPO_ROOT, 'recommendations.json'))
+
+// TrackCToolScaffold's kb_search reads from DATABASE_READONLY_URL || DATABASE_URL.
+// `.env` here uses individual PG* vars (matching ingest_kb.py), so build a URL from
+// them so the wired pgvector kb_search path activates instead of returning the stub.
+function buildDatabaseUrlFromPgVars(): string | undefined {
+  const env = (() => {
+    try {
+      return readEnv()
+    } catch {
+      return process.env as unknown as Record<string, string>
+    }
+  })()
+  const get = (k: string) => (process.env[k] || env[k] || '').trim()
+  const host = get('PGHOST')
+  const user = get('PGUSER')
+  const password = get('PGPASSWORD')
+  const database = get('PGDATABASE') || 'defaultdb'
+  if (!host || !user || !password) return undefined
+  const port = get('PGPORT') || '5432'
+  const sslmode = get('PGSSLMODE') || 'require'
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslmode}`
+}
+if (!process.env.DATABASE_URL && !process.env.DATABASE_READONLY_URL) {
+  const url = buildDatabaseUrlFromPgVars()
+  if (url) process.env.DATABASE_URL = url
+}
+
 const trackCScaffold = new TrackCToolScaffold({
   readEnv,
   poolFactory: (connectionString) =>
