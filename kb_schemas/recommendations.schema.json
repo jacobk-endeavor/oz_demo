@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "recommendations.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cross_sell", "upsell", "margin_substitution"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cross_sell": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "upsell": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "margin_substitution": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    }
+  },
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["left_sku", "right_sku"],
+      "properties": {
+        "left_sku": { "type": "string", "minLength": 1 },
+        "right_sku": { "type": "string", "minLength": 1 },
+        "sub_category": { "type": "string" },
+        "co_invoices": { "type": "number" },
+        "confidence": { "type": "number" },
+        "lift": { "type": "number" },
+        "price_uplift_pct": { "type": "number" },
+        "gp_pct_uplift_pp": { "type": "number" }
+      }
+    }
+  },
+  "x-kb-schema": {
+    "stem": "recommendations",
+    "version": 1
+  }
+}
