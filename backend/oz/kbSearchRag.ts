@@ -191,7 +191,9 @@ export async function runKbSearch(deps: KbSearchDeps, args: KbSearchArgs): Promi
   const kbRows = (await deps.dbQuery<KbRow>(kbSql, kbParams)).rows
   const callRows = (await deps.dbQuery<CallRow>(callSql, callParams)).rows
 
-  type Tagged = { t: 'kb'; dist: number; hit: KbSearchHit }
+  type Tagged =
+    | { t: 'kb'; dist: number; hit: KbSearchHit }
+    | { t: 'call'; dist: number; hit: KbSearchHit }
   const merged: Tagged[] = [
     ...kbRows.map((row) => ({
       t: 'kb' as const,

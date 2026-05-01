@@ -25,9 +25,13 @@ import {
 import type {
   CatalogGetResult,
   CatalogListResult,
+  CatalogSearchRow,
+  ImageViewResult,
   KbSearchToolResult,
+  TrackCToolScaffold,
   WikiGrepResult,
   WikiLogResult,
+  WikiLookupResult,
   WikiReadResult,
 } from './trackCToolScaffold'
 import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
@@ -122,6 +126,20 @@ export type RuntimeDependencies = {
       call_scope?: string
     }) => Promise<KbSearchToolResult>
   }
+  /** Optional Track C scaffold instance — wires Layer 1–2 catalog/rec/wiki tools when provided. */
+  trackC?: {
+    scaffold?: TrackCToolScaffold
+  }
+  /** Optional audit sink for tool latency / summaries (PII-redacted args). Spec: Q&A §9. */
+  audit?: {
+    onComplete?: (payload: {
+      tool: string
+      ok: boolean
+      latency_ms: number
+      args_summary: string
+      result_summary: string
+    }) => void
+  }
 }
 
 export type OzToolSurface = {
@@ -153,6 +171,27 @@ export type OzToolSurface = {
     kind?: string
     call_scope?: string
   }) => Promise<KbSearchToolResult>
+  recommendations_for: (request: {
+    sku_or_subcat: string
+    kind?: 'cross_sell' | 'upsell' | 'margin_substitution' | 'all'
+  }) => Promise<ReturnType<TrackCToolScaffold['recommendations_for']>>
+  recommendations_explain: (request: { citation: string }) => Promise<Awaited<ReturnType<TrackCToolScaffold['recommendations_explain']>>>
+  recommendations_top: (
+    request: Parameters<TrackCToolScaffold['recommendations_top']>[0],
+  ) => Promise<ReturnType<TrackCToolScaffold['recommendations_top']>>
+  catalog_search: (request: { query: string; k?: number }) => Promise<{ query: string; rows: CatalogSearchRow[] }>
+  catalog_aggregate: (
+    request: Parameters<TrackCToolScaffold['catalog_aggregate']>[0],
+  ) => Promise<ReturnType<TrackCToolScaffold['catalog_aggregate']>>
+  catalog_compare: (request: { skus: string[] }) => Promise<ReturnType<TrackCToolScaffold['catalog_compare']>>
+  catalog_diff: (request: { sku_a: string; sku_b: string }) => Promise<ReturnType<TrackCToolScaffold['catalog_diff']>>
+  catalog_neighbors: (request: {
+    sku: string
+    by?: 'price' | 'margin' | 'sales' | 'description'
+    k?: number
+  }) => Promise<Awaited<ReturnType<TrackCToolScaffold['catalog_neighbors']>>>
+  wiki_lookup: (request: { query: string; top_n?: number }) => Promise<WikiLookupResult>
+  image_view: (request: { path: string }) => Promise<ImageViewResult>
 }
 
 function nowMs(now: () => Date): number {
@@ -161,6 +200,56 @@ function nowMs(now: () => Date): number {
 
 function defaultScopeFor(request: OzChatRequest): string | undefined {
   return request.ragScope?.trim() || undefined
+}
+
+function redactToolArgs(args: unknown): string {
+  const text = JSON.stringify(args)
+  return text
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
+    .replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[phone]')
+    .slice(0, 500)
+}
+
+function summarizeToolResult(result: unknown): string {
+  try {
+    return JSON.stringify(result).slice(0, 500)
+  } catch {
+    return String(result).slice(0, 500)
+  }
+}
+
+function wrapOzToolSurface(surface: OzToolSurface, audit: RuntimeDependencies['audit']): OzToolSurface {
+  if (!audit?.onComplete) return surface
+  return new Proxy(surface, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver)
+      if (typeof value !== 'function' || typeof prop === 'symbol') return value
+      return async (...args: unknown[]) => {
+        const t0 = Date.now()
+        const name = String(prop)
+        try {
+          const out = await value.apply(target, args)
+          audit.onComplete?.({
+            tool: name,
+            ok: true,
+            latency_ms: Date.now() - t0,
+            args_summary: redactToolArgs(args),
+            result_summary: summarizeToolResult(out),
+          })
+          return out
+        } catch (error) {
+          audit.onComplete?.({
+            tool: name,
+            ok: false,
+            latency_ms: Date.now() - t0,
+            args_summary: redactToolArgs(args),
+            result_summary: error instanceof Error ? error.message : String(error),
+          })
+          throw error
+        }
+      }
+    },
+  }) as OzToolSurface
 }
 
 export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDependencies = {}): OzToolSurface {
@@ -220,27 +309,31 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
 
   const kbSearch =
     deps.kb?.kb_search ??
-    (async (payload: {
-      query: string
-      surface?: 'kb' | 'call' | 'global'
-      k?: number
-      kind?: string
-      call_scope?: string
-    }): Promise<KbSearchToolResult> => {
-      const query = String(payload.query ?? '').trim()
-      const surface =
-        payload.surface === 'kb' || payload.surface === 'call' || payload.surface === 'global'
-          ? payload.surface
-          : 'global'
-      return {
-        query,
-        surface,
-        chunks: [],
-        provenance: { source: 'stub', retrieval: 'none' },
-      }
-    })
+    (deps.trackC?.scaffold
+      ? (payload) => deps.trackC!.scaffold!.kb_search(payload)
+      : async (payload: {
+          query: string
+          surface?: 'kb' | 'call' | 'global'
+          k?: number
+          kind?: string
+          call_scope?: string
+        }): Promise<KbSearchToolResult> => {
+          const query = String(payload.query ?? '').trim()
+          const surface =
+            payload.surface === 'kb' || payload.surface === 'call' || payload.surface === 'global'
+              ? payload.surface
+              : 'global'
+          return {
+            query,
+            surface,
+            chunks: [],
+            provenance: { source: 'stub', retrieval: 'none' },
+          }
+        })
 
-  return {
+  const tc = deps.trackC?.scaffold
+
+  const surface: OzToolSurface = {
     async graph_search(payload): Promise<GraphSearchResult> {
       const bounded: EnforcedGraphSearchRequest = applyGraphSearchLimits(
         { ...payload, scope: payload.scope ?? requestScope },
@@ -279,7 +372,68 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
     async kb_search(payload): Promise<KbSearchToolResult> {
       return kbSearch(payload)
     },
+    async recommendations_for(payload) {
+      if (!tc) return { target: '', filter_kind: 'all', rules: [] }
+      return tc.recommendations_for(payload.sku_or_subcat, payload.kind)
+    },
+    async recommendations_explain(payload) {
+      if (!tc) {
+        return {
+          citation: payload.citation,
+          rule: null,
+          methodology_text: '',
+          methodology_citation: '[wiki:concepts/recommendations/methodology.md]',
+          related_catalog: [],
+        }
+      }
+      return tc.recommendations_explain(payload.citation)
+    },
+    async recommendations_top(payload) {
+      if (!tc) return { by: payload.by ?? 'confidence', rows: [] }
+      return tc.recommendations_top(payload)
+    },
+    async catalog_search(payload) {
+      if (!tc) return { query: String(payload.query ?? ''), rows: [] }
+      return tc.catalog_search(payload.query, payload.k)
+    },
+    async catalog_aggregate(payload) {
+      if (!tc) {
+        return { group_by: payload.group_by, metric: payload.metric, rows: [] }
+      }
+      return tc.catalog_aggregate(payload)
+    },
+    async catalog_compare(payload) {
+      if (!tc) return { skus: [], fields: [], rows: [] }
+      return tc.catalog_compare(payload.skus)
+    },
+    async catalog_diff(payload) {
+      if (!tc) {
+        return {
+          sku_a: { sku: payload.sku_a, found: false, record: null, citation: `[catalog:sku=${payload.sku_a}]` },
+          sku_b: { sku: payload.sku_b, found: false, record: null, citation: `[catalog:sku=${payload.sku_b}]` },
+          shared: {},
+          only_a: {},
+          only_b: {},
+          numeric_deltas: {},
+        }
+      }
+      return tc.catalog_diff(payload.sku_a, payload.sku_b)
+    },
+    async catalog_neighbors(payload) {
+      if (!tc) return { sku: payload.sku, by: payload.by ?? 'price', neighbors: [] }
+      return tc.catalog_neighbors(payload.sku, payload.by, payload.k)
+    },
+    async wiki_lookup(payload) {
+      if (!tc) return { query: String(payload.query ?? ''), pages: [] }
+      return tc.wiki_lookup(payload.query, payload.top_n)
+    },
+    async image_view(payload) {
+      if (!tc) return { ok: false, path: String(payload.path ?? ''), error: 'stub' }
+      return tc.image_view(payload.path)
+    },
   }
+
+  return wrapOzToolSurface(surface, deps.audit)
 }
 
 export function choosePolicyPath(request: OzChatRequest): OzPolicyPath {

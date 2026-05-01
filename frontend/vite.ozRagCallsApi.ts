@@ -213,7 +213,10 @@ export function ozRagCallsApiPlugin(mode: string) {
       const embedModelName = embedModel(mode)
       const chunks = await runKbSearch(
         {
-          dbQuery: async <T>(sql: string, params: unknown[]) => db.query<T>(sql, params),
+          dbQuery: async <T>(sql: string, params: unknown[]) => {
+            const r = await db.query(sql, params)
+            return { rows: r.rows as T[] }
+          },
           embedQuery: (text) =>
             embedOpenAiText({ apiKey: key, model: embedModelName, text, fetchImpl: fetch }),
         },

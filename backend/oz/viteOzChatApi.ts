@@ -167,9 +167,19 @@ export function ozChatApiPlugin() {
             },
           },
         },
-        kb: {
-          kb_search: (payload) => trackCScaffold.kb_search(payload),
+        trackC: {
+          scaffold: trackCScaffold,
         },
+        audit:
+          process.env.OZ_TOOL_AUDIT === '1'
+            ? {
+                onComplete: (payload) => {
+                  console.error(
+                    `[oz-tool-audit] ${JSON.stringify({ ts: new Date().toISOString(), ...payload })}`,
+                  )
+                },
+              }
+            : undefined,
       })) {
         writeSseFrame(res, event)
       }
