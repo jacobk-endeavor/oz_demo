@@ -28,3 +28,8 @@ chat:
 # (.github/workflows/oz-sandbox-image.yml prints IMAGE@sha256:… on main). Rollback = bump digest.
 # sandbox:
 #   imageDigest: "sha256:…"
+
+# Chat artifact storage (DigitalOcean Spaces): optional presigned GET lifetime in seconds.
+# Override with env OZ_SPACES_SIGNED_URL_TTL_SECONDS when set.
+# artifacts:
+#   signedUrlTtlSeconds: 3600
