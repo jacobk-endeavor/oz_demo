@@ -285,6 +285,54 @@ export function ozChatOpenAiToolDefinitions(): OzOpenAiStyleTool[] {
     {
       type: 'function',
       function: {
+        name: 'display_table',
+        description:
+          'Open the right-side slide-out panel and render tabular data inline in chat. ' +
+          'Use for any rows the user might want to scan, sort, or pin into composer ' +
+          'context (catalog rows, recommendations, transcript hits, run_python results). ' +
+          'Each row gets a stable id so the user can attach it back to a follow-up turn.',
+        parameters: jsonParameters(
+          {
+            title: { type: 'string' },
+            columns: {
+              type: 'array',
+              description: '[{key, label, kind?: "number"|"currency"|"text"}]',
+            },
+            rows: { type: 'array', description: '[{id, cells: {key: value}}]' },
+            scope: {
+              type: 'string',
+              description:
+                'Optional: "catalog"|"recs"|"calls"|"sandbox" — controls the chip color when pinned.',
+            },
+          },
+          ['title', 'columns', 'rows'],
+        ),
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'display_panel',
+        description:
+          'Open the slide-out and render a richer non-tabular component (e.g. an invoice ' +
+          'preview, a job-cost recap). Pass a kind + props payload; the renderer maps ' +
+          'kind to a registered component. Use display_table for plain rows.',
+        parameters: jsonParameters(
+          {
+            kind: {
+              type: 'string',
+              description:
+                'Registered: "invoice_preview"|"job_cost_recap"|"chart"|"docx_outline".',
+            },
+            props: { type: 'object', description: 'Component-specific props.' },
+          },
+          ['kind', 'props'],
+        ),
+      },
+    },
+    {
+      type: 'function',
+      function: {
         name: 'product_dossier',
         description:
           'Bundled fan-out for “everything about SKU / product line” (catalog + wiki + kb + recs + calls). Prefer composing catalog_get, wiki_lookup, kb_search, recommendations_for yourself unless you need one-shot latency; this runtime may return a stub until Oz-Demo-rx1 lands.',
