@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { OZ_DEFAULT_WELCOME, OzAssistantPanel } from './OzAssistantPanel'
@@ -58,6 +58,33 @@ describe('OzAssistantPanel', () => {
     expect(
       await within(conversation).findByText(new RegExp(OZ_DEFAULT_WELCOME.slice(0, 20))),
     ).toBeInTheDocument()
+  })
+
+  it('shows Used in this reply after attaching a file and sending', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const u = typeof input === 'string' ? input : 'url' in input ? input.url : String(input)
+      if (u.includes('/api/oz/chat/uploads')) {
+        return Promise.resolve(new Response(null, { status: 404 }))
+      }
+      return Promise.reject(new Error(`unexpected fetch: ${u}`))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    try {
+      renderPanel({
+        onUserMessage: async () => ({ reply: 'Acknowledged.', delayMs: 0, stream: false }),
+      })
+      const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46])
+      const file = new File([pdfBytes], 'demo.pdf', { type: 'application/pdf' })
+      await user.upload(screen.getByTestId('oz-composer-upload-input'), file)
+      await user.type(screen.getByPlaceholderText('Ask Oz…'), 'Please review')
+      await user.click(screen.getByRole('button', { name: 'Send message' }))
+      expect(await screen.findByText('Acknowledged.')).toBeInTheDocument()
+      expect(screen.getByText('Used in this reply')).toBeInTheDocument()
+      expect(fetchMock).toHaveBeenCalled()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('applies layout dock for bottom strips', () => {
