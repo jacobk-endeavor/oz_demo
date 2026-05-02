@@ -21,5 +21,5 @@
       "@aws-sdk/s3-request-presigner": ["node_modules/@aws-sdk/s3-request-presigner"]
     }
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "../backend/oz/pythonSandbox.ts"]
 }
