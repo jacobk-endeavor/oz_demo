@@ -91,6 +91,21 @@ function summarizeForTelemetry(value: unknown): string {
   }
 }
 
+function escapeOzPanelXmlAttr(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function panelInjectionToken(name: string, result: unknown): string | null {
+  if (name !== 'display_table' && name !== 'display_panel') return null
+  if (!result || typeof result !== 'object') return null
+  const rec = result as Record<string, unknown>
+  const pid = typeof rec.panel_id === 'string' ? rec.panel_id.trim() : ''
+  if (!pid) return null
+  const kindRaw = typeof rec.kind === 'string' ? rec.kind.trim() : ''
+  const kind = kindRaw || (name === 'display_table' ? 'table' : 'chart')
+  return `<panel id="${escapeOzPanelXmlAttr(pid)}" kind="${escapeOzPanelXmlAttr(kind)}"/>`
+}
+
 async function executeToolOnSurface(
   surface: OzToolSurface,
   name: string,
@@ -233,6 +248,7 @@ export async function* runOzChatLoopAgenticOpenAi(
     { role: 'user', content: userText },
   ]
   let finalText = ''
+  const panelSuffixFragments: string[] = []
   let stopReason = 'stop'
   const startedAt = Date.now()
 
@@ -320,6 +336,10 @@ export async function* runOzChatLoopAgenticOpenAi(
       }
       try {
         const result = await executeToolOnSurface(surface, tc.name, parsedArgs)
+        const panelMeta =
+          tc.name === 'display_table' || tc.name === 'display_panel'
+            ? (result as Record<string, unknown>)
+            : undefined
         yield {
           ...ev(),
           type: 'tool_result',
@@ -327,6 +347,12 @@ export async function* runOzChatLoopAgenticOpenAi(
           name: tc.name,
           ok: true,
           summary: summarizeForTelemetry(result),
+          ...(panelMeta ? { result_meta: panelMeta } : {}),
+        }
+        const injected = panelInjectionToken(tc.name, result)
+        if (injected) {
+          panelSuffixFragments.push(injected)
+          yield { ...ev(), type: 'token', delta: injected }
         }
         messages.push({
           role: 'tool',
@@ -385,6 +411,10 @@ export async function* runOzChatLoopAgenticOpenAi(
         outputMessage = sanitizeOzAnswer(outputMessage, secondPass)
       }
     }
+  }
+
+  if (panelSuffixFragments.length > 0) {
+    outputMessage = `${outputMessage}${panelSuffixFragments.join('')}`
   }
 
   yield {

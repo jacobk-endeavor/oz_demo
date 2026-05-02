@@ -263,6 +263,45 @@ export function extractGrammarNodes(input: string): ParsedGrammarNode[] {
   return spans.map((s) => s.node)
 }
 
+/** One markdown line split into prose vs grammar nodes (`[doc:…]`, `<panel/>`, `<artifact/>`, …). */
+export type AssistantInlineSegment =
+  | { type: 'text'; text: string }
+  | { type: 'grammar'; node: ParsedGrammarNode }
+
+/**
+ * Split a single assistant markdown line for inline rendering: bracket citations plus `<artifact/>` /
+ * `<panel/>` tags, in source order. Used by Oz chat to insert pills without breaking citation chips.
+ */
+export function splitAssistantInlineLine(input: string): AssistantInlineSegment[] {
+  const bracketSpans = extractBracketCitationSpans(input).map((s) => ({
+    start: s.index,
+    end: s.index + s.node.raw.length,
+    node: s.node as ParsedGrammarNode,
+  }))
+  const xmlSpans = collectXmlGrammarNodes(input).map((s) => ({
+    start: s.index,
+    end: s.index + s.node.raw.length,
+    node: s.node,
+  }))
+  const spans = [...bracketSpans, ...xmlSpans].sort((a, b) => a.start - b.start || a.end - b.end)
+  const filtered: typeof spans = []
+  let guard = -1
+  for (const s of spans) {
+    if (s.start < guard) continue
+    filtered.push(s)
+    guard = s.end
+  }
+  const out: AssistantInlineSegment[] = []
+  let cursor = 0
+  for (const s of filtered) {
+    if (s.start > cursor) out.push({ type: 'text', text: input.slice(cursor, s.start) })
+    out.push({ type: 'grammar', node: s.node })
+    cursor = s.end
+  }
+  if (cursor < input.length) out.push({ type: 'text', text: input.slice(cursor) })
+  return out
+}
+
 export function extractCitations(input: string): Exclude<ParsedGrammarNode, { kind: 'artifact' | 'panel' }>[] {
   return extractGrammarNodes(input).filter(isBracketCitation)
 }
