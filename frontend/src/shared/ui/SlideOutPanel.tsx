@@ -1,6 +1,14 @@
 import { useEffect, useId, useRef } from 'react'
 import { resolveOzPanelComponent } from '../../features/oz/panelRegistry'
 import { joinClasses } from './visualSystem'
+import { useOzSlideOutMobileSheetLayout } from './useOzSlideOutMobileSheetLayout'
+
+function collectFocusables(root: HTMLElement): HTMLElement[] {
+  const nodes = root.querySelectorAll<HTMLElement>(
+    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )
+  return [...nodes].filter((el) => !el.closest('[inert]'))
+}
 
 export type SlideOutPanelProps = {
   open: boolean
@@ -13,25 +21,14 @@ export type SlideOutPanelProps = {
   title?: string
 }
 
-function focusableSelector(): string {
-  return [
-    'a[href]',
-    'button:not([disabled])',
-    'textarea:not([disabled])',
-    'input:not([disabled])',
-    'select:not([disabled])',
-    '[tabindex]:not([tabindex="-1"])',
-  ].join(',')
-}
-
 /**
- * Right-edge slide-out shell for model-callable panels. Inner body comes from
- * {@link resolveOzPanelComponent} (`frontend/src/features/oz/panelRegistry.ts`).
+ * Right-edge drawer (&lt;768px: bottom sheet) for model-callable panels.
+ * Inner body comes from {@link resolveOzPanelComponent}.
  */
 export function SlideOutPanel({ open, onClose, panelKind, payload, title }: SlideOutPanelProps) {
-  const panelRef = useRef<HTMLDivElement>(null)
+  const reducedTrapScopeRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
-  const Body = resolveOzPanelComponent(panelKind)
+  const isMobileSheet = useOzSlideOutMobileSheetLayout()
 
   useEffect(() => {
     if (!open) return
@@ -46,48 +43,70 @@ export function SlideOutPanel({ open, onClose, panelKind, payload, title }: Slid
   }, [open, onClose])
 
   useEffect(() => {
-    if (!open || panelRef.current == null) return
-    const root = panelRef.current
-    const list = [...root.querySelectorAll<HTMLElement>(focusableSelector())]
-    const first = list[0]
-    const last = list[list.length - 1]
+    if (!open) return
+    const root = reducedTrapScopeRef.current
+    if (!root) return
+    const focusables = collectFocusables(root)
+    const first = focusables[0]
     first?.focus()
 
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Tab' || list.length === 0) return
+    function onKeyDownTab(event: KeyboardEvent) {
+      if (event.key !== 'Tab' || event.defaultPrevented) return
+      const panel = reducedTrapScopeRef.current
+      if (!panel) return
+      const list = collectFocusables(panel)
+      if (list.length === 0) return
+      const last = list[list.length - 1]
+      const active = document.activeElement as HTMLElement | null
       if (event.shiftKey) {
-        if (document.activeElement === first) {
+        if (active === first || !panel.contains(active)) {
           event.preventDefault()
-          last?.focus()
+          last.focus()
         }
-      } else if (document.activeElement === last) {
+      } else if (active === last) {
         event.preventDefault()
-        first?.focus()
+        first.focus()
       }
     }
-    root.addEventListener('keydown', onKeyDown)
-    return () => root.removeEventListener('keydown', onKeyDown)
-  }, [open, panelKind, payload])
+
+    root.addEventListener('keydown', onKeyDownTab as EventListener)
+    return () => root.removeEventListener('keydown', onKeyDownTab as EventListener)
+  }, [open, panelKind, payload, title])
 
   if (!open) return null
 
+  const Body = resolveOzPanelComponent(panelKind)
+  const variant = isMobileSheet ? 'sheet' : 'drawer'
+
   return (
-    <div className="fixed inset-0 z-[210] flex justify-end" role="presentation">
+    <div
+      className={joinClasses(
+        'fixed inset-0 z-[210] flex',
+        isMobileSheet ? 'flex-col justify-end' : 'justify-end',
+      )}
+      data-oz-slideout-root
+      data-oz-slideout-variant={variant}
+      role="presentation"
+    >
       <button
         type="button"
-        aria-label="Close panel"
-        className="absolute inset-0 cursor-default bg-zinc-950/35 backdrop-blur-[2px] motion-reduce:backdrop-blur-none"
+        aria-label="Close panel backdrop"
         onClick={onClose}
+        className="absolute inset-0 cursor-default bg-zinc-950/35 backdrop-blur-[2px] motion-reduce:backdrop-blur-none"
       />
       <div
-        ref={panelRef}
+        ref={reducedTrapScopeRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : `Oz panel: ${panelKind}`}
         data-testid="oz-slide-out-panel"
         tabIndex={-1}
         className={joinClasses(
-          'relative z-10 flex h-full w-[min(100vw-1rem,28rem)] flex-col overflow-hidden border-l border-zinc-200 bg-white shadow-2xl',
+          'relative z-10 flex max-h-full min-h-0 flex-col overflow-hidden border-zinc-200 bg-white shadow-2xl',
+          isMobileSheet
+            ? 'mt-auto max-h-[min(88vh,920px)] w-full rounded-t-2xl border-x border-t'
+            : 'h-full w-[min(100vw-1rem,28rem)] border-l',
         )}
       >
         <header className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-200 px-4 py-3">
@@ -106,7 +125,7 @@ export function SlideOutPanel({ open, onClose, panelKind, payload, title }: Slid
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Close panel"
             className="rounded-md p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
           >
             <svg
