@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   STALE_OR_INVALID_ARTIFACT_ID,
   type ResolvedCitation,
@@ -24,14 +25,40 @@ function formatByteSize(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export type ArtifactPillProps = {
-  resolved: ResolvedCitation
+/** Kinds the KB ingest pipeline can index from a chat-generated artifact (matches backend P4-1). */
+const KB_PROMOTABLE_ARTIFACT_KINDS = new Set(['xlsx', 'docx', 'pdf'])
+
+export type ArtifactKbPromotionResult = {
+  ok: boolean
+  /** Returned by the backend when ingest produced a kb_sources row. */
+  source_id?: string
+  error?: string
+  detail?: string
 }
 
+export type ArtifactPillProps = {
+  resolved: ResolvedCitation
+  /**
+   * Optional handler that posts the artifact id to the KB-ingest endpoint and resolves with the
+   * status (P4-1). When provided **and** the artifact is a promotable kind (xlsx/docx/pdf), the
+   * pill renders an inline "Save to KB" affordance.
+   */
+  onIngestArtifact?: (artifactId: string) => Promise<ArtifactKbPromotionResult>
+}
+
+type IngestState =
+  | { phase: 'idle' }
+  | { phase: 'promoting' }
+  | { phase: 'promoted'; sourceId?: string }
+  | { phase: 'error'; message: string }
+
 /**
- * Inline control for `<artifact …/>` — download affordance when the id resolves in the oracle.
+ * Inline control for `<artifact …/>` — download affordance when the id resolves in the oracle,
+ * plus an optional KB-promotion button (P4-1) when the consumer wires `onIngestArtifact`.
  */
-export function ArtifactPill({ resolved }: ArtifactPillProps) {
+export function ArtifactPill({ resolved, onIngestArtifact }: ArtifactPillProps) {
+  const [ingest, setIngest] = useState<IngestState>({ phase: 'idle' })
+
   if (resolved.citation.kind !== 'artifact') return null
 
   if (!resolved.ok && resolved.reason === 'invalid_artifact_id') {
@@ -66,6 +93,29 @@ export function ArtifactPill({ resolved }: ArtifactPillProps) {
   }
 
   const href = artifactDownloadHref(record)
+  const promotable = KB_PROMOTABLE_ARTIFACT_KINDS.has(kind.toLowerCase()) && Boolean(onIngestArtifact)
+
+  async function handlePromote() {
+    if (!onIngestArtifact) return
+    if (ingest.phase === 'promoting' || ingest.phase === 'promoted') return
+    setIngest({ phase: 'promoting' })
+    try {
+      const result = await onIngestArtifact(citation.id)
+      if (result.ok) {
+        setIngest({ phase: 'promoted', sourceId: result.source_id })
+      } else {
+        setIngest({
+          phase: 'error',
+          message: result.error || result.detail || 'KB ingest failed',
+        })
+      }
+    } catch (e) {
+      setIngest({
+        phase: 'error',
+        message: e instanceof Error ? e.message : String(e),
+      })
+    }
+  }
 
   return (
     <span
@@ -102,6 +152,41 @@ export function ArtifactPill({ resolved }: ArtifactPillProps) {
             No link
           </span>
         )}
+        {promotable ? (
+          ingest.phase === 'promoted' ? (
+            <span
+              className="shrink-0 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-800"
+              data-testid="oz-artifact-promoted"
+              title={
+                ingest.sourceId
+                  ? `Indexed as kb source ${ingest.sourceId}`
+                  : 'Indexed in knowledge base'
+              }
+            >
+              Indexed
+            </span>
+          ) : ingest.phase === 'error' ? (
+            <button
+              type="button"
+              onClick={handlePromote}
+              className="shrink-0 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-900 hover:bg-amber-100"
+              data-testid="oz-artifact-promote-retry"
+              title={ingest.message}
+            >
+              Retry KB
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handlePromote}
+              disabled={ingest.phase === 'promoting'}
+              className="shrink-0 rounded-md border border-sky-300 bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-800 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+              data-testid="oz-artifact-promote"
+            >
+              {ingest.phase === 'promoting' ? 'Saving…' : 'Save to KB'}
+            </button>
+          )
+        ) : null}
       </span>
     </span>
   )

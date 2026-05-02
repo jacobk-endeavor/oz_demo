@@ -61,6 +61,7 @@ import { BackgroundAgentsPage } from './features/backgroundAgents/BackgroundAgen
 import { KnowledgeBasePage } from './features/oz/KnowledgeBasePage'
 import { NebulaHubPage } from './features/oz/NebulaHubPage'
 import { createOzCitationInlineRenderer, type OzSlidePanelOpenDetail } from './features/oz/citationChatInline'
+import { promoteArtifactToKb } from './features/oz/ozKbPromoteArtifactApi'
 import { clearOzPanelPayloadsForThread, useOzChatStream } from './features/oz/useOzChatStream'
 import { OzChatRuntimeTogglePanel } from './features/oz/OzChatRuntimeTogglePanel'
 import { DashboardGeneratorPage } from './features/dashboardGenerator/DashboardGeneratorPage'
@@ -185,6 +186,7 @@ export default function App() {
     () =>
       createOzCitationInlineRenderer(undefined, {
         onOpenSlidePanel: setOzSlideOutPanel,
+        onIngestArtifact: (artifactId) => promoteArtifactToKb(artifactId),
       }),
     [],
   )

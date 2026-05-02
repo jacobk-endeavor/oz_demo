@@ -37,6 +37,8 @@ export type SpacesArtifactClient = {
   headObjectExists(key: string): Promise<boolean>
   /** Time-limited HTTPS URL for GET; suitable for browser download when bucket CORS allows the app origin. */
   presignGetObject(key: string): Promise<string>
+  /** Server-side fetch — reads the object body into a Buffer. Throws on missing object. */
+  getObjectBytes(key: string): Promise<Buffer>
 }
 
 function isS3NotFound(err: unknown): boolean {
@@ -171,6 +173,22 @@ export function createSpacesArtifactClient(
         Key: key,
       })
       return getSignedUrl(client, cmd, { expiresIn: ttl })
+    },
+    async getObjectBytes(key: string): Promise<Buffer> {
+      const out = await client.send(
+        new GetObjectCommand({
+          Bucket: env.bucket,
+          Key: key,
+        }),
+      )
+      const body = out.Body as
+        | { transformToByteArray?: () => Promise<Uint8Array> }
+        | undefined
+      if (!body || typeof body.transformToByteArray !== 'function') {
+        throw new Error('Unsupported S3 GetObject body shape (expected Uint8Array stream).')
+      }
+      const bytes = await body.transformToByteArray()
+      return Buffer.from(bytes)
     },
   }
 }

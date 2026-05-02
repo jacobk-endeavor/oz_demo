@@ -9,7 +9,7 @@ import {
   type AssistantMarkdownInlineRenderer,
   renderAssistantMarkdownInlineDefault,
 } from '../../shared/ui/SimpleAssistantMarkdown'
-import { ArtifactPill } from '../../shared/ui/ArtifactPill'
+import { ArtifactPill, type ArtifactKbPromotionResult } from '../../shared/ui/ArtifactPill'
 import { PanelPill } from '../../shared/ui/PanelPill'
 import { OzCitationChip } from './OzCitationChip'
 
@@ -25,6 +25,11 @@ export function createOzCitationInlineRenderer(
     onCitationClick?: (d: OzCitationClickDetail) => void
     /** When set, valid `<panel/>` pills invoke this so the host can mount {@link SlideOutPanel}. */
     onOpenSlidePanel?: (d: OzSlidePanelOpenDetail) => void
+    /**
+     * P4-1: when set, `<artifact/>` pills for promotable kinds (xlsx/docx/pdf) render a "Save to KB"
+     * button that posts the artifact id to `/api/oz/knowledge-base/promote-artifact`.
+     */
+    onIngestArtifact?: (artifactId: string) => Promise<ArtifactKbPromotionResult>
   },
 ): AssistantMarkdownInlineRenderer {
   return (line: string, keyBase: string): ReactNode => {
@@ -56,7 +61,13 @@ export function createOzCitationInlineRenderer(
           }
           const resolved = resolveCitation(seg.node, tables ?? {})
           if (seg.node.kind === 'artifact') {
-            return <ArtifactPill key={`${keyBase}-art-${i}`} resolved={resolved} />
+            return (
+              <ArtifactPill
+                key={`${keyBase}-art-${i}`}
+                resolved={resolved}
+                {...(options?.onIngestArtifact ? { onIngestArtifact: options.onIngestArtifact } : {})}
+              />
+            )
           }
           if (seg.node.kind === 'panel') {
             return (

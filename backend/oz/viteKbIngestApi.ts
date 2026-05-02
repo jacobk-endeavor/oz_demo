@@ -7,10 +7,21 @@
  */
 import { execFile, execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
-import { createWriteStream, existsSync, mkdirSync, readFileSync, unlinkSync } from 'node:fs'
+import { createWriteStream, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import {
+  getOzArtifactsDb,
+  resolveOzArtifactRead,
+  type OzArtifactRow,
+} from './artifactRegistry'
+import {
+  tryCreateSpacesArtifactClientFromEnv,
+  type SpacesArtifactClient,
+} from './artifactStorage'
+import { resolveOzTenant } from './threadDirectionNormalize'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '../..')
@@ -26,6 +37,17 @@ function maxUploadBytes(): number {
 }
 
 const KB_INGEST_PATH = '/api/oz/knowledge-base/ingest'
+const KB_PROMOTE_ARTIFACT_PATH = '/api/oz/knowledge-base/promote-artifact'
+
+/** Kinds we accept for KB promotion from a chat artifact (P4-1). Images and raw json are excluded. */
+export const KB_PROMOTABLE_ARTIFACT_KINDS = new Set(['xlsx', 'docx', 'pdf'])
+
+/** Map promotable kind → on-disk extension when staging the bytes for ingest_kb.py. */
+const PROMOTABLE_KIND_TO_EXT: Record<string, string> = {
+  xlsx: 'xlsx',
+  docx: 'docx',
+  pdf: 'pdf',
+}
 
 function normalizedUrlPath(url: string | undefined): string {
   const pathOnly = url?.split('?')[0] ?? ''
@@ -37,6 +59,41 @@ function isKbIngestPost(req: IncomingMessage): boolean {
   if (req.method !== 'POST') return false
   const url = req.url ?? ''
   return normalizedUrlPath(url) === KB_INGEST_PATH || url.includes(KB_INGEST_PATH)
+}
+
+function isKbPromoteArtifactPost(req: IncomingMessage): boolean {
+  if (req.method !== 'POST') return false
+  const url = req.url ?? ''
+  return (
+    normalizedUrlPath(url) === KB_PROMOTE_ARTIFACT_PATH || url.includes(KB_PROMOTE_ARTIFACT_PATH)
+  )
+}
+
+async function readJsonBody(req: IncomingMessage, maxBytes = 64 * 1024): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    let total = 0
+    const chunks: Buffer[] = []
+    req.on('data', (chunk: Buffer | string) => {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+      total += buf.length
+      if (total > maxBytes) {
+        req.destroy()
+        reject(new Error(`JSON body exceeds ${maxBytes} bytes`))
+        return
+      }
+      chunks.push(buf)
+    })
+    req.on('end', () => {
+      const text = Buffer.concat(chunks).toString('utf8').trim()
+      if (!text) return resolve({})
+      try {
+        resolve(JSON.parse(text))
+      } catch (e) {
+        reject(e instanceof Error ? e : new Error(String(e)))
+      }
+    })
+    req.on('error', (e) => reject(e instanceof Error ? e : new Error(String(e))))
+  })
 }
 
 /** When true, first ingest pass uses --reembed so kb_extracts + wiki scaffold run even for duplicate SHA. */
@@ -308,6 +365,258 @@ function runWikiIngest(repoRoot: string, sourceId: string): { ok: boolean; detai
   }
 }
 
+async function runIngestChainForRawPath(params: {
+  rawPath: string
+  wikiFullPath: boolean
+  password?: string
+}): Promise<
+  | { ok: false; statusCode: number; body: Record<string, unknown> }
+  | {
+      ok: true
+      sourceId: string
+      wiki: { ok: boolean; detail?: string; skipped?: boolean }
+      pgvector: { ok: true } | { ok: false; detail: string }
+      kbExtractsLocal: boolean
+    }
+> {
+  const py = resolvePython()
+  const env = mergeEnv()
+
+  let extractStdout = ''
+  try {
+    extractStdout = await execKbExtractBundleOnly({
+      py,
+      env,
+      rawPath: params.rawPath,
+      password: params.password,
+    })
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e)
+    const hint = hintForIngestFailure(detail)
+    return {
+      ok: false,
+      statusCode: 502,
+      body: {
+        ok: false,
+        error: 'Local kb_extracts failed (--extract-bundle-only)',
+        detail,
+        ...(hint ? { hint } : {}),
+      },
+    }
+  }
+
+  let parsedLocal = parseKbIngestStdout(extractStdout)
+  let sourceId = (parsedLocal.source_id ?? '').toLowerCase()
+  if (!sourceId) {
+    return {
+      ok: false,
+      statusCode: 502,
+      body: {
+        ok: false,
+        error: 'Local kb_extracts produced no source_id (cannot promote)',
+      },
+    }
+  }
+  let manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
+
+  let wiki: { ok: boolean; detail?: string; skipped?: boolean }
+  let wikiCompletedOk = false
+  if (existsSync(manifestPath)) {
+    wiki = runWikiIngest(REPO_ROOT, sourceId)
+    if (wiki.ok) {
+      wiki = { ...wiki, skipped: false }
+      wikiCompletedOk = true
+    }
+  } else {
+    wiki = {
+      ok: true,
+      skipped: true,
+      detail: 'Local kb_extracts bundle missing after --extract-bundle-only (wiki scaffold skipped).',
+    }
+  }
+
+  let pgvector: { ok: true } | { ok: false; detail: string } = { ok: true }
+  let vectorStdout = ''
+  try {
+    vectorStdout = await execKbIngest({
+      py,
+      env,
+      rawPath: params.rawPath,
+      password: params.password,
+      reembed: params.wikiFullPath,
+    })
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e)
+    pgvector = { ok: false, detail }
+  }
+
+  if (!params.wikiFullPath && pgvector.ok && !existsSync(manifestPath)) {
+    try {
+      vectorStdout = await execKbIngest({
+        py,
+        env,
+        rawPath: params.rawPath,
+        password: params.password,
+        reembed: true,
+      })
+      pgvector = { ok: true }
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e)
+      pgvector = { ok: false, detail }
+    }
+  }
+
+  if (pgvector.ok) {
+    const pv = parseKbIngestStdout(vectorStdout)
+    if (pv.source_id) sourceId = pv.source_id.toLowerCase()
+    manifestPath = path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json')
+    if (existsSync(manifestPath) && !wikiCompletedOk) {
+      wiki = runWikiIngest(REPO_ROOT, sourceId)
+      if (wiki.ok) wiki = { ...wiki, skipped: false }
+    }
+  }
+
+  const kbExtractsLocal = existsSync(path.join(REPO_ROOT, 'kb_extracts', sourceId, 'manifest.json'))
+  return { ok: true, sourceId, wiki, pgvector, kbExtractsLocal }
+}
+
+/**
+ * P4-1: stage an existing artifact's bytes from DO Spaces into incoming/kb-ui-raw/ and run the
+ * standard KB ingest chain (extract → wiki → pgvector). Idempotent via ingest_kb.py's sha-dedup.
+ */
+async function kbPromoteArtifactHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: () => void,
+): Promise<void> {
+  if (!isKbPromoteArtifactPost(req)) {
+    next()
+    return
+  }
+
+  const writeJson = (status: number, body: Record<string, unknown>) => {
+    res.statusCode = status
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    res.end(JSON.stringify(body))
+  }
+
+  if (!existsSync(KB_INGEST_SCRIPT)) {
+    return writeJson(501, { ok: false, error: 'ingest_kb.py not found in repo' })
+  }
+
+  let body: unknown
+  try {
+    body = await readJsonBody(req)
+  } catch (e) {
+    return writeJson(400, {
+      ok: false,
+      error: 'Invalid JSON body',
+      detail: e instanceof Error ? e.message : String(e),
+    })
+  }
+
+  const artifact_id =
+    body && typeof body === 'object' && !Array.isArray(body)
+      ? String((body as Record<string, unknown>).artifact_id ?? '').trim()
+      : ''
+  if (!artifact_id) {
+    return writeJson(400, { ok: false, error: 'artifact_id required' })
+  }
+
+  const tenant = resolveOzTenant(() => process.env as Record<string, string>)
+  const db = getOzArtifactsDb(() => process.env as Record<string, string>)
+  if (!db) {
+    return writeJson(503, { ok: false, error: 'oz_artifacts requires DATABASE_URL' })
+  }
+
+  const spaces: SpacesArtifactClient | null = tryCreateSpacesArtifactClientFromEnv()
+  if (!spaces) {
+    return writeJson(503, { ok: false, error: 'Spaces credentials not configured' })
+  }
+
+  let resolved: Awaited<ReturnType<typeof resolveOzArtifactRead>>
+  try {
+    resolved = await resolveOzArtifactRead(db, spaces, artifact_id, tenant)
+  } catch (e) {
+    return writeJson(502, {
+      ok: false,
+      error: 'oz_artifacts lookup failed',
+      detail: e instanceof Error ? e.message : String(e),
+    })
+  }
+  if (resolved.outcome === 'not_found') {
+    return writeJson(404, { ok: false, error: 'artifact_not_found', artifact_id })
+  }
+  if (resolved.outcome === 'gone') {
+    return writeJson(410, {
+      ok: false,
+      error: 'artifact_gone',
+      artifact_id,
+      status: resolved.row.status,
+    })
+  }
+
+  const row: OzArtifactRow = resolved.row
+  if (!KB_PROMOTABLE_ARTIFACT_KINDS.has(row.kind)) {
+    return writeJson(415, {
+      ok: false,
+      error: 'kind_not_promotable',
+      artifact_id,
+      kind: row.kind,
+      promotable: Array.from(KB_PROMOTABLE_ARTIFACT_KINDS),
+    })
+  }
+
+  let bytes: Buffer
+  try {
+    bytes = await spaces.getObjectBytes(row.key)
+  } catch (e) {
+    return writeJson(502, {
+      ok: false,
+      error: 'spaces_get_object_failed',
+      detail: e instanceof Error ? e.message : String(e),
+    })
+  }
+
+  const ext = PROMOTABLE_KIND_TO_EXT[row.kind] ?? row.kind
+  const safeTitle = sanitizeBasename(row.title || `artifact-${row.id}`)
+  const stagedName = `promote-artifact_${row.id}_${safeTitle}`.replace(/\.[^.]+$/, '') + `.${ext}`
+  const stagedPath = path.join(KB_RAW_INCOMING_ROOT, dayStamp(), stagedName)
+  try {
+    mkdirSync(path.dirname(stagedPath), { recursive: true })
+    writeFileSync(stagedPath, bytes)
+  } catch (e) {
+    return writeJson(500, {
+      ok: false,
+      error: 'staging_write_failed',
+      detail: e instanceof Error ? e.message : String(e),
+    })
+  }
+
+  const result = await runIngestChainForRawPath({
+    rawPath: stagedPath,
+    wikiFullPath: false,
+  })
+  if (!result.ok) {
+    return writeJson(result.statusCode, result.body)
+  }
+
+  return writeJson(200, {
+    ok: true,
+    artifact_id: row.id,
+    source: 'chat-artifact',
+    kind: row.kind,
+    title: row.title,
+    sha256: row.sha256,
+    bytes_written: bytes.length,
+    raw_path: path.relative(REPO_ROOT, stagedPath).replace(/\\/g, '/'),
+    source_id: result.sourceId,
+    wiki: result.wiki,
+    pgvector: result.pgvector,
+    kb_extracts_local: result.kbExtractsLocal,
+  })
+}
+
 export function kbIngestApiPlugin() {
   async function handler(req: IncomingMessage, res: ServerResponse, next: () => void) {
     if (!isKbIngestPost(req)) {
@@ -448,9 +757,11 @@ export function kbIngestApiPlugin() {
     name: 'oz-kb-ingest-api',
     enforce: 'pre' as const,
     configureServer(server: { middlewares: { use: (fn: typeof handler) => void } }) {
+      server.middlewares.use(kbPromoteArtifactHandler)
       server.middlewares.use(handler)
     },
     configurePreviewServer(server: { middlewares: { use: (fn: typeof handler) => void } }) {
+      server.middlewares.use(kbPromoteArtifactHandler)
       server.middlewares.use(handler)
     },
   }

@@ -509,7 +509,7 @@ These answers are the working baseline. Anything not answered here is explicitly
 - **When.** Only on (a) explicit "Save to KB" click, or (b) successful tool-call consumption of the upload **and** kind ∈ {csv, xlsx, pdf, docx, txt, md}. Never auto-prompt on bare attach.
 - **Copy.** *"Add this file to the knowledge base? Future conversations in this workspace will be able to cite it. Indexing takes a few minutes. You can remove it later from the Knowledge Base page."*
 - **API.** Reuse [`viteKbIngestApi.ts`](backend/oz/viteKbIngestApi.ts) with `{upload_id, consent:true, source:"chat-promotion"}`. Idempotent on `(upload_id, tenant)`; second click is a no-op resolving to the same `source_id`. Returns `source_id` so the chip can flip to "Indexed".
-- **Denylist.** Hard reject anything off the allowlist or `>` 25 MB. Soft warn (modal asks again) on PII patterns in the first 4 KB (SSN-like, credit-card-like, bulk email). All promotions logged to `wiki/log.md` plus an audit row.
+- **Denylist.** Hard reject anything off the allowlist or `>` 25 MB. (PII soft-warn scan was de-scoped on 2026-05-02 — allowlist + size cap + explicit consent are sufficient for the demo; re-file if a real tenant requires it.) All promotions logged to `wiki/log.md` plus an audit row.
 
 #### 12.1.4 Task-direction popup (§10.4)
 
@@ -634,7 +634,6 @@ Doesn't depend on the sandbox; ships on the same train as Phase 1a per §12.1.6.
 | `Oz-Demo-9zl` | P1b-3: `chat_uploads` system-prompt block injection + tool param `upload_ids` | P1b-1, F5, P2-4 |
 | `Oz-Demo-irv` | P1b-4: KB-promotion inline card UX (no focus trap) | P1b-1, P1b-2 |
 | `Oz-Demo-u4j` | P1b-5: KB-promotion API — `viteKbIngestApi` accepts `{upload_id, consent, source}` | P1b-1, P1b-4 |
-| `Oz-Demo-1it` | P1b-6: PII soft-warn on KB promotion (SSN/CC/bulk-email regex on first 4 KB) | P1b-5 |
 | `Oz-Demo-abp` | P1b-8: `oz_thread_direction` table + GET/PUT API | — |
 | `Oz-Demo-i4c` | P1b-7: Task-direction modal (frontend) — Cmd-K, header button, focus trap, Esc close | P1b-8 |
 | `Oz-Demo-1zl` | P1b-9: Inject `direction_summary` into system prompt (800 token cap, server-enforced) | P1b-7, P1b-8 |

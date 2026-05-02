@@ -198,4 +198,38 @@ describe('createSpacesArtifactClient', () => {
     const expiresArg = getSignedUrlMock.mock.calls[0][2] as { expiresIn?: number }
     expect(expiresArg.expiresIn).toBe(120)
   })
+
+  it('getObjectBytes returns the body bytes from S3 GetObject', async () => {
+    const payload = Buffer.from('hello-artifact-bytes')
+    sendMock.mockResolvedValueOnce({
+      Body: {
+        transformToByteArray: async () => new Uint8Array(payload),
+      },
+    })
+    const client = createSpacesArtifactClient({
+      accessKeyId: 'k',
+      secretAccessKey: 's',
+      endpoint: 'https://nyc3.digitaloceanspaces.com',
+      bucket: 'b',
+      region: 'nyc3',
+    })
+    const bytes = await client.getObjectBytes('t/20260101/art-1.xlsx')
+    expect(bytes.equals(payload)).toBe(true)
+    const call = sendMock.mock.calls[sendMock.mock.calls.length - 1][0] as {
+      input: Record<string, unknown>
+    }
+    expect(call.input).toMatchObject({ Bucket: 'b', Key: 't/20260101/art-1.xlsx' })
+  })
+
+  it('getObjectBytes throws on unsupported body shape', async () => {
+    sendMock.mockResolvedValueOnce({ Body: undefined })
+    const client = createSpacesArtifactClient({
+      accessKeyId: 'k',
+      secretAccessKey: 's',
+      endpoint: 'https://nyc3.digitaloceanspaces.com',
+      bucket: 'b',
+      region: 'nyc3',
+    })
+    await expect(client.getObjectBytes('missing/body')).rejects.toThrow(/Unsupported S3 GetObject body shape/)
+  })
 })
