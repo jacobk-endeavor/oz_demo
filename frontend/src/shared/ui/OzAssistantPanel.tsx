@@ -4,14 +4,20 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ChangeEvent,
+  type DragEvent,
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
 } from 'react'
 import { OzThreadDirectionModal } from '../../features/oz/OzThreadDirectionModal'
 import { matchStockUpLikelyBuyersIntent } from '../../features/leadGen/stockUpBuyerIntents'
+import {
+  postOzChatUploadsIfAvailable,
+  validateComposerUploadFiles,
+} from '../../features/oz/ozChatUploadsApi'
 import type { TableRowContextAttachment } from '../tableRowContext'
-import { ArrowUpIcon } from './icons'
+import { ArrowUpIcon, PaperclipIcon } from './icons'
 import { SimpleAssistantMarkdown, type AssistantMarkdownInlineRenderer } from './SimpleAssistantMarkdown'
 import { joinClasses, type Tone } from './visualSystem'
 
@@ -32,6 +38,8 @@ export interface OzChatTurnContext {
   threadId?: string
   /** Assistant placeholder message id for this send; correlates streamed tool_result with panels. */
   assistantMessageId?: string
+  /** Upload ids returned from `POST /api/oz/chat/uploads` when that route is deployed. */
+  composerUploadIds?: string[]
 }
 export type OzActionVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
@@ -56,6 +64,10 @@ export interface OzAssistantMessage {
   sources?: string[]
   /** Lumberyard activity table rows the user had in the composer for this line. */
   rowAttachments?: { id: string; label: string }[]
+  /** Files staged on this line from the composer upload strip. */
+  fileAttachments?: { id: string; label: string }[]
+  /** When true, show a badge that this assistant reply consumed composer uploads for this turn. */
+  usedUploadedContext?: boolean
 }
 
 export interface OzAssistantAction {
@@ -138,6 +150,11 @@ export interface OzAssistantPanelProps {
    * panel payloads per transcript scope.
    */
   chatThreadId?: string
+  /**
+   * Show the attach-files strip under the composer and support optional `POST /api/oz/chat/uploads`.
+   * When false, the panel behaves as before (no upload UI).
+   */
+  enableComposerUploads?: boolean
 }
 
 function makeId() {
@@ -167,9 +184,14 @@ function transcriptToContext(transcript: OzAssistantMessage[]): OzChatTurnContex
       continue
     if (m.role === 'user') {
       const ra = m.rowAttachments
-      const withCtx = ra?.length
-        ? `[Context: ${ra.map((r) => r.label).join(', ')}] ${t}`.trim()
-        : t
+      const fa = m.fileAttachments
+      let withCtx = t
+      if (fa?.length) {
+        withCtx = `[Attached files: ${fa.map((f) => f.label).join(', ')}] ${withCtx}`.trim()
+      }
+      if (ra?.length) {
+        withCtx = `[Context: ${ra.map((r) => r.label).join(', ')}] ${withCtx}`.trim()
+      }
       if (!withCtx.trim()) continue
       priorExchanges.push({ role: 'user', text: withCtx })
     } else {
@@ -341,6 +363,119 @@ function StreamedText({
   )
 }
 
+function ComposerUploadStrip({
+  entries,
+  onRemove,
+  onFilesChosen,
+  errorText,
+  disabled,
+}: {
+  entries: { id: string; label: string }[]
+  onRemove: (id: string) => void
+  onFilesChosen: (files: File[]) => void
+  errorText: string | null
+  disabled: boolean
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [dragActive, setDragActive] = useState(false)
+
+  const pick = () => {
+    if (disabled) return
+    inputRef.current?.click()
+  }
+
+  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const list = e.target.files
+    if (list?.length) onFilesChosen(Array.from(list))
+    e.target.value = ''
+  }
+
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault()
+    setDragActive(false)
+    if (disabled) return
+    if (e.dataTransfer.files?.length) onFilesChosen(Array.from(e.dataTransfer.files))
+  }
+
+  return (
+    <div
+      className={joinClasses(
+        'flex min-h-0 flex-col gap-1 border-t border-zinc-200/60 bg-violet-50/25 px-2 py-1.5 pl-2.5',
+        dragActive && 'bg-violet-100/40 ring-1 ring-inset ring-violet-300/50',
+      )}
+      onDragEnter={(e) => {
+        e.preventDefault()
+        if (!disabled) setDragActive(true)
+      }}
+      onDragOver={(e) => {
+        e.preventDefault()
+        if (!disabled) setDragActive(true)
+      }}
+      onDragLeave={() => setDragActive(false)}
+      onDrop={onDrop}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        className="sr-only"
+        multiple
+        accept=".csv,.json,.xlsx,.pdf,.txt,.png,.jpg,.jpeg"
+        data-testid="oz-composer-upload-input"
+        disabled={disabled}
+        onChange={onInputChange}
+      />
+      <div className="flex min-h-[1.75rem] flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={pick}
+          disabled={disabled}
+          className={joinClasses(
+            'inline-flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors',
+            disabled
+              ? 'cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400'
+              : 'border-violet-300/70 bg-white/90 text-violet-900 hover:border-violet-400 hover:bg-violet-50',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-violet-500/50',
+          )}
+          aria-label="Attach files"
+        >
+          <PaperclipIcon className="h-3.5 w-3.5 shrink-0 opacity-90" />
+          Attach
+        </button>
+        {entries.map((e) => (
+          <span key={e.id} className="inline-flex max-w-full min-w-0">
+            <button
+              type="button"
+              onClick={() => onRemove(e.id)}
+              disabled={disabled}
+              className={joinClasses(
+                'inline-flex max-w-full min-w-0 items-center gap-0.5 rounded-md border border-violet-300/60 bg-white/90 px-1.5 py-0.5',
+                'text-left font-mono text-[10px] font-semibold leading-tight text-violet-950',
+                'shadow-sm transition-colors hover:border-violet-400/80 hover:bg-violet-50/95',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-violet-500/50',
+                disabled && 'opacity-50',
+              )}
+              title="Remove attachment"
+            >
+              <span className="min-w-0 truncate">{e.label}</span>
+              <span className="shrink-0 text-zinc-400" aria-hidden>
+                ×
+              </span>
+            </button>
+          </span>
+        ))}
+        {entries.length === 0 ? (
+          <span className="text-[11px] text-zinc-500">Drop files here or use Attach</span>
+        ) : null}
+      </div>
+      {errorText ? (
+        <p className="text-[11px] leading-snug text-red-600" role="alert">
+          {errorText}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 function ChatComposerRow({
   textareaRef,
   draft,
@@ -353,6 +488,7 @@ function ChatComposerRow({
   inputId = 'oz-chat-input',
   contextRowTags,
   onRemoveContextRowTag,
+  composerUploadStrip,
 }: {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>
   draft: string
@@ -365,6 +501,7 @@ function ChatComposerRow({
   inputId?: string
   contextRowTags?: { id: string; label: string }[]
   onRemoveContextRowTag?: (rowId: string) => void
+  composerUploadStrip?: ReactNode
 }) {
   return (
     <form
@@ -452,6 +589,7 @@ function ChatComposerRow({
           </button>
         </div>
         </div>
+        {composerUploadStrip}
       </div>
     </form>
   )
@@ -622,11 +760,14 @@ export function OzAssistantPanel({
   transcriptResetKey,
   renderAssistantInline,
   chatThreadId,
+  enableComposerUploads = true,
 }: OzAssistantPanelProps) {
   const [transcript, setTranscript] = useState<OzAssistantMessage[]>(() =>
     buildInitialTranscript(seed, hideWelcome),
   )
   const [draft, setDraft] = useState('')
+  const [composerFiles, setComposerFiles] = useState<{ id: string; file: File }[]>([])
+  const [composerUploadError, setComposerUploadError] = useState<string | null>(null)
   const [historyCursor, setHistoryCursor] = useState<number | null>(null)
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [streamingId, setStreamingId] = useState<string | null>(null)
@@ -647,6 +788,8 @@ export function OzAssistantPanel({
     setHistoryCursor(null)
     setPendingId(null)
     setStreamingId(null)
+    setComposerFiles([])
+    setComposerUploadError(null)
     // `seed` omitted on purpose: `messages={[]}` from parents is a new `[]` each render, but
     // `seedSignature` is stable for the same content.
   }, [hideWelcome, seedSignature, transcriptResetKey])
@@ -733,6 +876,21 @@ export function OzAssistantPanel({
     node.style.height = `${Math.max(44, h)}px`
   }, [])
 
+  const addComposerFiles = useCallback(
+    (picked: File[]) => {
+      if (!enableComposerUploads || picked.length === 0) return
+      const combined = [...composerFiles.map((c) => c.file), ...picked]
+      const v = validateComposerUploadFiles(combined)
+      if (!v.ok) {
+        setComposerUploadError(v.detail)
+        return
+      }
+      setComposerUploadError(null)
+      setComposerFiles((prev) => [...prev, ...picked.map((file) => ({ id: makeId(), file }))])
+    },
+    [composerFiles, enableComposerUploads],
+  )
+
   useEffect(() => {
     resizeTextarea()
   }, [draft, resizeTextarea])
@@ -751,12 +909,39 @@ export function OzAssistantPanel({
         knowledgePreambleFallbackTimerRef.current = null
       }
 
+      const fileSnapshot = enableComposerUploads ? [...composerFiles] : []
+      if (fileSnapshot.length) {
+        const v = validateComposerUploadFiles(fileSnapshot.map((x) => x.file))
+        if (!v.ok) {
+          setComposerUploadError(v.detail)
+          return
+        }
+      }
+
+      let composerUploadIds: string[] | undefined
+      if (fileSnapshot.length) {
+        const up = await postOzChatUploadsIfAvailable(fileSnapshot.map((x) => x.file))
+        if (!up.ok) {
+          if (up.reason !== 'unavailable') {
+            setComposerUploadError(up.detail ?? 'Could not upload attachments.')
+            return
+          }
+        } else if (up.uploadIds.length) {
+          composerUploadIds = up.uploadIds
+        }
+      }
+
       const att = composerContextAttachments
       const userMessage: OzAssistantMessage = {
         id: makeId(),
         role: 'user',
         content: value,
         rowAttachments: att?.map((a) => ({ id: a.key, label: a.label })),
+        ...(fileSnapshot.length
+          ? {
+              fileAttachments: fileSnapshot.map((x) => ({ id: x.id, label: x.file.name })),
+            }
+          : {}),
       }
       const pendingKind: PendingKind = pendingAssistantPlaceholder?.(value) ?? 'thinking'
       const placeholder: OzAssistantMessage = {
@@ -764,11 +949,13 @@ export function OzAssistantPanel({
         role: 'oz',
         content: placeholderForPendingKind(pendingKind),
       }
+      const markUploadedReply = fileSnapshot.length > 0
       const turnCtx: OzChatTurnContext = {
         ...transcriptToContext(transcript),
         tableContextAttachments: att?.length ? att : undefined,
         assistantMessageId: placeholder.id,
         ...(chatThreadId ? { threadId: chatThreadId } : {}),
+        ...(composerUploadIds?.length ? { composerUploadIds } : {}),
       }
       const isKnowledgePreamble = isKnowledgePillKind(pendingKind)
       const knowledgeSequenceMs = isKnowledgePreamble ? variantSequenceMs(pendingKind) : 0
@@ -781,6 +968,8 @@ export function OzAssistantPanel({
       setTranscript((t) => [...t, userMessage, placeholder])
       setDraft('')
       setHistoryCursor(null)
+      setComposerFiles([])
+      setComposerUploadError(null)
 
       const t0 = Date.now()
       let fromParent: { reply: string; delayMs?: number; stream?: boolean } | void
@@ -826,6 +1015,7 @@ export function OzAssistantPanel({
                   content: replyText,
                   streamIn: doStream,
                   ...(instantOptOut ? { instantReply: true } : {}),
+                  ...(markUploadedReply ? { usedUploadedContext: true } : {}),
                 }
               : entry,
           ),
@@ -846,7 +1036,9 @@ export function OzAssistantPanel({
     [
       chatThreadId,
       composerContextAttachments,
+      composerFiles,
       contextSummary,
+      enableComposerUploads,
       isPending,
       notifyKnowledgePreambleComplete,
       onAfterUserMessage,
@@ -914,6 +1106,20 @@ export function OzAssistantPanel({
       inputId={opts.inputId}
       contextRowTags={contextRowTags}
       onRemoveContextRowTag={onRemoveComposerContextAttachment}
+      composerUploadStrip={
+        enableComposerUploads ? (
+          <ComposerUploadStrip
+            entries={composerFiles.map((c) => ({ id: c.id, label: c.file.name }))}
+            onRemove={(id) => {
+              setComposerFiles((p) => p.filter((x) => x.id !== id))
+              setComposerUploadError(null)
+            }}
+            onFilesChosen={addComposerFiles}
+            errorText={composerUploadError}
+            disabled={isPending}
+          />
+        ) : undefined
+      }
     />
   )
 
@@ -1190,9 +1396,13 @@ function ChatMessage({
     >
       <span className="sr-only">
         {roleLabel}
+        {isUser && message.fileAttachments?.length
+          ? ` · Attached files: ${message.fileAttachments.map((f) => f.label).join(', ')}`
+          : null}
         {isUser && message.rowAttachments?.length
           ? ` · Context: ${message.rowAttachments.map((r) => r.label).join(', ')}`
           : null}
+        {!isUser && !isSystem && message.usedUploadedContext ? ' · Used composer uploads in this reply' : null}
         {isThinking && ' · Thinking'}
         {isKnowledgeLoading && pillSrLabel}
       </span>
@@ -1225,23 +1435,36 @@ function ChatMessage({
           <span className="cursor-chat-dot" aria-hidden="true" />
         </div>
       ) : (
-        <div
-          className={joinClasses(
-            'text-sm leading-relaxed',
-            centered && isUser
-              ? 'max-w-[90%]'
-              : centered
-                ? 'w-full min-w-0 max-w-2xl'
-                : 'max-w-[90%]',
-            isUser
-              ? 'rounded-2xl bg-zinc-100 px-3 py-2 text-zinc-900'
-              : isSystem
-                ? 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900'
-                : 'text-zinc-800',
-            !isUser && !isSystem && 'cursor-chat-reply-bubble rounded-2xl border border-zinc-200/80 bg-zinc-50/90 px-3 py-2',
-            centered && 'text-left', // long replies stay left-aligned in the block for readability
-          )}
-        >
+        <>
+          {!isUser && !isSystem && message.usedUploadedContext ? (
+            <div
+              className={joinClasses(
+                'flex w-full max-w-2xl',
+                centered ? 'justify-center' : 'justify-start',
+              )}
+            >
+              <span className="inline-flex items-center rounded-full border border-violet-200/90 bg-violet-50/95 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-900 shadow-sm">
+                Used in this reply
+              </span>
+            </div>
+          ) : null}
+          <div
+            className={joinClasses(
+              'text-sm leading-relaxed',
+              centered && isUser
+                ? 'max-w-[90%]'
+                : centered
+                  ? 'w-full min-w-0 max-w-2xl'
+                  : 'max-w-[90%]',
+              isUser
+                ? 'rounded-2xl bg-zinc-100 px-3 py-2 text-zinc-900'
+                : isSystem
+                  ? 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900'
+                  : 'text-zinc-800',
+              !isUser && !isSystem && 'cursor-chat-reply-bubble rounded-2xl border border-zinc-200/80 bg-zinc-50/90 px-3 py-2',
+              centered && 'text-left', // long replies stay left-aligned in the block for readability
+            )}
+          >
           {isUser && message.rowAttachments?.length ? (
             <div
               className="mb-1.5 flex flex-wrap justify-end gap-1.5"
@@ -1251,6 +1474,18 @@ function ChatMessage({
                 <span
                   key={r.id}
                   className="inline-flex max-w-full min-w-0 rounded-md border border-sky-300/50 bg-white/60 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-sky-900"
+                >
+                  {r.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {isUser && message.fileAttachments?.length ? (
+            <div className="mb-1.5 flex flex-wrap justify-end gap-1.5" aria-hidden>
+              {message.fileAttachments.map((r) => (
+                <span
+                  key={r.id}
+                  className="inline-flex max-w-full min-w-0 rounded-md border border-violet-300/55 bg-white/70 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-violet-950"
                 >
                   {r.label}
                 </span>
@@ -1271,7 +1506,8 @@ function ChatMessage({
           ) : (
             message.content
           )}
-        </div>
+          </div>
+        </>
       )}
     </article>
   )
