@@ -17,13 +17,13 @@ import {
 } from './chatRuntime'
 import { OZ_CHAT_SYSTEM_PROMPT, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
+import { truncateForToolResult } from './toolResultTruncate'
 
 const DEFAULT_MODEL = 'claude-sonnet-4-6'
 const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
 const MAX_AGENT_ITERATIONS = 12
 const MAX_TOKENS_PER_RESPONSE = 4096
-const TOOL_RESULT_CONTENT_CAP = 80_000
 
 export type AgenticDependencies = RuntimeDependencies & {
   anthropic: {
@@ -81,16 +81,6 @@ function summarizeForTelemetry(value: unknown): string {
     return JSON.stringify(value).slice(0, 500)
   } catch {
     return String(value).slice(0, 500)
-  }
-}
-
-function truncateForToolResult(value: unknown): string {
-  try {
-    const text = JSON.stringify(value)
-    return text.length > TOOL_RESULT_CONTENT_CAP ? `${text.slice(0, TOOL_RESULT_CONTENT_CAP)}…[truncated]` : text
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    return `__serialization_error: ${msg}`
   }
 }
 
@@ -346,7 +336,11 @@ export async function* runOzChatLoopAgentic(
           ok: true,
           summary: summarizeForTelemetry(result),
         }
-        toolResults.push({ type: 'tool_result', tool_use_id: callId, content: truncateForToolResult(result) })
+        toolResults.push({
+          type: 'tool_result',
+          tool_use_id: callId,
+          content: truncateForToolResult(result, toolUse.name),
+        })
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         yield {
