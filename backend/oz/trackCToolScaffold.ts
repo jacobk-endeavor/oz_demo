@@ -1120,6 +1120,11 @@ export class TrackCToolScaffold {
     if (!candidate.startsWith(`${this.wikiRoot}${path.sep}`)) return null
     return candidate
   }
+
+  /** Repo root (OZ_REPO_ROOT / cwd) — used for filing-back paths and kb_extracts resolution. */
+  getRepoRoot(): string {
+    return this.repoRoot
+  }
 }
 
 function tokenize(text: string): string[] {
