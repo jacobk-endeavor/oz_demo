@@ -47,3 +47,5 @@ raw/*
 incoming/kb-ui-raw/
 
 docs/palantir-ontology/
+kb_extracts/*
+recommendations_flat.json

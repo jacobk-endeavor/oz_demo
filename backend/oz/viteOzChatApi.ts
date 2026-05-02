@@ -34,7 +34,10 @@ ensureOzPathDefault('OZ_KB_EXTRACTS_ROOT', path.join(REPO_ROOT, 'kb_extracts'))
 // product_catalog_flat.json is the array-of-SKU shape the scaffold expects;
 // product_catalog.json (hierarchical: product_lines→sub_categories→products) does not match.
 ensureOzPathDefault('OZ_PRODUCT_CATALOG_PATH', path.join(REPO_ROOT, 'product_catalog_flat.json'))
-ensureOzPathDefault('OZ_RECOMMENDATIONS_PATH', path.join(REPO_ROOT, 'recommendations.json'))
+// recommendations_flat.json is a flat row array of {rule_kind, sub_category|from_sku, recommend, ...};
+// recommendations.json from the analytics export groups by anchor and uses different field names per kind.
+// Regenerate with `npx tsx scripts/build-flat-recommendations.ts` whenever the source refreshes.
+ensureOzPathDefault('OZ_RECOMMENDATIONS_PATH', path.join(REPO_ROOT, 'recommendations_flat.json'))
 
 // TrackCToolScaffold's kb_search reads from DATABASE_READONLY_URL || DATABASE_URL.
 // `.env` here uses individual PG* vars (matching ingest_kb.py), so build a URL from
