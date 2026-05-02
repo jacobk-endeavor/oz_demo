@@ -8,6 +8,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react'
+import { OzThreadDirectionModal } from '../../features/oz/OzThreadDirectionModal'
 import { matchStockUpLikelyBuyersIntent } from '../../features/leadGen/stockUpBuyerIntents'
 import type { TableRowContextAttachment } from '../tableRowContext'
 import { ArrowUpIcon } from './icons'
@@ -473,6 +474,24 @@ function assistantSeedSignature(msgs: OzAssistantMessage[]): string {
     .join('\n')
 }
 
+function ThreadDirectionToolbar({ onOpen }: { onOpen: () => void }) {
+  return (
+    <div className="flex w-full max-w-2xl shrink-0 items-center justify-end border-b border-zinc-200/80 bg-white/70 px-3 py-1.5 backdrop-blur-sm md:px-4">
+      <button
+        type="button"
+        data-testid="oz-thread-direction-open"
+        onClick={onOpen}
+        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-100"
+      >
+        <span>Direction</span>
+        <kbd className="hidden rounded border border-zinc-200 bg-zinc-50 px-1 py-0.5 font-mono text-[10px] text-zinc-500 sm:inline">
+          ⌘K
+        </kbd>
+      </button>
+    </div>
+  )
+}
+
 export const OZ_KNOWLEDGE_PLACEHOLDER = '__knowledge_base__' as const
 export const OZ_KNOWLEDGE_WEB_PLACEHOLDER = '__knowledge_web__' as const
 export const OZ_KNOWLEDGE_CRM_PLACEHOLDER = '__knowledge_crm__' as const
@@ -618,6 +637,8 @@ export function OzAssistantPanel({
   const knowledgePreambleFallbackTimerRef = useRef<number | null>(null)
   const knowledgePreambleNotifiedRef = useRef(false)
   const knowledgePreambleT0Ref = useRef(0)
+  const [directionModalOpen, setDirectionModalOpen] = useState(false)
+  const autoDirOpenedForRef = useRef<string | null>(null)
 
   const seedSignature = assistantSeedSignature(seed)
   useEffect(() => {
@@ -629,6 +650,34 @@ export function OzAssistantPanel({
     // `seed` omitted on purpose: `messages={[]}` from parents is a new `[]` each render, but
     // `seedSignature` is stable for the same content.
   }, [hideWelcome, seedSignature, transcriptResetKey])
+
+  useEffect(() => {
+    autoDirOpenedForRef.current = null
+  }, [transcriptResetKey])
+
+  useEffect(() => {
+    if (!chatThreadId) return
+    if (autoDirOpenedForRef.current === chatThreadId) return
+    const onlyWelcome =
+      transcript.length === 1 &&
+      transcript[0]?.role === 'oz' &&
+      transcript[0]?.id === 'oz-welcome'
+    if (!onlyWelcome) return
+    autoDirOpenedForRef.current = chatThreadId
+    setDirectionModalOpen(true)
+  }, [chatThreadId, transcript])
+
+  useEffect(() => {
+    if (!chatThreadId) return
+    function onDirShortcut(ev: globalThis.KeyboardEvent) {
+      if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'k') {
+        ev.preventDefault()
+        setDirectionModalOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onDirShortcut)
+    return () => window.removeEventListener('keydown', onDirShortcut)
+  }, [chatThreadId])
 
   useEffect(() => {
     return () => {
@@ -878,6 +927,9 @@ export function OzAssistantPanel({
         aria-label="Oz chat"
       >
         <h2 className="sr-only">Start a conversation with Oz</h2>
+        {chatThreadId ? (
+          <ThreadDirectionToolbar onOpen={() => setDirectionModalOpen(true)} />
+        ) : null}
         <div
           role="region"
           className="flex w-full flex-col items-center justify-center gap-2 px-2"
@@ -892,6 +944,13 @@ export function OzAssistantPanel({
             inputId: 'oz-chat-input-hero',
           })}
         </div>
+        {chatThreadId ? (
+          <OzThreadDirectionModal
+            open={directionModalOpen}
+            threadId={chatThreadId}
+            onClose={() => setDirectionModalOpen(false)}
+          />
+        ) : null}
       </aside>
     )
   }
@@ -908,6 +967,9 @@ export function OzAssistantPanel({
       )}
       aria-label="Oz chat"
     >
+      {chatThreadId ? (
+        <ThreadDirectionToolbar onOpen={() => setDirectionModalOpen(true)} />
+      ) : null}
       <div
         ref={scrollerRef}
         role="log"
@@ -963,6 +1025,13 @@ export function OzAssistantPanel({
           })}
         </div>
       </div>
+      {chatThreadId ? (
+        <OzThreadDirectionModal
+          open={directionModalOpen}
+          threadId={chatThreadId}
+          onClose={() => setDirectionModalOpen(false)}
+        />
+      ) : null}
     </aside>
   )
 }
