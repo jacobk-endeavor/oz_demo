@@ -55,4 +55,14 @@ describe('parseOzConfigYaml', () => {
     const cfg = parseOzConfigYaml('sandbox:\n  imageDigest: ""\n')
     expect(cfg.sandbox).toBeUndefined()
   })
+
+  it('parses artifacts.signedUrlTtlSeconds', () => {
+    const cfg = parseOzConfigYaml('artifacts:\n  signedUrlTtlSeconds: 1800\n')
+    expect(cfg.artifacts?.signedUrlTtlSeconds).toBe(1800)
+  })
+
+  it('omits artifacts when TTL invalid or missing', () => {
+    expect(parseOzConfigYaml('artifacts:\n  signedUrlTtlSeconds: 0\n').artifacts).toBeUndefined()
+    expect(parseOzConfigYaml('artifacts:\n  signedUrlTtlSeconds: -1\n').artifacts).toBeUndefined()
+  })
 })
