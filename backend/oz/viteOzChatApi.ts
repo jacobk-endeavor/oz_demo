@@ -5,7 +5,13 @@ import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
 import pg from 'pg'
 import { buildOzChatAgentManifest } from './ozChatAgentManifest'
-import { OZ_CHAT_CONTRACT_VERSION, runOzChatLoop, type OzChatRequest, type OzChatStreamEvent } from './chatRuntime'
+import {
+  OZ_CHAT_CONTRACT_VERSION,
+  runOzChatLoop,
+  type OzChatRequest,
+  type OzChatStreamEvent,
+  type OzToolAuditOnCompletePayload,
+} from './chatRuntime'
 import { runOzChatLoopAgentic } from './chatRuntimeAgentic'
 import { runOzChatLoopAgenticOpenAi } from './chatRuntimeAgenticOpenAi'
 import { loadOzConfig, type OzChatAgenticProvider, type OzChatRuntimeKind } from './ozConfig'
@@ -499,13 +505,7 @@ export function ozChatApiPlugin() {
       const auditDep =
         process.env.OZ_TOOL_AUDIT === '1'
           ? {
-              onComplete: (payload: {
-                tool: string
-                ok: boolean
-                latency_ms: number
-                args_summary: string
-                result_summary: string
-              }) => {
+              onComplete: (payload: OzToolAuditOnCompletePayload) => {
                 console.error(`[oz-tool-audit] ${JSON.stringify({ ts: new Date().toISOString(), ...payload })}`)
               },
             }

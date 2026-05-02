@@ -43,7 +43,7 @@ import {
   type DataRef,
   type PythonSandboxResult,
 } from './pythonSandbox'
-import { isOzSandboxToolsUnavailable } from './ozSandboxAvailability'
+import { isOzSandboxToolsUnavailable, ozSandboxStartupHealth } from './ozSandboxAvailability'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
 import { OZ_CHAT_SYSTEM_PROMPT_VERSION, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import {
@@ -158,13 +158,23 @@ export type RuntimeDependencies = {
   }
   /** Optional audit sink for tool latency / summaries (PII-redacted args). Spec: Q&A §9. */
   audit?: {
-    onComplete?: (payload: {
-      tool: string
-      ok: boolean
-      latency_ms: number
-      args_summary: string
-      result_summary: string
-    }) => void
+    onComplete?: (payload: OzToolAuditOnCompletePayload) => void
+  }
+}
+
+/** Payload for {@link RuntimeDependencies.audit} when `OZ_TOOL_AUDIT=1` (console JSON lines). */
+export type OzToolAuditOnCompletePayload = {
+  tool: string
+  ok: boolean
+  latency_ms: number
+  args_summary: string
+  result_summary: string
+  sandbox?: {
+    exit_code: number | null
+    /** Resolved image ref (`repo:tag`, `repo@sha256:…`) from startup smoke or {@link resolveSandboxImage}. */
+    container_image_sha?: string
+    sandbox_egress_bytes: number
+    artifacts_emitted: number
   }
 }
 
@@ -309,6 +319,33 @@ function summarizeToolResult(result: unknown): string {
   }
 }
 
+function resolveSandboxImageRefForAudit(): string | undefined {
+  const fromSmoke = ozSandboxStartupHealth().image?.trim()
+  if (fromSmoke) return fromSmoke
+  return resolveSandboxImage()
+}
+
+function sandboxAuditFromRunPythonResult(out: unknown): OzToolAuditOnCompletePayload['sandbox'] | undefined {
+  if (!out || typeof out !== 'object') return undefined
+  const r = out as Record<string, unknown>
+  if (typeof r.ok !== 'boolean') return undefined
+  if (typeof r.stdout !== 'string' || typeof r.stderr !== 'string') return undefined
+  if (typeof r.runtime_ms !== 'number') return undefined
+  const ec = r.exit_code
+  if (typeof ec !== 'number' && ec !== null) return undefined
+
+  const artifactsLen = Array.isArray(r.artifacts) ? r.artifacts.length : 0
+  const inlineLen = Array.isArray(r.inline_figures) ? r.inline_figures.length : 0
+  const imageRef = resolveSandboxImageRefForAudit()
+
+  return {
+    exit_code: ec,
+    ...(imageRef ? { container_image_sha: imageRef } : {}),
+    sandbox_egress_bytes: 0,
+    artifacts_emitted: artifactsLen + inlineLen,
+  }
+}
+
 function wrapOzToolSurface(surface: OzToolSurface, audit: RuntimeDependencies['audit']): OzToolSurface {
   if (!audit?.onComplete) return surface
   return new Proxy(surface, {
@@ -320,12 +357,14 @@ function wrapOzToolSurface(surface: OzToolSurface, audit: RuntimeDependencies['a
         const name = String(prop)
         try {
           const out = await value.apply(target, args)
+          const sandbox = name === 'run_python' ? sandboxAuditFromRunPythonResult(out) : undefined
           audit.onComplete?.({
             tool: name,
             ok: true,
             latency_ms: Date.now() - t0,
             args_summary: redactToolArgs(args),
             result_summary: summarizeToolResult(out),
+            ...(sandbox ? { sandbox } : {}),
           })
           return out
         } catch (error) {
