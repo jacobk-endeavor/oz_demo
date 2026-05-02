@@ -19,11 +19,11 @@ import {
 } from './chatRuntime'
 import { OZ_CHAT_SYSTEM_PROMPT, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
+import { truncateForToolResult } from './toolResultTruncate'
 
 const DEFAULT_MODEL = 'gpt-4o-mini'
 const OPENAI_CHAT_URL = 'https://api.openai.com/v1/chat/completions'
 const MAX_AGENT_ITERATIONS = 12
-const TOOL_RESULT_CONTENT_CAP = 80_000
 
 export type OpenAiAgenticDependencies = RuntimeDependencies & {
   openai: {
@@ -82,16 +82,6 @@ function summarizeForTelemetry(value: unknown): string {
     return JSON.stringify(value).slice(0, 500)
   } catch {
     return String(value).slice(0, 500)
-  }
-}
-
-function truncateForToolResult(value: unknown): string {
-  try {
-    const text = JSON.stringify(value)
-    return text.length > TOOL_RESULT_CONTENT_CAP ? `${text.slice(0, TOOL_RESULT_CONTENT_CAP)}…[truncated]` : text
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    return `__serialization_error: ${msg}`
   }
 }
 
@@ -306,7 +296,11 @@ export async function* runOzChatLoopAgenticOpenAi(
           ok: true,
           summary: summarizeForTelemetry(result),
         }
-        messages.push({ role: 'tool', tool_call_id: callId, content: truncateForToolResult(result) })
+        messages.push({
+          role: 'tool',
+          tool_call_id: callId,
+          content: truncateForToolResult(result, tc.name),
+        })
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         yield {
