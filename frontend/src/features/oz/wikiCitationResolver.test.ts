@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { extractCitations, resolveCitations, type CitationLookupTables } from './wikiCitationResolver'
+import {
+  literalWarningForResolved,
+  resolveGrammarNodes,
+  StreamingGrammarBuffer,
+  STALE_OR_INVALID_ARTIFACT_ID,
+  STALE_OR_INVALID_PANEL_ID,
+  extractCitations,
+  extractGrammarNodes,
+  resolveCitations,
+  type CitationLookupTables,
+} from './wikiCitationResolver'
 
 const tables: CitationLookupTables = {
   docChunks: {
@@ -35,6 +45,12 @@ const tables: CitationLookupTables = {
   wikiPages: {
     'concepts/decking-width-tradeoff': { slug: 'concepts/decking-width-tradeoff', status: 'ready' },
     'archive/old-page': { slug: 'archive/old-page', status: 'archived' },
+  },
+  artifacts: {
+    art_known: { id: 'art_known', kind: 'xlsx', title: 'OK' },
+  },
+  panels: {
+    pan_known: { id: 'pan_known', kind: 'table' },
   },
 }
 
@@ -95,5 +111,72 @@ describe('resolveCitations', () => {
   it('returns missing record when citation key is unknown', () => {
     const [result] = resolveCitations('[catalog:sku=NOPE]', tables)
     expect(result).toMatchObject({ ok: false, reason: 'missing_record' })
+  })
+})
+
+describe('extractGrammarNodes (artifact + panel)', () => {
+  it('parses self-closing artifact and panel tags with attributes', () => {
+    const text =
+      'See <artifact id="art_known" kind="xlsx" title="Export"/> and <panel id="pan_known" kind="table"/>.'
+    const nodes = extractGrammarNodes(text)
+    const artifacts = nodes.filter((n) => n.kind === 'artifact')
+    const panels = nodes.filter((n) => n.kind === 'panel')
+    expect(artifacts).toHaveLength(1)
+    expect(artifacts[0]).toMatchObject({
+      kind: 'artifact',
+      id: 'art_known',
+      artifactKind: 'xlsx',
+      title: 'Export',
+    })
+    expect(panels).toHaveLength(1)
+    expect(panels[0]).toMatchObject({ kind: 'panel', id: 'pan_known', panelKind: 'table' })
+  })
+
+  it('keeps bracket citations and XML nodes in source order', () => {
+    const text = '[doc:abc123_p007_00002] <artifact id="art_known"/> tail'
+    const nodes = extractGrammarNodes(text)
+    expect(nodes.map((n) => n.kind)).toEqual(['doc', 'artifact'])
+  })
+
+  it('does not include XML tags in extractCitations (wiki lint compatibility)', () => {
+    const text = '<artifact id="art_known"/> [[wiki:concepts/decking-width-tradeoff]]'
+    const cites = extractCitations(text)
+    expect(cites.map((c) => c.kind)).toEqual(['wiki'])
+  })
+})
+
+describe('resolveGrammarNodes', () => {
+  it('resolves known artifact/panel ids from lookup tables', () => {
+    const text = '<artifact id="art_known"/><panel id="pan_known"/>'
+    const resolved = resolveGrammarNodes(text, tables)
+    expect(resolved.every((r) => r.ok)).toBe(true)
+  })
+
+  it('flags unknown ids with invalid reasons and literal warning strings', () => {
+    const text = '<artifact id="art_missing"/><panel id="pan_missing"/>'
+    const resolved = resolveGrammarNodes(text, tables)
+    expect(resolved[0]).toMatchObject({ ok: false, reason: 'invalid_artifact_id' })
+    expect(literalWarningForResolved(resolved[0])).toBe(STALE_OR_INVALID_ARTIFACT_ID)
+    expect(resolved[1]).toMatchObject({ ok: false, reason: 'invalid_panel_id' })
+    expect(literalWarningForResolved(resolved[1])).toBe(STALE_OR_INVALID_PANEL_ID)
+  })
+})
+
+describe('StreamingGrammarBuffer (SSE)', () => {
+  it('buffers from < until > across chunks', () => {
+    const buf = new StreamingGrammarBuffer()
+    expect(buf.append('before ')).toEqual({ safeText: 'before ' })
+    expect(buf.append('<arti')).toEqual({ safeText: '' })
+    expect(buf.append('fact id="art_known" kind="xlsx"/>')).toEqual({
+      safeText: '<artifact id="art_known" kind="xlsx"/>',
+    })
+    expect(buf.append(' after')).toEqual({ safeText: ' after' })
+    expect(buf.flush()).toEqual({ safeText: '' })
+  })
+
+  it('flush emits incomplete tag suffix literally', () => {
+    const buf = new StreamingGrammarBuffer()
+    expect(buf.append('x <panel id=')).toEqual({ safeText: 'x ' })
+    expect(buf.flush().safeText).toBe('<panel id=')
   })
 })
