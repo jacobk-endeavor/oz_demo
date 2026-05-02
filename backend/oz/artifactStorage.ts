@@ -2,7 +2,13 @@
  * DigitalOcean Spaces (S3-compatible) helpers for chat artifacts: PutObject and presigned GetObject.
  * Credentials and bucket come from env (see `.env.example`). Optional TTL from `config/oz.yaml` + env.
  */
-import { GetObjectCommand, PutObjectCommand, S3Client, type S3ClientConfig } from '@aws-sdk/client-s3'
+import {
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+  type S3ClientConfig,
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { loadOzConfig } from './ozConfig'
 
@@ -27,8 +33,16 @@ export type PutArtifactObjectInput = {
 export type SpacesArtifactClient = {
   readonly bucket: string
   putObject(input: PutArtifactObjectInput): Promise<void>
+  /** True when the object exists in Spaces (HTTP 200-class HEAD). False when missing (404). Throws on other errors. */
+  headObjectExists(key: string): Promise<boolean>
   /** Time-limited HTTPS URL for GET; suitable for browser download when bucket CORS allows the app origin. */
   presignGetObject(key: string): Promise<string>
+}
+
+function isS3NotFound(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false
+  const e = err as { name?: string; $metadata?: { httpStatusCode?: number } }
+  return e.name === 'NotFound' || e.$metadata?.httpStatusCode === 404
 }
 
 /** UTC date folder segment `yyyymmdd` per docs/infra/oz-artifacts-spaces.md */
@@ -136,6 +150,20 @@ export function createSpacesArtifactClient(
           CacheControl: input.cacheControl,
         }),
       )
+    },
+    async headObjectExists(key: string): Promise<boolean> {
+      try {
+        await client.send(
+          new HeadObjectCommand({
+            Bucket: env.bucket,
+            Key: key,
+          }),
+        )
+        return true
+      } catch (err) {
+        if (isS3NotFound(err)) return false
+        throw err
+      }
     },
     async presignGetObject(key: string): Promise<string> {
       const cmd = new GetObjectCommand({
