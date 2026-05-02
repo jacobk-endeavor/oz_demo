@@ -60,6 +60,114 @@ describe('OzAssistantPanel', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows KB promotion card when upload ids exist and the reply references the file', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const u = typeof input === 'string' ? input : 'url' in input ? input.url : String(input)
+      if (u.includes('/api/oz/chat/uploads')) {
+        return Promise.resolve(
+          new Response(JSON.stringify([{ upload_id: 'up_ozdemo_1' }]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        )
+      }
+      return Promise.reject(new Error(`unexpected fetch: ${u}`))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    try {
+      renderPanel({
+        onUserMessage: async () => ({
+          reply: 'I reviewed demo.pdf and here are notes.',
+          delayMs: 0,
+          stream: false,
+        }),
+      })
+      const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46])
+      const file = new File([pdfBytes], 'demo.pdf', { type: 'application/pdf' })
+      await user.upload(screen.getByTestId('oz-composer-upload-input'), file)
+      await user.type(screen.getByPlaceholderText('Ask Oz…'), 'Please review')
+      await user.click(screen.getByRole('button', { name: 'Send message' }))
+      expect(await screen.findByTestId('oz-kb-promotion-card')).toBeInTheDocument()
+      expect(
+        screen.getByRole('heading', { name: /Add this file to the knowledge base/i }),
+      ).toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('shows KB promotion card after Save to KB even without filename in the reply', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const u = typeof input === 'string' ? input : 'url' in input ? input.url : String(input)
+      if (u.includes('/api/oz/chat/uploads')) {
+        return Promise.resolve(
+          new Response(JSON.stringify([{ upload_id: 'up_explicit_1' }]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        )
+      }
+      return Promise.reject(new Error(`unexpected fetch: ${u}`))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    try {
+      renderPanel({
+        onUserMessage: async () => ({
+          reply: 'Done.',
+          delayMs: 0,
+          stream: false,
+        }),
+      })
+      const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46])
+      const file = new File([pdfBytes], 'demo.pdf', { type: 'application/pdf' })
+      await user.upload(screen.getByTestId('oz-composer-upload-input'), file)
+      await user.click(screen.getByRole('button', { name: 'Save to KB' }))
+      await user.type(screen.getByPlaceholderText('Ask Oz…'), 'Please process')
+      await user.click(screen.getByRole('button', { name: 'Send message' }))
+      expect(await screen.findByTestId('oz-kb-promotion-card')).toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('invokes onKbPromotionConsent when user confirms KB promotion', async () => {
+    const user = userEvent.setup()
+    const onKbPromotionConsent = vi.fn()
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const u = typeof input === 'string' ? input : 'url' in input ? input.url : String(input)
+      if (u.includes('/api/oz/chat/uploads')) {
+        return Promise.resolve(
+          new Response(JSON.stringify([{ upload_id: 'up_consent_1' }]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        )
+      }
+      return Promise.reject(new Error(`unexpected fetch: ${u}`))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    try {
+      renderPanel({
+        onKbPromotionConsent,
+        onUserMessage: async () => ({
+          reply: 'See notes.csv.',
+          delayMs: 0,
+          stream: false,
+        }),
+      })
+      const file = new File([new Uint8Array([1, 2, 3])], 'notes.csv', { type: 'text/csv' })
+      await user.upload(screen.getByTestId('oz-composer-upload-input'), file)
+      await user.type(screen.getByPlaceholderText('Ask Oz…'), 'Analyze')
+      await user.click(screen.getByRole('button', { name: 'Send message' }))
+      await user.click(await screen.findByRole('button', { name: 'Add to knowledge base' }))
+      expect(onKbPromotionConsent).toHaveBeenCalledWith('up_consent_1', true)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('shows Used in this reply after attaching a file and sending', async () => {
     const user = userEvent.setup()
     const fetchMock = vi.fn((input: RequestInfo | URL) => {
@@ -98,5 +206,29 @@ describe('OzAssistantPanel', () => {
     const aside = screen.getByRole('complementary', { name: 'Oz chat' })
     expect(aside).toHaveClass('border-t')
     expect(aside.className).toMatch(/max-h-\[min/)
+  })
+
+  it('shows sandbox runner-unreachable banner when parent returns unified-chat flags', async () => {
+    const user = userEvent.setup()
+    render(
+      <OzAssistantPanel
+        contextSummary="Demo"
+        messages={[]}
+        hideWelcome
+        onUserMessage={async () => ({
+          reply: 'Done.',
+          delayMs: 0,
+          stream: false,
+          ozSandboxToolsUnavailable: ['run_python'],
+          ozSandboxUnavailableReason: 'runner_unreachable',
+        })}
+      />,
+    )
+    await user.type(screen.getByPlaceholderText('Ask Oz…'), 'hello')
+    await user.click(screen.getByRole('button', { name: 'Send message' }))
+    expect(
+      await screen.findByText(/Sandbox temporarily unavailable/, undefined, { timeout: 10_000 }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Dismiss sandbox notice' })).toBeInTheDocument()
   })
 })

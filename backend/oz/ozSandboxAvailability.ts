@@ -40,3 +40,14 @@ export function ozSandboxStartupHealth(): {
 export function isOzSandboxToolsUnavailable(): boolean {
   return startupChecked && !startupOk
 }
+
+/** Trace payload for first agent iteration (`runtime_summary` / sandbox availability). */
+export function getOzChatSandboxTraceDetails(): Record<string, unknown> | undefined {
+  if (!startupChecked) return undefined
+  return {
+    sandbox_startup_ok: startupOk,
+    sandbox_startup_runtime_ms: startupRuntimeMs,
+    ...(startupImageTag ? { sandbox_image: startupImageTag } : {}),
+    ...(isOzSandboxToolsUnavailable() ? { tools_unavailable: ['run_python'] as const } : {}),
+  }
+}

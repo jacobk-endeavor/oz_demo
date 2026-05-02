@@ -15,6 +15,7 @@ import { OzThreadDirectionModal } from '../../features/oz/OzThreadDirectionModal
 import { getOzPanelPayload } from '../../features/oz/useOzChatStream'
 import { matchStockUpLikelyBuyersIntent } from '../../features/leadGen/stockUpBuyerIntents'
 import {
+  isKbPromotableFilename,
   postOzChatUploadsIfAvailable,
   validateComposerUploadFiles,
 } from '../../features/oz/ozChatUploadsApi'
@@ -125,6 +126,14 @@ export interface OzAssistantMessage {
   fileAttachments?: { id: string; label: string }[]
   /** When true, show a badge that this assistant reply consumed composer uploads for this turn. */
   usedUploadedContext?: boolean
+  /** Inline KB-promotion prompt under this assistant message (§12.1.3). */
+  kbPromotion?: OzAssistantKbPromotion
+}
+
+/** Payload for the KB-promotion inline card (docs/code-sandbox-and-artifact-generation.md §12.1.3). */
+export interface OzAssistantKbPromotion {
+  items: { uploadId: string; fileLabel: string }[]
+  trigger: 'explicit' | 'automatic'
 }
 
 export interface OzAssistantAction {
@@ -133,6 +142,15 @@ export interface OzAssistantAction {
   variant?: OzActionVariant
   disabled?: boolean
   onClick?: () => void
+}
+
+/** Return shape from {@link OzAssistantPanelProps.onUserMessage} (unified chat may add sandbox flags). */
+export type OzUserMessageResult = {
+  reply: string
+  delayMs?: number
+  stream?: boolean
+  ozSandboxToolsUnavailable?: string[]
+  ozSandboxUnavailableReason?: 'runner_unreachable' | 'feature_disabled'
 }
 
 export interface OzAssistantPanelProps {
@@ -148,10 +166,7 @@ export interface OzAssistantPanelProps {
   onUserMessage?: (
     text: string,
     context: OzChatTurnContext,
-  ) =>
-    | { reply: string; delayMs?: number; stream?: boolean }
-    | void
-    | Promise<{ reply: string; delayMs?: number; stream?: boolean } | void>
+  ) => OzUserMessageResult | void | Promise<OzUserMessageResult | void>
   /**
    * Choose the loading UI after the user sends a line (before `onUserMessage` resolves).
    * Use `knowledge_base` when the reply will draw on company-specific tabular / KB data.
@@ -214,10 +229,57 @@ export interface OzAssistantPanelProps {
   enableComposerUploads?: boolean
   /** Pin/unpin rows from Oz `display_table` slide-outs into the composer (sandbox/catalog/recs/calls chips). */
   onToggleComposerSandboxRow?: (attachment: TableRowContextAttachment) => void
+  /**
+   * KB-promotion consent until `viteKbIngestApi` wiring lands (`Oz-Demo-u4j`).
+   * Stub with logging if unset.
+   */
+  onKbPromotionConsent?: (uploadId: string, consent: boolean) => void
 }
 
 function makeId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+}
+
+function replyReferencesUpload(reply: string, fileLabels: string[], uploadIds: string[]): boolean {
+  const lower = reply.toLowerCase()
+  for (const id of uploadIds) {
+    const t = id.trim()
+    if (t.length >= 6 && lower.includes(t.toLowerCase())) return true
+  }
+  for (const label of fileLabels) {
+    const base = label.includes('/') ? label.slice(label.lastIndexOf('/') + 1) : label
+    if (base.length >= 3 && lower.includes(base.toLowerCase())) return true
+    const dot = base.lastIndexOf('.')
+    const stem = dot > 0 ? base.slice(0, dot) : base
+    if (stem.length >= 3 && lower.includes(stem.toLowerCase())) return true
+  }
+  return false
+}
+
+function buildKbPromotionPayload(args: {
+  fileSnapshot: { file: File }[]
+  composerUploadIds: string[] | undefined
+  replyText: string
+  explicitSaveToKb: boolean
+  enableComposerUploads: boolean
+}): OzAssistantKbPromotion | undefined {
+  const { fileSnapshot, composerUploadIds, replyText, explicitSaveToKb, enableComposerUploads } = args
+  if (!enableComposerUploads || !composerUploadIds?.length || !fileSnapshot.length) return undefined
+
+  const items: { uploadId: string; fileLabel: string }[] = []
+  for (let i = 0; i < composerUploadIds.length; i++) {
+    const f = fileSnapshot[i]?.file
+    const uploadId = composerUploadIds[i]
+    if (!f || !uploadId?.trim() || !isKbPromotableFilename(f.name)) continue
+    items.push({ uploadId: uploadId.trim(), fileLabel: f.name })
+  }
+  if (!items.length) return undefined
+
+  const labels = fileSnapshot.map((x) => x.file.name)
+  const referenced = replyReferencesUpload(replyText, labels, composerUploadIds)
+  if (explicitSaveToKb) return { items, trigger: 'explicit' }
+  if (referenced) return { items, trigger: 'automatic' }
+  return undefined
 }
 
 function asString(content: ReactNode): string {
@@ -426,12 +488,15 @@ function ComposerUploadStrip({
   entries,
   onRemove,
   onFilesChosen,
+  onRequestSaveToKb,
   errorText,
   disabled,
 }: {
   entries: { id: string; label: string }[]
   onRemove: (id: string) => void
   onFilesChosen: (files: File[]) => void
+  /** Marks the next sent message as an explicit KB-promotion request (§12.1.3). */
+  onRequestSaveToKb?: () => void
   errorText: string | null
   disabled: boolean
 }) {
@@ -500,6 +565,22 @@ function ComposerUploadStrip({
           <PaperclipIcon className="h-3.5 w-3.5 shrink-0 opacity-90" />
           Attach
         </button>
+        {entries.length > 0 && onRequestSaveToKb ? (
+          <button
+            type="button"
+            onClick={() => onRequestSaveToKb()}
+            disabled={disabled}
+            className={joinClasses(
+              'inline-flex shrink-0 items-center rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors',
+              disabled
+                ? 'cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400'
+                : 'border-emerald-300/70 bg-white/90 text-emerald-900 hover:border-emerald-400 hover:bg-emerald-50',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-500/50',
+            )}
+          >
+            Save to KB
+          </button>
+        ) : null}
         {entries.map((e) => (
           <span key={e.id} className="inline-flex max-w-full min-w-0">
             <button
@@ -836,6 +917,7 @@ export function OzAssistantPanel({
   chatThreadId,
   enableComposerUploads = true,
   onToggleComposerSandboxRow,
+  onKbPromotionConsent,
 }: OzAssistantPanelProps) {
   const [transcript, setTranscript] = useState<OzAssistantMessage[]>(() =>
     buildInitialTranscript(seed, hideWelcome),
@@ -855,6 +937,11 @@ export function OzAssistantPanel({
   const knowledgePreambleT0Ref = useRef(0)
   const [directionModalOpen, setDirectionModalOpen] = useState(false)
   const autoDirOpenedForRef = useRef<string | null>(null)
+  /** Next send will treat KB promotion as explicitly requested (Save to KB). */
+  const explicitKbSaveNextTurnRef = useRef(false)
+
+  const [sandboxRunnerUnreachableActive, setSandboxRunnerUnreachableActive] = useState(false)
+  const [sandboxRunnerBannerDismissed, setSandboxRunnerBannerDismissed] = useState(false)
 
   const [panelShellOpen, setPanelShellOpen] = useState<OzChatPanelShellState['openPanel']>(null)
 
@@ -893,6 +980,11 @@ export function OzAssistantPanel({
 
   useEffect(() => {
     autoDirOpenedForRef.current = null
+  }, [transcriptResetKey])
+
+  useEffect(() => {
+    setSandboxRunnerBannerDismissed(false)
+    setSandboxRunnerUnreachableActive(false)
   }, [transcriptResetKey])
 
   useEffect(() => {
@@ -1028,6 +1120,9 @@ export function OzAssistantPanel({
         }
       }
 
+      const explicitKbSave = explicitKbSaveNextTurnRef.current
+      explicitKbSaveNextTurnRef.current = false
+
       const att = composerContextAttachments
       const userMessage: OzAssistantMessage = {
         id: makeId(),
@@ -1069,7 +1164,7 @@ export function OzAssistantPanel({
       setComposerUploadError(null)
 
       const t0 = Date.now()
-      let fromParent: { reply: string; delayMs?: number; stream?: boolean } | void
+      let fromParent: OzUserMessageResult | void
       try {
         fromParent = await Promise.resolve(onUserMessage?.(value, turnCtx))
       } catch {
@@ -1077,6 +1172,21 @@ export function OzAssistantPanel({
           reply: 'I could not complete that just now. Try again in a moment.',
           delayMs: 0,
         }
+      }
+      if (fromParent && typeof fromParent === 'object') {
+        const tools = fromParent.ozSandboxToolsUnavailable
+        const r = fromParent.ozSandboxUnavailableReason
+        const showRunnerBanner =
+          Array.isArray(tools) && tools.includes('run_python') && r === 'runner_unreachable'
+        if (showRunnerBanner) {
+          setSandboxRunnerUnreachableActive(true)
+        } else {
+          setSandboxRunnerUnreachableActive(false)
+          setSandboxRunnerBannerDismissed(false)
+        }
+      } else {
+        setSandboxRunnerUnreachableActive(false)
+        setSandboxRunnerBannerDismissed(false)
       }
       const replyText =
         fromParent && typeof fromParent === 'object' && 'reply' in fromParent
@@ -1104,6 +1214,13 @@ export function OzAssistantPanel({
         fromParent && typeof fromParent === 'object' && 'stream' in fromParent && fromParent.stream === false
 
       window.setTimeout(() => {
+        const kbPromotion = buildKbPromotionPayload({
+          fileSnapshot,
+          composerUploadIds,
+          replyText,
+          explicitSaveToKb: explicitKbSave,
+          enableComposerUploads,
+        })
         setTranscript((t) =>
           t.map((entry) =>
             entry.id === placeholder.id
@@ -1113,6 +1230,7 @@ export function OzAssistantPanel({
                   streamIn: doStream,
                   ...(instantOptOut ? { instantReply: true } : {}),
                   ...(markUploadedReply ? { usedUploadedContext: true } : {}),
+                  ...(kbPromotion ? { kbPromotion } : {}),
                 }
               : entry,
           ),
@@ -1216,6 +1334,9 @@ export function OzAssistantPanel({
               setComposerUploadError(null)
             }}
             onFilesChosen={addComposerFiles}
+            onRequestSaveToKb={
+              enableComposerUploads ? () => { explicitKbSaveNextTurnRef.current = true } : undefined
+            }
             errorText={composerUploadError}
             disabled={isPending}
           />
@@ -1223,6 +1344,27 @@ export function OzAssistantPanel({
       }
     />
   )
+
+  const showSandboxRunnerBanner = sandboxRunnerUnreachableActive && !sandboxRunnerBannerDismissed
+  const sandboxRunnerBanner =
+    showSandboxRunnerBanner ? (
+      <div
+        role="status"
+        className="flex shrink-0 items-start gap-2 border-b border-amber-200/90 bg-amber-50/95 px-3 py-2 text-sm leading-snug text-amber-950"
+      >
+        <span className="min-w-0 flex-1">
+          Sandbox temporarily unavailable — typed exports still work.
+        </span>
+        <button
+          type="button"
+          className="shrink-0 rounded p-0.5 text-amber-900/80 hover:bg-amber-200/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-500"
+          aria-label="Dismiss sandbox notice"
+          onClick={() => setSandboxRunnerBannerDismissed(true)}
+        >
+          <span aria-hidden>×</span>
+        </button>
+      </div>
+    ) : null
 
   if (isCentered && !hasThread) {
     return (
@@ -1239,6 +1381,7 @@ export function OzAssistantPanel({
             {chatThreadId ? (
               <ThreadDirectionToolbar onOpen={() => setDirectionModalOpen(true)} />
             ) : null}
+            {sandboxRunnerBanner}
             <div
               role="region"
               className="flex w-full flex-col items-center justify-center gap-2 px-2"
@@ -1288,6 +1431,7 @@ export function OzAssistantPanel({
       {chatThreadId ? (
         <ThreadDirectionToolbar onOpen={() => setDirectionModalOpen(true)} />
       ) : null}
+      {sandboxRunnerBanner}
       <div
         ref={scrollerRef}
         role="log"
@@ -1318,6 +1462,7 @@ export function OzAssistantPanel({
                 align={isCentered ? 'center' : 'sides'}
                 reducedMotion={reducedMotion}
                 renderAssistantInline={assistantInline}
+                onKbPromotionConsent={onKbPromotionConsent}
               />
             ))}
           </div>
@@ -1450,6 +1595,86 @@ function KnowledgeBaseLoadingPill({
   )
 }
 
+function KbPromotionInlineCards({
+  messageId,
+  promotion,
+  align,
+  onKbPromotionConsent,
+}: {
+  messageId: string
+  promotion: OzAssistantKbPromotion
+  align: 'sides' | 'center'
+  onKbPromotionConsent?: (uploadId: string, consent: boolean) => void
+}) {
+  const [hidden, setHidden] = useState(false)
+  const centered = align === 'center'
+  const headingId = `oz-kb-promo-heading-${messageId}`
+  const multiple = promotion.items.length > 1
+  const title = multiple
+    ? 'Add these files to the knowledge base?'
+    : 'Add this file to the knowledge base?'
+  const body = multiple
+    ? 'Future conversations in this workspace will be able to cite them. Indexing takes a few minutes. You can remove them later from the Knowledge Base page.'
+    : 'Future conversations in this workspace will be able to cite it. Indexing takes a few minutes. You can remove it later from the Knowledge Base page.'
+
+  const applyConsent = (consent: boolean) => {
+    for (const it of promotion.items) {
+      if (onKbPromotionConsent) onKbPromotionConsent(it.uploadId, consent)
+      else console.info('[Oz KB promotion]', { uploadId: it.uploadId, consent, fileLabel: it.fileLabel })
+    }
+    setHidden(true)
+  }
+
+  if (hidden) return null
+
+  return (
+    <div
+      className={joinClasses(
+        'mt-2 flex w-full max-w-2xl',
+        centered ? 'justify-center' : 'justify-start',
+      )}
+    >
+      <section
+        role="region"
+        aria-labelledby={headingId}
+        className="w-full max-w-2xl rounded-xl border border-violet-200/80 bg-violet-50/50 px-3 py-2.5 text-left shadow-sm"
+        data-testid="oz-kb-promotion-card"
+      >
+        <h3 id={headingId} className="m-0 text-sm font-semibold text-zinc-900">
+          {title}
+        </h3>
+        {!multiple && promotion.items[0] ? (
+          <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{promotion.items[0].fileLabel}</p>
+        ) : null}
+        {multiple ? (
+          <ul className="mb-1.5 mt-1 list-inside list-disc text-xs text-zinc-600">
+            {promotion.items.map((it) => (
+              <li key={it.uploadId}>{it.fileLabel}</li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="m-0 text-xs leading-relaxed text-zinc-600">{body}</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="inline-flex items-center rounded-lg border border-violet-400/80 bg-violet-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
+            onClick={() => applyConsent(true)}
+          >
+            Add to knowledge base
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500/50"
+            onClick={() => applyConsent(false)}
+          >
+            Not now
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function ChatMessage({
   message,
   onStreamEnd,
@@ -1457,6 +1682,7 @@ function ChatMessage({
   align = 'sides',
   reducedMotion = false,
   renderAssistantInline,
+  onKbPromotionConsent,
 }: {
   message: OzAssistantMessage
   onStreamEnd?: (id: string) => void
@@ -1466,6 +1692,7 @@ function ChatMessage({
   align?: 'sides' | 'center'
   reducedMotion?: boolean
   renderAssistantInline?: AssistantMarkdownInlineRenderer
+  onKbPromotionConsent?: (uploadId: string, consent: boolean) => void
 }) {
   const isUser = message.role === 'user'
   const isSystem = message.role === 'system'
@@ -1632,6 +1859,14 @@ function ChatMessage({
               )}
             </div>,
           )}
+          {!isUser && !isSystem && message.kbPromotion ? (
+            <KbPromotionInlineCards
+              messageId={message.id}
+              promotion={message.kbPromotion}
+              align={align}
+              onKbPromotionConsent={onKbPromotionConsent}
+            />
+          ) : null}
         </>
       )}
     </article>

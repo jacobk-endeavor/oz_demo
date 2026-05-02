@@ -17,6 +17,39 @@ const ALLOWED_MIME = new Set([
 /** Fallback when the browser leaves `type` empty (common on drag-drop). */
 const ALLOWED_EXT = new Set(['.csv', '.json', '.xlsx', '.pdf', '.txt', '.png', '.jpg', '.jpeg'])
 
+/** Upload kinds that may be offered for KB promotion (docs/code-sandbox-and-artifact-generation.md §12.1.3). */
+export const OZ_KB_PROMOTABLE_KINDS = new Set(['csv', 'xlsx', 'pdf', 'docx', 'txt', 'md'])
+
+/**
+ * Normalized extension-derived kind for KB promotion gating (not MIME — consistent with filename UX).
+ */
+export function uploadKindFromFilename(filename: string): string {
+  const lower = filename.trim().toLowerCase()
+  const dot = lower.lastIndexOf('.')
+  const ext = dot >= 0 ? lower.slice(dot) : ''
+  switch (ext) {
+    case '.csv':
+      return 'csv'
+    case '.xlsx':
+      return 'xlsx'
+    case '.pdf':
+      return 'pdf'
+    case '.docx':
+      return 'docx'
+    case '.txt':
+      return 'txt'
+    case '.md':
+    case '.markdown':
+      return 'md'
+    default:
+      return 'other'
+  }
+}
+
+export function isKbPromotableFilename(filename: string): boolean {
+  return OZ_KB_PROMOTABLE_KINDS.has(uploadKindFromFilename(filename))
+}
+
 export function isAllowedComposerUploadFile(f: File): boolean {
   const mime = (f.type || '').trim().toLowerCase()
   if (mime && ALLOWED_MIME.has(mime)) return true

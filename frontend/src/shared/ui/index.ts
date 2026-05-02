@@ -15,6 +15,7 @@ export {
 export type {
   OzActionVariant,
   OzAssistantAction,
+  OzAssistantKbPromotion,
   OzAssistantMessage,
   OzAssistantPanelProps,
   OzChatTurnContext,

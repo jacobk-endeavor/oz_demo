@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   isAllowedComposerUploadFile,
+  isKbPromotableFilename,
+  uploadKindFromFilename,
   validateComposerUploadFiles,
 } from './ozChatUploadsApi'
 
@@ -13,6 +15,14 @@ describe('ozChatUploadsApi', () => {
 
   it('rejects unknown extensions', () => {
     expect(isAllowedComposerUploadFile(new File([], 'x.exe', { type: '' }))).toBe(false)
+  })
+
+  it('maps promotable kinds from filenames for KB promotion', () => {
+    expect(uploadKindFromFilename('data.csv')).toBe('csv')
+    expect(uploadKindFromFilename('Sheet.xlsx')).toBe('xlsx')
+    expect(uploadKindFromFilename('readme.md')).toBe('md')
+    expect(isKbPromotableFilename('x.pdf')).toBe(true)
+    expect(isKbPromotableFilename('snap.png')).toBe(false)
   })
 
   it('enforces aggregate size', () => {
