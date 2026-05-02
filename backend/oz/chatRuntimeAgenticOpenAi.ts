@@ -17,6 +17,7 @@ import {
   type OzToolSurface,
   type RuntimeDependencies,
 } from './chatRuntime'
+import { getOzChatSandboxTraceDetails } from './ozSandboxAvailability'
 import { OZ_CHAT_SYSTEM_PROMPT, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
 import { augmentOzChatUserTextFromContext } from './ozChatTableContextAugment'
@@ -273,6 +274,18 @@ export async function* runOzChatLoopAgenticOpenAi(
   let runPythonCallsThisTurn = 0
 
   for (let iteration = 0; iteration < MAX_AGENT_ITERATIONS; iteration++) {
+    if (iteration === 0) {
+      const sandboxTraceDetails = getOzChatSandboxTraceDetails()
+      if (sandboxTraceDetails) {
+        yield {
+          ...ev(),
+          type: 'trace',
+          stage: 'runtime_summary',
+          decision: 'availability',
+          details: sandboxTraceDetails,
+        }
+      }
+    }
     let stream: ReadableStream<Uint8Array>
     try {
       stream = await callOpenAiChatStream(fetchImpl, apiKey, model, tools, messages)

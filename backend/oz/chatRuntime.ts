@@ -43,7 +43,7 @@ import {
   type DataRef,
   type PythonSandboxResult,
 } from './pythonSandbox'
-import { isOzSandboxToolsUnavailable, ozSandboxStartupHealth } from './ozSandboxAvailability'
+import { getOzChatSandboxTraceDetails, isOzSandboxToolsUnavailable, ozSandboxStartupHealth } from './ozSandboxAvailability'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
 import { OZ_CHAT_SYSTEM_PROMPT_VERSION, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import {
@@ -785,6 +785,17 @@ export async function* runOzChatLoop(
     details: {
       reason: policyPath === 'hardcoded' ? 'deterministic text match' : 'fallback to runtime loop',
     },
+  }
+
+  const sandboxTraceDetails = getOzChatSandboxTraceDetails()
+  if (sandboxTraceDetails) {
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'runtime_summary',
+      decision: 'availability',
+      details: sandboxTraceDetails,
+    }
   }
 
   if (policyPath === 'hardcoded') {

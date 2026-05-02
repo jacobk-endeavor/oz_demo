@@ -41,6 +41,8 @@ export type OzChatClientRequest = {
   onPanelToolResult?: (event: Record<string, unknown>) => void
 }
 
+export type OzSandboxUnavailableReason = 'runner_unreachable' | 'feature_disabled'
+
 export type OzChatClientResponse = {
   reply: string
   // Correlates frontend and backend logs/telemetry for a single turn.
@@ -51,6 +53,9 @@ export type OzChatClientResponse = {
     toolCalls: number
     toolFailures: number
     toolLatencies: Array<{ tool: string; latencyMs: number }>
+    /** First `runtime_summary` / availability trace with `details.tools_unavailable` (unified chat). */
+    toolsUnavailable?: string[]
+    sandboxUnavailableReason?: OzSandboxUnavailableReason
   }
 }
 
@@ -126,6 +131,7 @@ async function readSseReply(
     toolFailures: 0,
     toolLatencies: [],
   }
+  let capturedSandboxTrace = false
 
   while (true) {
     const { value, done } = await reader.read()
@@ -174,6 +180,24 @@ async function readSseReply(
         if (event.type === 'trace' && event.stage === 'policy_gate' && typeof event.decision === 'string') {
           telemetry.policyPath = event.decision
           continue
+        }
+        // First availability trace (sandbox / tools_unavailable).
+        if (
+          !capturedSandboxTrace &&
+          event.type === 'trace' &&
+          event.details &&
+          typeof event.details === 'object'
+        ) {
+          const det = event.details as Record<string, unknown>
+          const tu = det.tools_unavailable
+          if (Array.isArray(tu) && tu.length > 0 && tu.every((x) => typeof x === 'string')) {
+            capturedSandboxTrace = true
+            telemetry.toolsUnavailable = tu as string[]
+            const r = det.reason
+            if (r === 'runner_unreachable' || r === 'feature_disabled') {
+              telemetry.sandboxUnavailableReason = r
+            }
+          }
         }
         // Runtime summary currently reports end-to-end latency.
         if (

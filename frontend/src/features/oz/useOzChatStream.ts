@@ -1,10 +1,15 @@
 import { useCallback, useRef } from 'react'
 import { create } from 'zustand'
 import type { OzChatTurnContext } from '../../shared/ui'
-import { postOzChat } from './ozChatClient'
+import { postOzChat, type OzSandboxUnavailableReason } from './ozChatClient'
 import { readOzChatRuntimeOverride } from './ozChatRuntimeToggle'
 
-type FallbackReply = { reply: string; delayMs?: number }
+type FallbackReply = {
+  reply: string
+  delayMs?: number
+  ozSandboxToolsUnavailable?: string[]
+  ozSandboxUnavailableReason?: OzSandboxUnavailableReason
+}
 
 /** Separator so thread id cannot collide with message id when joined. */
 const PANEL_KEY_SEP = '\u001f'
@@ -121,7 +126,14 @@ export function useOzChatStream({
             ...(mode ? { mode } : {}),
             ...(onPanelToolResult ? { onPanelToolResult } : {}),
           })
-          return { reply: result.reply, delayMs: 0 }
+          const tu = result.telemetry.toolsUnavailable
+          const reason = result.telemetry.sandboxUnavailableReason
+          return {
+            reply: result.reply,
+            delayMs: 0,
+            ...(tu?.length ? { ozSandboxToolsUnavailable: tu } : {}),
+            ...(reason ? { ozSandboxUnavailableReason: reason } : {}),
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error)
           if (

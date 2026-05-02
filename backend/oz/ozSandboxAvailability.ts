@@ -41,13 +41,20 @@ export function isOzSandboxToolsUnavailable(): boolean {
   return startupChecked && !startupOk
 }
 
-/** Trace payload for first agent iteration (`runtime_summary` / sandbox availability). */
-export function getOzChatSandboxTraceDetails(): Record<string, unknown> | undefined {
-  if (!startupChecked) return undefined
+/** Emitted in `trace` `details` when `run_python` is gated (startup smoke failed). */
+export type OzChatSandboxTraceDetails = {
+  tools_unavailable: string[]
+  reason: 'runner_unreachable' | 'feature_disabled'
+}
+
+/**
+ * When non-null, emit an early `trace` (`runtime_summary` / `decision: 'availability'`) so the
+ * client can show a banner only for `reason: 'runner_unreachable'`.
+ */
+export function getOzChatSandboxTraceDetails(): OzChatSandboxTraceDetails | null {
+  if (!isOzSandboxToolsUnavailable()) return null
   return {
-    sandbox_startup_ok: startupOk,
-    sandbox_startup_runtime_ms: startupRuntimeMs,
-    ...(startupImageTag ? { sandbox_image: startupImageTag } : {}),
-    ...(isOzSandboxToolsUnavailable() ? { tools_unavailable: ['run_python'] as const } : {}),
+    tools_unavailable: ['run_python'],
+    reason: 'runner_unreachable',
   }
 }

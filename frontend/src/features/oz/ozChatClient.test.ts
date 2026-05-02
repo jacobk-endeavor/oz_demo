@@ -150,4 +150,38 @@ describe('postOzChat SSE stream parsing', () => {
     expect(seen.length).toBe(1)
     expect(seen[0]?.name).toBe('display_table')
   })
+
+  it('captures first availability trace tools_unavailable and reason', async () => {
+    const fetchMock = vi.fn(async () => {
+      return new Response(
+        createSseBody([
+          `data: ${JSON.stringify({
+            type: 'trace',
+            stage: 'runtime_summary',
+            decision: 'availability',
+            details: { tools_unavailable: ['run_python'], reason: 'runner_unreachable' },
+          })}\n\n`,
+          `data: ${JSON.stringify({
+            type: 'trace',
+            stage: 'runtime_summary',
+            decision: 'availability',
+            details: { tools_unavailable: ['run_python'], reason: 'feature_disabled' },
+          })}\n\n`,
+          'data: {"type":"done","reply":"ok"}\n\n',
+        ]),
+        { headers: { 'content-type': 'text/event-stream' } },
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await postOzChat({
+      text: 'hello',
+      context: { priorUserMessages: [], priorExchanges: [] },
+      ragScope: 'Jacob',
+    })
+
+    expect(result.reply).toBe('ok')
+    expect(result.telemetry.toolsUnavailable).toEqual(['run_python'])
+    expect(result.telemetry.sandboxUnavailableReason).toBe('runner_unreachable')
+  })
 })
