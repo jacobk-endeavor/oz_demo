@@ -18,6 +18,11 @@ export type OzConfig = {
       model?: string
     }
   }
+  /** Python sandbox runner: Docker image pinned by registry digest after CI publish. */
+  sandbox?: {
+    /** Immutable digest from CI (e.g. `sha256:…`) for `oz-sandbox`; rollback = change digest + redeploy. */
+    imageDigest?: string
+  }
 }
 
 const DEFAULT_CONFIG: OzConfig = {
@@ -97,7 +102,11 @@ export function parseOzConfigYaml(text: string): OzConfig {
   const model = getValue(root, 'chat.agentic.model')
   const agentic: NonNullable<OzConfig['chat']['agentic']> = { provider }
   if (model) agentic.model = model
-  return { chat: { runtime, agentic } }
+  const digestRaw = getValue(root, 'sandbox.imageDigest')
+  const digest = digestRaw?.trim()
+  const sandbox =
+    digest && digest.length > 0 ? { imageDigest: digest } : undefined
+  return { chat: { runtime, agentic }, ...(sandbox ? { sandbox } : {}) }
 }
 
 let cached: { mtimeMs: number; config: OzConfig } | null = null

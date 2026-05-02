@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseOzConfigYaml } from './ozConfig'
+import { parseOzConfigYaml } from '../../../../backend/oz/ozConfig'
 
 describe('parseOzConfigYaml', () => {
   it('returns scaffold default when input is empty', () => {
@@ -42,5 +42,17 @@ describe('parseOzConfigYaml', () => {
     const cfg = parseOzConfigYaml('chat:\n  runtime: agentic   # trailing\n  agentic:\n    model: "claude-sonnet-4-6"\n')
     expect(cfg.chat.runtime).toBe('agentic')
     expect(cfg.chat.agentic?.model).toBe('claude-sonnet-4-6')
+  })
+
+  it('parses sandbox.imageDigest', () => {
+    const cfg = parseOzConfigYaml(
+      ['sandbox:', '  imageDigest: "sha256:abcd"', 'chat:', '  runtime: scaffold', ''].join('\n'),
+    )
+    expect(cfg.sandbox?.imageDigest).toBe('sha256:abcd')
+  })
+
+  it('omits sandbox when imageDigest empty', () => {
+    const cfg = parseOzConfigYaml('sandbox:\n  imageDigest: ""\n')
+    expect(cfg.sandbox).toBeUndefined()
   })
 })

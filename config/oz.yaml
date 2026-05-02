@@ -23,3 +23,8 @@ chat:
     provider: auto
     # model: gpt-4o-mini             # OpenAI override
     # model: claude-sonnet-4-6       # Anthropic override
+
+# Python sandbox (run_python): pin the oz-sandbox image by registry digest after CI push
+# (.github/workflows/oz-sandbox-image.yml prints IMAGE@sha256:… on main). Rollback = bump digest.
+# sandbox:
+#   imageDigest: "sha256:…"
