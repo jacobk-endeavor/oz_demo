@@ -61,6 +61,8 @@ describe('buildLocalDockerRunParts', () => {
       '--network=none',
       '--tmpfs',
       '/tmp:rw,nosuid,nodev,size=64m',
+      '--tmpfs',
+      '/sandbox:rw,nosuid,nodev,size=512m',
       '-v',
       '/tmp/in:/sandbox/inputs:ro',
       '-v',

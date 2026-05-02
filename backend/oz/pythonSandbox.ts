@@ -16,6 +16,8 @@ export const SANDBOX_DEFAULT_MEMORY = '512m'
 export const SANDBOX_DEFAULT_CPUS = 1.0
 export const SANDBOX_DEFAULT_PIDS = 128
 export const SANDBOX_TMPFS_TMP_SIZE = '64m'
+/** Writable sandbox root (inputs/outputs are bind mounts over this tmpfs). */
+export const SANDBOX_TMPFS_ROOT_SIZE = '512m'
 
 export type SandboxNetworkMode = 'none' | 'allow'
 
@@ -130,6 +132,8 @@ export function buildLocalDockerRunParts(spec: SandboxRunSpec, opts: LocalDocker
     `--network=${netFlag}`,
     '--tmpfs',
     `/tmp:rw,nosuid,nodev,size=${SANDBOX_TMPFS_TMP_SIZE}`,
+    '--tmpfs',
+    `/sandbox:rw,nosuid,nodev,size=${SANDBOX_TMPFS_ROOT_SIZE}`,
     '-v',
     `${spec.inputsDir}:/sandbox/inputs:ro`,
     '-v',
