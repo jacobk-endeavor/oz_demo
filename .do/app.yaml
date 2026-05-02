@@ -39,6 +39,11 @@ services:
       period_seconds: 10
       timeout_seconds: 10
       failure_threshold: 5
+    # Encrypted at rest in the App Platform UI (do not commit values):
+    #   DO_SPACES_KEY, DO_SPACES_SECRET — Spaces access key pair for S3-compatible API
+    #   DO_SPACES_ENDPOINT — e.g. https://nyc3.digitaloceanspaces.com (match bucket region)
+    #   DO_SPACES_REGION — e.g. nyc3
+    #   DO_SPACES_BUCKET — e.g. oz-artifacts-prod (one per env; see docs/infra/oz-artifacts-spaces.md, design §6.3)
     envs:
       - key: NODE_ENV
         value: production

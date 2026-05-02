@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Do not commit secrets.
+
+environment = "dev"
+
+spaces_region = "nyc3"
+
+do_token = "dop_v1_..."
+
+spaces_access_id  = "Spaces access key id from DO control panel"
+spaces_secret_key   = "Spaces secret key"
+
+# App Platform app URL(s) and local Vite — browsers use these on GET to signed artifact URLs.
+chat_origins = [
+  "https://oz-demo-xxxxxxxx.ondigitalocean.app",
+  "http://localhost:5173",
+]
