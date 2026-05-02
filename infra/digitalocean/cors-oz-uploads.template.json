@@ -1,0 +1,11 @@
+{
+  "CORSRules": [
+    {
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+      "AllowedOrigins": ["$OZ_CHAT_CORS_ORIGIN"],
+      "ExposeHeaders": ["ETag", "Content-Length", "x-amz-request-id"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}

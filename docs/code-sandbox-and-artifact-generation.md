@@ -317,6 +317,7 @@ Recommended start: co-located, behind a runner abstraction (`SandboxBackend` int
 
 ### 6.3 Infrastructure / ops
 
+- **Chat uploads bucket** — `oz-uploads-<env>` (e.g. `oz-uploads-dev`), separate from artifacts; CORS allow only the chat origin; lifecycle rule expiring objects after 24 h (provisioned as **1-day** S3-compatible lifecycle — see [`infra/digitalocean/README.md`](../infra/digitalocean/README.md)). Object keys: `s3://oz-uploads-<env>/<tenant>/<conv_id>/<upload_id>.<ext>` (§12.1.2).
 - **DO Spaces bucket** — one per env (`oz-artifacts-dev`, `oz-artifacts-prod`); CORS allow only the chat origin; lifecycle rule expiring `artifacts/*` after 30 days.
 - **Signed URLs** — short TTL (1 h default, configurable on `putArtifact`). Rotate access keys quarterly.
 - **Sandbox image** — a small `Dockerfile` next to [Dockerfile](Dockerfile) (or a multi-stage in the existing one) producing `oz-sandbox:<sha>`. Pin all package versions; rebuild on dependabot bumps; CI publishes to a private registry.
@@ -381,6 +382,7 @@ This section records **questions we must answer before shipping** so the model i
 
 The design in §2.1 mounts resolved refs under `/sandbox/inputs/`. **User-uploaded files** are not the same as catalog/wiki tool results; we need an explicit story:
 
+- **Object keys (Spaces):** Canonical layout — `s3://oz-uploads-<env>/<tenant>/<conv_id>/<upload_id>.<ext>` — in a dedicated bucket per env (`oz-uploads-<env>`), separate from artifacts; per-tenant prefix is the first path segment after the bucket. CORS allows **only** the chat web origin; lifecycle matches §12.1.2. Operator provisioning: [`infra/digitalocean/README.md`](../infra/digitalocean/README.md).
 - **Ingestion path:** When the user attaches a file in the composer, where are bytes stored for the duration of the session (object storage, encrypted blob row, size limits, MIME allowlist)? Who generates the stable name the sandbox sees (`/sandbox/inputs/user_upload_1.csv`)?
 - **Tool surface:** Do we add a tool parameter (e.g. `upload_ids: string[]`) that maps server-side to those blobs, or a dedicated prep step that materializes uploads into inputs before the model’s first `run_python` call in that turn?
 - **Model visibility:** Does the system prompt list available input filenames and sizes so the model can write correct paths? How do we prevent path confusion when multiple files share similar names?
@@ -497,7 +499,7 @@ These answers are the working baseline. Anything not answered here is explicitly
 
 #### 12.1.2 Chat attachments → sandbox local context (§10.2)
 
-- **Ingestion path.** New endpoint `POST /api/oz/chat/uploads`. Multipart, MIME allowlist (`text/csv`, `application/json`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `application/pdf`, `text/plain`, `image/png`, `image/jpeg`), 25 MB per-file, 100 MB per-turn aggregate. Bytes go to `s3://oz-uploads-<env>/<tenant>/<conv_id>/<upload_id>.<ext>`. Returns `{upload_id, filename, kind, size_bytes, sha256}`. Server is the only owner of `upload_id → /sandbox/inputs/<safe_name>` mapping.
+- **Ingestion path.** New endpoint `POST /api/oz/chat/uploads`. Multipart, MIME allowlist (`text/csv`, `application/json`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `application/pdf`, `text/plain`, `image/png`, `image/jpeg`), 25 MB per-file, 100 MB per-turn aggregate. Bytes go to `s3://oz-uploads-<env>/<tenant>/<conv_id>/<upload_id>.<ext>` (bucket **`oz-uploads-<env>`**, distinct from `oz-artifacts-<env>`). Provision the bucket + CORS + lifecycle via [`infra/digitalocean/provision-oz-uploads-bucket.sh`](../infra/digitalocean/provision-oz-uploads-bucket.sh). Returns `{upload_id, filename, kind, size_bytes, sha256}`. Server is the only owner of `upload_id → /sandbox/inputs/<safe_name>` mapping.
 - **Tool surface.** Add `upload_ids?: string[]` to `run_python` and to `make_*` (so a docx can embed a user-uploaded image). Server resolves each id to `/sandbox/inputs/upload_<n>__<sanitized_filename>`.
 - **Model visibility.** `chat_uploads` block injected into the system prompt for any turn with uploads, listing `[{upload_id, mounted_at, filename, kind, size_bytes}]`. Numeric prefix in `mounted_at` disambiguates same-named files. Tool description gets one extra sentence pointing to that block.
 - **Privacy / retention.** Uploads default to **24 h TTL** (vs 30 d for artifacts). KB promotion (§10.3) copies bytes into the KB pipeline; declining promotion does **not** extend the upload TTL.

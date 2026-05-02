@@ -1,0 +1,14 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-chat-uploads",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": ""
+      },
+      "Expiration": {
+        "Days": 1
+      }
+    }
+  ]
+}
