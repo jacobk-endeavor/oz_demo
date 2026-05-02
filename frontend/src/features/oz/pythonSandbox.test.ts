@@ -1,4 +1,10 @@
 // @vitest-environment node
+/**
+ * Test tiers (Oz-Demo-vk6):
+ * (a) Unit + mocked {@link SandboxBackend} — this file, default CI.
+ * (b) Integration — real local Docker; opt-in with OZ_RUN_SANDBOX_INTEGRATION=1 on PRs that touch pythonSandbox or sandboxTemplates.
+ * (c) E2E — prod image digest in nightly CI (outside Vitest).
+ */
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -13,6 +19,7 @@ import {
   type SandboxRunSpec,
 } from '../../../../backend/oz/pythonSandbox'
 
+describe('pythonSandbox tier (a) unit + mocked backend', () => {
 describe('pythonSandbox helpers', () => {
   it('maps data refs to stable input filenames', () => {
     expect(inputFilenameForDataRef('catalog_list_result', 'trc_abc')).toBe(
@@ -174,3 +181,13 @@ describe('runPythonSandbox', () => {
     if (!result.ok) expect(result.reason).toBe('timeout')
   })
 })
+})
+
+describe.skipIf(process.env.OZ_RUN_SANDBOX_INTEGRATION !== '1')(
+  'pythonSandbox tier (b) integration (local Docker)',
+  () => {
+    it('is opt-in only (set OZ_RUN_SANDBOX_INTEGRATION=1 to run real container tests here)', () => {
+      expect(process.env.OZ_RUN_SANDBOX_INTEGRATION).toBe('1')
+    })
+  },
+)

@@ -1,33 +1,62 @@
 import { joinClasses } from '../../shared/ui'
 
-/** Read-only demo invoice aligned with Summit Ridge / Marshall Court lumber package (JCR sell ~$285k). */
-export function LumberInvoicePreviewSheet({ className }: { className?: string }) {
-  const rows = [
-    {
-      desc: 'SPF dimensional & stud packs — walls / plates',
-      qty: '1 lot',
-      unit: '—',
-      amount: 95_000,
-    },
-    {
-      desc: 'Engineered floor system (LVL / I-joist)',
-      qty: '1 lot',
-      unit: '—',
-      amount: 98_000,
-    },
-    {
-      desc: '7/16 OSB sheathing, anchors & hardware bundle',
-      qty: '1 lot',
-      unit: '—',
-      amount: 72_000,
-    },
-    {
-      desc: 'Flatbed delivery coordination (3 drops, Marshall Court)',
-      qty: '3',
-      unit: 'drops',
-      amount: 20_000,
-    },
-  ] as const
+type DemoRow = {
+  desc: string
+  qty: string
+  unit: string
+  amount: number
+}
+
+const DEFAULT_INVOICE_ROWS: readonly DemoRow[] = [
+  {
+    desc: 'SPF dimensional & stud packs — walls / plates',
+    qty: '1 lot',
+    unit: '—',
+    amount: 95_000,
+  },
+  {
+    desc: 'Engineered floor system (LVL / I-joist)',
+    qty: '1 lot',
+    unit: '—',
+    amount: 98_000,
+  },
+  {
+    desc: '7/16 OSB sheathing, anchors & hardware bundle',
+    qty: '1 lot',
+    unit: '—',
+    amount: 72_000,
+  },
+  {
+    desc: 'Flatbed delivery coordination (3 drops, Marshall Court)',
+    qty: '3',
+    unit: 'drops',
+    amount: 20_000,
+  },
+]
+
+export type LumberInvoicePreviewSheetProps = {
+  className?: string
+  /** Overrides header title line (e.g. from `display_panel` props). */
+  heading?: string
+  refLine?: string
+  billToLine?: string
+  shipLine?: string
+  /** When provided with amounts, replaces demo line items. */
+  rows?: readonly DemoRow[]
+  totalLabel?: string
+}
+
+/** Read-only demo invoice; optional props come from `display_panel` / invoice_preview payloads (Oz-Demo-a3g). */
+export function LumberInvoicePreviewSheet({
+  className,
+  heading = 'INV-Q25-4420-LUM · Summit Ridge Framing',
+  refLine = 'Ref Q26-0601-LB · April 26, 2026',
+  billToLine = 'Bill-to: Summit Ridge Framing',
+  shipLine = 'Ship: Marshall Court jobsite (staged flatbed)',
+  rows: rowsProp,
+  totalLabel = 'Total due (matches Job Cost Recap sell)',
+}: LumberInvoicePreviewSheetProps) {
+  const rows = rowsProp ?? DEFAULT_INVOICE_ROWS
   const total = rows.reduce((s, r) => s + r.amount, 0)
 
   return (
@@ -41,11 +70,11 @@ export function LumberInvoicePreviewSheet({ className }: { className?: string })
       <header className="border-b border-zinc-200 bg-gradient-to-r from-amber-50/90 to-white px-4 py-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-900/90">Invoice preview (demo)</p>
         <div className="mt-1 flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-semibold text-zinc-900">INV-Q25-4420-LUM · Summit Ridge Framing</h3>
-          <p className="text-xs text-zinc-600">Ref Q26-0601-LB · April 26, 2026</p>
+          <h3 className="text-sm font-semibold text-zinc-900">{heading}</h3>
+          <p className="text-xs text-zinc-600">{refLine}</p>
         </div>
         <p className="mt-1 text-xs text-zinc-600">
-          Bill-to: Summit Ridge Framing · Ship: Marshall Court jobsite (staged flatbed)
+          {billToLine} · {shipLine}
         </p>
       </header>
       <div className="overflow-x-auto">
@@ -74,7 +103,7 @@ export function LumberInvoicePreviewSheet({ className }: { className?: string })
       </div>
       <div className="space-y-1 border-t border-zinc-200 bg-zinc-50/50 px-4 py-3 text-sm">
         <div className="flex justify-between text-base font-semibold text-zinc-900">
-          <span>Total due (matches Job Cost Recap sell)</span>
+          <span>{totalLabel}</span>
           <span className="tabular-nums">
             {total.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
           </span>

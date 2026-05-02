@@ -17,6 +17,7 @@ import {
 } from './chatRuntime'
 import { OZ_CHAT_SYSTEM_PROMPT, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
+import { augmentOzChatUserTextFromContext } from './ozChatTableContextAugment'
 import { truncateForToolResult } from './toolResultTruncate'
 import {
   buildAnswerAmendmentUserMessage,
@@ -29,6 +30,7 @@ const DEFAULT_MODEL = 'claude-sonnet-4-6'
 const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
 const MAX_AGENT_ITERATIONS = 16
+const RUN_PYTHON_CALL_CAP_PER_TURN = 4
 const MAX_TOKENS_PER_RESPONSE = 4096
 
 export type AgenticDependencies = RuntimeDependencies & {
@@ -272,7 +274,11 @@ export async function* runOzChatLoopAgentic(
   if (parsedRoute.systemNote != null) {
     systemPrompt = `${systemPrompt}\n\n${parsedRoute.systemNote}`
   }
-  const userText = parsedRoute.bareMessage || String(request.message ?? '')
+  const userText = augmentOzChatUserTextFromContext(
+    parsedRoute.bareMessage || String(request.message ?? ''),
+    request.context,
+    ['lead', 'lumberyard', 'competitor', 'sandbox'],
+  )
   const tools = convertOpenAiToolsToAnthropic()
 
   yield {
@@ -307,6 +313,7 @@ export async function* runOzChatLoopAgentic(
   const panelSuffixFragments: string[] = []
   let stopReason: string = 'end_turn'
   const startedAt = Date.now()
+  let runPythonCallsThisTurn = 0
 
   for (let iteration = 0; iteration < MAX_AGENT_ITERATIONS; iteration++) {
     let stream: ReadableStream<Uint8Array>
@@ -406,6 +413,34 @@ export async function* runOzChatLoopAgentic(
         arguments: toolUse.input,
       }
       try {
+        if (toolUse.name === 'run_python' && runPythonCallsThisTurn >= RUN_PYTHON_CALL_CAP_PER_TURN) {
+          const capResult = {
+            ok: false,
+            reason: 'call_cap_exceeded',
+            stdout: '',
+            stderr: '',
+            exit_code: null,
+            runtime_ms: 0,
+          }
+          yield {
+            ...ev(),
+            type: 'tool_result',
+            tool_call_id: callId,
+            name: toolUse.name,
+            ok: false,
+            summary: 'call_cap_exceeded',
+            result_meta: capResult as Record<string, unknown>,
+          }
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: callId,
+            content: truncateForToolResult(capResult, toolUse.name),
+          })
+          continue
+        }
+        if (toolUse.name === 'run_python') {
+          runPythonCallsThisTurn += 1
+        }
         const result = await executeToolOnSurface(surface, toolUse.name, toolUse.input)
         const panelMeta =
           toolUse.name === 'display_table' || toolUse.name === 'display_panel'

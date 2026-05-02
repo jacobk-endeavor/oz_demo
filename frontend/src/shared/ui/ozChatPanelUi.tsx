@@ -3,6 +3,7 @@ import {
   splitAssistantInlineLine,
   type ParsedGrammarNode,
 } from '../../../../shared/oz/citationGrammarResolver'
+import type { TableRowContextAttachment } from '../tableRowContext'
 import { getOzPanelPayload } from '../../features/oz/useOzChatStream'
 import {
   type AssistantMarkdownInlineRenderer,
@@ -15,6 +16,8 @@ export type OzChatPanelShellState = {
   openPanel: { messageId: string; panelId: string; kind?: string } | null
   togglePanel: (messageId: string, panelId: string, kind?: string) => void
   closePanel: () => void
+  /** Pin a `display_table` row into the Oz composer (sandbox/catalog/recs/calls chip scopes). */
+  pinDisplayTableRow?: (attachment: TableRowContextAttachment) => void
 }
 
 export const OzChatPanelShellContext = createContext<OzChatPanelShellState | null>(null)

@@ -3,7 +3,7 @@
  * Spec: docs/wiki-kb/track-c-chat-integration.md — descriptions act as routing logic; no separate classifier.
  */
 
-export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-track-c-1zl' as const
+export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-track-c-4qh' as const
 
 /** Full system prompt appended before tool definitions in an OpenAI-style chat completion. */
 export const OZ_CHAT_SYSTEM_PROMPT = [
@@ -283,6 +283,48 @@ export function ozChatOpenAiToolDefinitions(): OzOpenAiStyleTool[] {
         description:
           'Load an extracted figure/diagram from kb_extracts for vision or detailed explanation.',
         parameters: jsonParameters({ path: { type: 'string' } }, ['path']),
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'run_python',
+        description:
+          'Run Python in an isolated sandbox (Docker). Use for compute, transforms, plots, or writing files under /sandbox/outputs/. ' +
+          'Prefer make_spreadsheet / make_docx / make_pdf when the schema is already fixed. ' +
+          'Returns stdout/stderr/exit_code plus optional inline figures and artifact refs. ' +
+          'Per-turn limit: 4 calls (server-enforced).',
+        parameters: {
+          type: 'object',
+          properties: {
+            code: { type: 'string', description: 'Full Python program executed as main.py.' },
+            data_refs: {
+              type: 'array',
+              description:
+                'Optional refs to prior tool results; mounted as JSON files under /sandbox/inputs/ when resolvable.',
+              items: {
+                type: 'object',
+                properties: {
+                  kind: { type: 'string' },
+                  id: { type: 'string' },
+                },
+                required: ['kind', 'id'],
+                additionalProperties: false,
+              },
+            },
+            upload_ids: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional composer upload ids mapped server-side into /sandbox/inputs/.',
+            },
+            timeout_s: {
+              type: 'number',
+              description: 'Wall-clock timeout in seconds (default 30, max 120).',
+            },
+          },
+          required: ['code'],
+          additionalProperties: false,
+        },
       },
     },
     {

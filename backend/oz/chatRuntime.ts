@@ -36,6 +36,14 @@ import type {
 } from './trackCToolScaffold'
 import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
 import { randomUUID } from 'node:crypto'
+import {
+  LocalDockerBackend,
+  resolveSandboxImage,
+  runPythonSandbox,
+  type DataRef,
+  type PythonSandboxResult,
+} from './pythonSandbox'
+import { isOzSandboxToolsUnavailable } from './ozSandboxAvailability'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
 import { OZ_CHAT_SYSTEM_PROMPT_VERSION, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import {
@@ -235,6 +243,13 @@ export type OzToolSurface = {
   compare: (request: { targets: string[]; dimensions?: string[] }) => Promise<OzBundledLayer3Result>
   wiki_compare: (request: { slugs: string[] }) => Promise<OzBundledLayer3Result>
   drift_check: (request: { target: string }) => Promise<OzBundledLayer3Result>
+  /** Isolated Python runner (Docker); see docs/code-sandbox-and-artifact-generation.md §2.1. */
+  run_python: (request: {
+    code: string
+    data_refs?: DataRef[]
+    upload_ids?: string[]
+    timeout_s?: number
+  }) => Promise<PythonSandboxResult>
   /** Model-callable slide-out: tabular rows + stable ids (see docs/oz-chat-contract-schema.md). */
   display_table: (request: {
     title: string
@@ -584,6 +599,66 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
         'Bundled drift_check requires TrackCToolScaffold; contrast sources manually.',
         { target: String(payload.target ?? '') },
       )
+    },
+    async run_python(payload) {
+      if (isOzSandboxToolsUnavailable()) {
+        return {
+          ok: false,
+          reason: 'sandbox_unavailable',
+          stdout: '',
+          stderr:
+            'Sandbox runner did not pass startup smoke (see backend logs). Ensure Docker is running and OZ_SANDBOX_IMAGE is set when needed.',
+          exit_code: null,
+          runtime_ms: 0,
+        }
+      }
+      const code = String(payload.code ?? '')
+      if (!code.trim()) {
+        return {
+          ok: false,
+          reason: 'nonzero_exit',
+          stdout: '',
+          stderr: 'run_python requires non-empty code.',
+          exit_code: 1,
+          runtime_ms: 0,
+        }
+      }
+      const timeoutS = Math.min(120, Math.max(1, Number(payload.timeout_s) || 30))
+      const timeoutMs = timeoutS * 1000
+      const uploadIds = Array.isArray(payload.upload_ids)
+        ? payload.upload_ids.map((u) => String(u ?? '').trim()).filter(Boolean)
+        : []
+      if (uploadIds.length > 0) {
+        return {
+          ok: false,
+          reason: 'sandbox_unavailable',
+          stdout: '',
+          stderr: 'upload_ids are not wired to storage in this runtime yet; omit upload_ids or use host-mode tools.',
+          exit_code: null,
+          runtime_ms: 0,
+        }
+      }
+      const refs = Array.isArray(payload.data_refs)
+        ? payload.data_refs
+            .map((r) => {
+              if (!r || typeof r !== 'object') return null
+              const o = r as Record<string, unknown>
+              const kind = String(o.kind ?? '').trim()
+              const id = String(o.id ?? '').trim()
+              return kind && id ? ({ kind, id } as DataRef) : null
+            })
+            .filter((x): x is DataRef => x != null)
+        : []
+      const backend = new LocalDockerBackend()
+      const image = resolveSandboxImage()
+      return runPythonSandbox({
+        code,
+        ...(refs.length ? { dataRefs: refs } : {}),
+        timeoutMs,
+        backend,
+        resolveDataRef: async () => null,
+        image,
+      })
     },
     async display_table(payload) {
       const panel_id = `pan_${randomUUID().replace(/-/g, '')}`

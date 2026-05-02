@@ -19,6 +19,7 @@ import {
 } from './chatRuntime'
 import { OZ_CHAT_SYSTEM_PROMPT, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
+import { augmentOzChatUserTextFromContext } from './ozChatTableContextAugment'
 import { truncateForToolResult } from './toolResultTruncate'
 import {
   buildAnswerAmendmentUserMessage,
@@ -30,6 +31,7 @@ import {
 const DEFAULT_MODEL = 'gpt-4o-mini'
 const OPENAI_CHAT_URL = 'https://api.openai.com/v1/chat/completions'
 const MAX_AGENT_ITERATIONS = 16
+const RUN_PYTHON_CALL_CAP_PER_TURN = 4
 
 export type OpenAiAgenticDependencies = RuntimeDependencies & {
   openai: {
@@ -227,7 +229,11 @@ export async function* runOzChatLoopAgenticOpenAi(
   if (parsedRoute.systemNote != null) {
     systemPrompt = `${systemPrompt}\n\n${parsedRoute.systemNote}`
   }
-  const userText = parsedRoute.bareMessage || String(request.message ?? '')
+  const userText = augmentOzChatUserTextFromContext(
+    parsedRoute.bareMessage || String(request.message ?? ''),
+    request.context,
+    ['lead', 'lumberyard', 'competitor', 'sandbox'],
+  )
   const tools = ozChatOpenAiToolDefinitions()
 
   yield {
@@ -264,6 +270,7 @@ export async function* runOzChatLoopAgenticOpenAi(
   const panelSuffixFragments: string[] = []
   let stopReason = 'stop'
   const startedAt = Date.now()
+  let runPythonCallsThisTurn = 0
 
   for (let iteration = 0; iteration < MAX_AGENT_ITERATIONS; iteration++) {
     let stream: ReadableStream<Uint8Array>
@@ -348,6 +355,34 @@ export async function* runOzChatLoopAgenticOpenAi(
         arguments: parsedArgs,
       }
       try {
+        if (tc.name === 'run_python' && runPythonCallsThisTurn >= RUN_PYTHON_CALL_CAP_PER_TURN) {
+          const capResult = {
+            ok: false,
+            reason: 'call_cap_exceeded',
+            stdout: '',
+            stderr: '',
+            exit_code: null,
+            runtime_ms: 0,
+          }
+          yield {
+            ...ev(),
+            type: 'tool_result',
+            tool_call_id: callId,
+            name: tc.name,
+            ok: false,
+            summary: 'call_cap_exceeded',
+            result_meta: capResult as Record<string, unknown>,
+          }
+          messages.push({
+            role: 'tool',
+            tool_call_id: callId,
+            content: truncateForToolResult(capResult, tc.name),
+          })
+          continue
+        }
+        if (tc.name === 'run_python') {
+          runPythonCallsThisTurn += 1
+        }
         const result = await executeToolOnSurface(surface, tc.name, parsedArgs)
         const panelMeta =
           tc.name === 'display_table' || tc.name === 'display_panel'

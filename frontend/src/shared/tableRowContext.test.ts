@@ -38,6 +38,19 @@ describe('augmentUserMessageWithTableContext', () => {
     expect(out).toContain('question')
   })
 
+  it('includes sandbox scope when requested', () => {
+    const sb: TableRowContextAttachment = {
+      key: 'oz:tbl:pan_x:row1',
+      scope: 'sandbox',
+      rowId: 'row1',
+      displayIndex: 1,
+      label: '<Row 1>',
+      modelLine: 'model',
+    }
+    const out = augmentUserMessageWithTableContext('q', [sb], { scopes: ['sandbox'] })
+    expect(out).toContain('model')
+  })
+
   it('includes competitor scope when requested', () => {
     const comp: TableRowContextAttachment = {
       key: 'competitor:x',

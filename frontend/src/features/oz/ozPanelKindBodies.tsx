@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react'
+import { useContext } from 'react'
+import { makeOzDisplayTableRowAttachment } from '../../shared/tableRowContext'
+import { OzChatPanelShellContext } from '../../shared/ui/ozChatPanelUi'
 import { JobCostEstimateRecapSheet } from '../fieldApp/JobCostEstimateRecapSheet'
 import { LumberInvoicePreviewSheet } from '../quoteAutomation/LumberInvoicePreviewSheet'
 
@@ -58,6 +61,7 @@ function formatCell(column: OzDisplayTableColumn, raw: unknown): string {
 
 /** Tabular slide-out content for `display_table` tool results (§6.1). */
 export function OzDataTablePanel({ payload }: OzPanelRendererProps) {
+  const shell = useContext(OzChatPanelShellContext)
   const parsed = readDisplayTablePayload(payload)
   if (!parsed) {
     return (
@@ -67,7 +71,9 @@ export function OzDataTablePanel({ payload }: OzPanelRendererProps) {
       />
     )
   }
-  const { title, columns, rows } = parsed
+  const { title, columns, rows, scope: tableScope } = parsed
+  const panelId = shell?.openPanel?.panelId ?? ''
+  const canPin = Boolean(shell?.pinDisplayTableRow && panelId)
 
   return (
     <section
@@ -87,16 +93,39 @@ export function OzDataTablePanel({ payload }: OzPanelRendererProps) {
                   {c.label}
                 </th>
               ))}
+              {canPin ? (
+                <th className="w-0 whitespace-nowrap px-2 py-2 text-right font-semibold">Chat</th>
+              ) : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
-            {rows.map((r) => (
+            {rows.map((r, idx) => (
               <tr key={r.id} data-row-id={r.id}>
                 {columns.map((c) => (
                   <td key={c.key} className="px-4 py-2.5 text-zinc-800">
                     {formatCell(c, r.cells[c.key])}
                   </td>
                 ))}
+                {canPin ? (
+                  <td className="w-0 whitespace-nowrap px-2 py-2 text-right align-middle">
+                    <button
+                      type="button"
+                      className="rounded-md border border-sky-300/70 bg-white px-2 py-0.5 text-[10px] font-semibold text-sky-900 shadow-sm hover:bg-sky-50"
+                      onClick={() =>
+                        shell?.pinDisplayTableRow?.(
+                          makeOzDisplayTableRowAttachment({
+                            panelId,
+                            tableScope,
+                            row: r,
+                            displayIndex: idx + 1,
+                          }),
+                        )
+                      }
+                    >
+                      Pin row
+                    </button>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
@@ -108,9 +137,29 @@ export function OzDataTablePanel({ payload }: OzPanelRendererProps) {
 
 // --- display_panel: invoice / job cost (existing sheets; richer wiring lands in P1a-4) ---
 
+function readInvoicePanelPayload(payload: unknown): {
+  heading?: string
+  refLine?: string
+  billToLine?: string
+  shipLine?: string
+  totalLabel?: string
+} {
+  if (!isRecord(payload)) return {}
+  const propsObj = isRecord(payload.props) ? payload.props : payload
+  const heading = propsObj.heading ?? propsObj.title
+  const refLine = propsObj.ref_line ?? propsObj.reference
+  return {
+    heading: typeof heading === 'string' ? heading : undefined,
+    refLine: typeof refLine === 'string' ? refLine : undefined,
+    billToLine: typeof propsObj.bill_to === 'string' ? propsObj.bill_to : undefined,
+    shipLine: typeof propsObj.ship_to === 'string' ? propsObj.ship_to : undefined,
+    totalLabel: typeof propsObj.total_label === 'string' ? propsObj.total_label : undefined,
+  }
+}
+
 export function OzInvoicePreviewPanel(props: OzPanelRendererProps) {
-  void props.payload
-  return <LumberInvoicePreviewSheet className="min-h-0 flex-1" />
+  const extra = readInvoicePanelPayload(props.payload)
+  return <LumberInvoicePreviewSheet className="min-h-0 flex-1" {...extra} />
 }
 
 function readJobCostPayload(payload: unknown): {

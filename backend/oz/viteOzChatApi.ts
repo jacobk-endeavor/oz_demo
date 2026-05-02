@@ -18,6 +18,10 @@ import {
   getOzThreadDirectionDb,
   upsertOzThreadDirection,
 } from './threadDirectionPg'
+import { resolveOzArtifactRead, getOzArtifactsDb } from './artifactRegistry'
+import { tryCreateSpacesArtifactClientFromEnv, resolveSignedUrlTtlSeconds } from './artifactStorage'
+import { ozSandboxStartupHealth, setOzSandboxStartupResult } from './ozSandboxAvailability'
+import { runOzSandboxStartupSmoke } from './sandboxStartupSmoke'
 
 // Canonical API route for the unified Oz runtime.
 const OZ_CHAT_PATH = '/api/oz/chat'
@@ -115,6 +119,29 @@ function normalizedUrlPath(url: string | undefined): string {
 }
 
 /** GET/PUT /api/oz/chat/thread/<id>/direction (prefix-safe: matches .../api/oz/chat/... in preview). */
+/** GET /api/oz/artifacts/<artifact_id>/signed-url */
+function parseOzArtifactSignedUrlPath(urlPath: string): { artifactId: string } | null {
+  const trimmed = urlPath.replace(/\/+$/, '')
+  const needle = '/api/oz/artifacts/'
+  const idx = trimmed.indexOf(needle)
+  if (idx === -1) return null
+  const rest = trimmed.slice(idx + needle.length)
+  const segments = rest.split('/').filter(Boolean)
+  if (segments.length !== 2 || segments[1] !== 'signed-url') return null
+  try {
+    const artifactId = decodeURIComponent(segments[0])
+    return artifactId ? { artifactId } : null
+  } catch {
+    return null
+  }
+}
+
+function isOzArtifactSignedUrlGet(req: IncomingMessage): boolean {
+  if (req.method !== 'GET') return false
+  const path = normalizedUrlPath(req.url)
+  return parseOzArtifactSignedUrlPath(path) != null
+}
+
 function parseOzThreadDirectionPath(urlPath: string): { threadId: string } | null {
   const trimmed = urlPath.replace(/\/+$/, '')
   const needle = '/api/oz/chat/thread/'
@@ -276,6 +303,7 @@ export function ozChatApiPlugin() {
             },
             sandbox: {
               imageDigest: config.sandbox?.imageDigest ?? null,
+              startup: ozSandboxStartupHealth(),
             },
             agentic_available: resolution.provider !== null,
             agentic_provider: resolution.provider, // 'openai' | 'anthropic' | null
@@ -294,6 +322,58 @@ export function ozChatApiPlugin() {
     }
 
     const pathForExtras = normalizedUrlPath(req.url)
+    if (isOzArtifactSignedUrlGet(req)) {
+      const parsed = parseOzArtifactSignedUrlPath(pathForExtras)
+      if (!parsed) {
+        res.statusCode = 400
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.end(JSON.stringify({ error: 'Invalid artifact path' }))
+        return
+      }
+      try {
+        const db = getOzArtifactsDb(readEnv)
+        const ttl = await resolveSignedUrlTtlSeconds(REPO_ROOT)
+        const spaces = tryCreateSpacesArtifactClientFromEnv({ signedUrlTtlSeconds: ttl })
+        if (!db || !spaces) {
+          res.statusCode = 503
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ error: 'Artifact signing unavailable (configure DATABASE_URL and Spaces env).' }))
+          return
+        }
+        const tenant = resolveOzTenant(readEnv)
+        const outcome = await resolveOzArtifactRead(db, spaces, parsed.artifactId, tenant)
+        if (outcome.outcome === 'not_found') {
+          res.statusCode = 404
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ error: 'Artifact not found' }))
+          return
+        }
+        if (outcome.outcome === 'gone') {
+          res.statusCode = 410
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ error: 'Artifact expired or unavailable' }))
+          return
+        }
+        const signed_url = await spaces.presignGetObject(outcome.row.key)
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-store')
+        res.end(
+          JSON.stringify({
+            signed_url,
+            artifact_id: outcome.row.id,
+            kind: outcome.row.kind,
+            ttl_seconds: ttl,
+          }),
+        )
+      } catch (error) {
+        res.statusCode = 500
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }))
+      }
+      return
+    }
+
     const threadDirection = parseOzThreadDirectionPath(pathForExtras)
     if (threadDirection && (req.method === 'GET' || req.method === 'PUT')) {
       try {
@@ -547,3 +627,17 @@ export function ozChatApiPlugin() {
     },
   }
 }
+
+void (async () => {
+  try {
+    await initTrackCScaffold
+    if (process.env.OZ_SKIP_SANDBOX_STARTUP === '1') {
+      setOzSandboxStartupResult({ ok: true, runtimeMs: 0 })
+      return
+    }
+    const r = await runOzSandboxStartupSmoke({ repoRoot: REPO_ROOT })
+    setOzSandboxStartupResult({ ok: r.ok, runtimeMs: r.runtimeMs, image: r.image })
+  } catch {
+    setOzSandboxStartupResult({ ok: false, runtimeMs: 0 })
+  }
+})()

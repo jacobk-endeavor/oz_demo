@@ -313,6 +313,15 @@ export default function App() {
     setChatExportNotices((prev) => [...prev.slice(-5), { id: `exp-${Date.now()}`, label }])
   }, [])
 
+  const toggleOzComposerSandboxRow = useCallback((att: TableRowContextAttachment) => {
+    setTableChatAttachments((prev) => {
+      if (prev.some((a) => a.key === att.key)) {
+        return prev.filter((a) => a.key !== att.key)
+      }
+      return [...prev, att]
+    })
+  }, [])
+
   const pendingLumberyardKnowledgeUi = useCallback(
     (userText: string) =>
       getPendingKnowledgeUiKind({
@@ -767,7 +776,7 @@ export default function App() {
       ].join('\n\n')
 
       const leadUserContent = augmentUserMessageWithTableContext(text, context.tableContextAttachments, {
-        scopes: ['lead', 'lumberyard', 'competitor'],
+        scopes: ['lead', 'lumberyard', 'competitor', 'sandbox'],
       })
 
       const messages: OzOpenAIMessage[] = [
@@ -1053,6 +1062,7 @@ export default function App() {
               onUserMessage,
               pendingAssistantPlaceholder: pendingLumberyardKnowledgeUi,
               composerContextAttachments: tableChatAttachments,
+              onToggleComposerSandboxRow: toggleOzComposerSandboxRow,
               onRemoveComposerContextAttachment: (key: string) =>
                 setTableChatAttachments((p) => p.filter((a) => a.key !== key)),
               onAfterUserMessage: () => setTableChatAttachments([]),

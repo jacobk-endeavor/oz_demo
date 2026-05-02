@@ -18,7 +18,7 @@ import {
   postOzChatUploadsIfAvailable,
   validateComposerUploadFiles,
 } from '../../features/oz/ozChatUploadsApi'
-import type { TableRowContextAttachment } from '../tableRowContext'
+import type { TableContextScope, TableRowContextAttachment } from '../tableRowContext'
 import { ArrowUpIcon, PaperclipIcon } from './icons'
 import { SimpleAssistantMarkdown, type AssistantMarkdownInlineRenderer } from './SimpleAssistantMarkdown'
 import {
@@ -212,6 +212,8 @@ export interface OzAssistantPanelProps {
    * When false, the panel behaves as before (no upload UI).
    */
   enableComposerUploads?: boolean
+  /** Pin/unpin rows from Oz `display_table` slide-outs into the composer (sandbox/catalog/recs/calls chips). */
+  onToggleComposerSandboxRow?: (attachment: TableRowContextAttachment) => void
 }
 
 function makeId() {
@@ -556,7 +558,7 @@ function ChatComposerRow({
   size: 'hero' | 'compact'
   formClassName?: string
   inputId?: string
-  contextRowTags?: { id: string; label: string }[]
+  contextRowTags?: { id: string; label: string; scope?: TableContextScope }[]
   onRemoveContextRowTag?: (rowId: string) => void
   composerUploadStrip?: ReactNode
 }) {
@@ -588,10 +590,11 @@ function ChatComposerRow({
                   type="button"
                   onClick={() => onRemoveContextRowTag?.(tag.id)}
                   className={joinClasses(
-                    'inline-flex max-w-full min-w-0 items-center gap-0.5 rounded-md border border-sky-300/60 bg-white/90 px-1.5 py-0.5',
-                    'text-left font-mono text-[10px] font-semibold leading-tight text-sky-900',
-                    'shadow-sm transition-colors hover:border-sky-400/80 hover:bg-sky-50/95',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-500/50',
+                    'inline-flex max-w-full min-w-0 items-center gap-0.5 rounded-md border px-1.5 py-0.5',
+                    'text-left font-mono text-[10px] font-semibold leading-tight',
+                    'shadow-sm transition-colors',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1',
+                    composerChipToneClasses(tag.scope ?? 'lumberyard'),
                   )}
                   title="Remove from context"
                 >
@@ -794,6 +797,20 @@ function variantSequenceMs(kind: KnowledgePillKind): number {
   return v.icons.length * v.staggerMs + (v.postSequencePadMs ?? 0)
 }
 
+function composerChipToneClasses(scope: TableContextScope): string {
+  switch (scope) {
+    case 'sandbox':
+      return 'border-amber-300/60 bg-white/90 text-amber-950 hover:border-amber-400/80 hover:bg-amber-50/95 focus-visible:outline-amber-500/50'
+    case 'lead':
+      return 'border-emerald-300/60 bg-white/90 text-emerald-950 hover:border-emerald-400/80 hover:bg-emerald-50/95 focus-visible:outline-emerald-500/50'
+    case 'competitor':
+      return 'border-rose-300/60 bg-white/90 text-rose-950 hover:border-rose-400/80 hover:bg-rose-50/95 focus-visible:outline-rose-500/50'
+    case 'lumberyard':
+    default:
+      return 'border-sky-300/60 bg-white/90 text-sky-900 hover:border-sky-400/80 hover:bg-sky-50/95 focus-visible:outline-sky-500/50'
+  }
+}
+
 /**
  * Short buffer after the sequence window so the last icon is visibly “settled”
  * (plus `postSequencePadMs` on a variant, if any, which is included in `variantSequenceMs`).
@@ -818,6 +835,7 @@ export function OzAssistantPanel({
   renderAssistantInline,
   chatThreadId,
   enableComposerUploads = true,
+  onToggleComposerSandboxRow,
 }: OzAssistantPanelProps) {
   const [transcript, setTranscript] = useState<OzAssistantMessage[]>(() =>
     buildInitialTranscript(seed, hideWelcome),
@@ -850,8 +868,9 @@ export function OzAssistantPanel({
         )
       },
       closePanel: () => setPanelShellOpen(null),
+      pinDisplayTableRow: onToggleComposerSandboxRow,
     }),
-    [chatThreadId, panelShellOpen],
+    [chatThreadId, panelShellOpen, onToggleComposerSandboxRow],
   )
 
   const assistantInline = useMemo(
@@ -1169,7 +1188,11 @@ export function OzAssistantPanel({
     if (historyCursor !== null) setHistoryCursor(null)
   }
 
-  const contextRowTags = composerContextAttachments?.map((a) => ({ id: a.key, label: a.label }))
+  const contextRowTags = composerContextAttachments?.map((a) => ({
+    id: a.key,
+    label: a.label,
+    scope: a.scope,
+  }))
 
   const sharedComposer = (opts: { size: 'hero' | 'compact'; className?: string; inputId?: string }) => (
     <ChatComposerRow
