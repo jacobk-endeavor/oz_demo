@@ -30,7 +30,21 @@ The following are treated as disposable artifacts and must be ignored or removed
 
 ## Runtime chat artifacts (DigitalOcean Spaces)
 
-Generated exports intended for user download (see [code-sandbox-and-artifact-generation.md](code-sandbox-and-artifact-generation.md) §6.3) live in **Spaces**, not git. Buckets `oz-artifacts-<env>` use a **30-day** lifecycle at the object layer; **presigned URLs** should use a short TTL (for example one hour). Operational setup is documented in [docs/infra/oz-artifacts-spaces.md](infra/oz-artifacts-spaces.md).
+Generated exports intended for user download (see [code-sandbox-and-artifact-generation.md](code-sandbox-and-artifact-generation.md) §6.3) live in **Spaces**, not git.
+
+### Artifacts bucket (`oz-artifacts-<env>`)
+
+- **Object TTL (Spaces):** **30 days** for every object in the bucket. Provisioning in [`infra/spaces-artifacts/`](../infra/spaces-artifacts/) applies lifecycle rule `expire-generated-artifacts-30d` (`expiration.days = 30`), matching §6.3 in [code-sandbox-and-artifact-generation.md](code-sandbox-and-artifact-generation.md). Key layout and ops runbook: [docs/infra/oz-artifacts-spaces.md](infra/oz-artifacts-spaces.md).
+- **Presigned URL TTL:** The backend mints time-limited presigned `GetObject` URLs for browser downloads. Default TTL is **1 hour** (override only by changing the mint-time parameter — see §6.3). Root Spaces credentials remain server-side; clients receive short-lived URLs only.
+
+### Chat uploads bucket (`oz-uploads-<env>`)
+
+- **Object TTL:** User uploads use a separate bucket with **24 h** retention intent, implemented as **1 day** S3-compatible lifecycle (minimum granularity on Spaces). See [infra/digitalocean/README.md](../infra/digitalocean/README.md) and §12.1.2 in [code-sandbox-and-artifact-generation.md](code-sandbox-and-artifact-generation.md).
+
+### Redaction and safe exposure
+
+- **Assistant output:** Sandbox / artifact tools must surface files using `<artifact …/>` (and panel tags where applicable); the model must **not** paste raw presigned URLs or bare download links — see guidance in [`backend/oz/ozChatToolRegistry.ts`](../backend/oz/ozChatToolRegistry.ts).
+- **Tool audit logs:** With `OZ_TOOL_AUDIT=1`, each tool dispatch logs a one-line summary with **PII-redacted** `args_summary` (emails, phone-like runs) and truncated `result_summary` — see [docs/tool-call-paths.md](tool-call-paths.md). Treat this as defense in depth; do not pass secrets through tool arguments.
 
 ## Validation checklist
 
