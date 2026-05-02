@@ -37,6 +37,14 @@ import type {
 import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
 import { OZ_CHAT_SYSTEM_PROMPT_VERSION, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
+import {
+  appendSkippedFilingQueryEvent,
+  collectDistinctEvidenceSources,
+  compactCitationList,
+  evaluateFilingNovelty,
+  runFilingCuratorAgent,
+  slugifyFilingSegment,
+} from './wikiFilingBack'
 
 export const OZ_CHAT_CONTRACT_VERSION = '2026-04-oz-chat-v1' as const
 
@@ -992,6 +1000,86 @@ export async function* runOzChatLoop(
       ? ` KB search (${kbResult.surface}): ${kbResult.chunks.length} chunk(s). Top match ${topKb.chunk_id} [${topKb.locator}]: ${topKb.content.slice(0, 500).trim()}${topKb.content.length > 500 ? '…' : ''}`
       : ' KB document search returned no chunks (configure DATABASE_URL + OPENAI_API_KEY, or ingest into kb_rag_chunks).'
   const agentReply = `Oz runtime executed transcript + kb_search tools.${recallSuffix}${transcriptSuffix}${kbSuffix}`
+
+  const filingEvidence = {
+    kbHits: kbResult?.chunks,
+    transcriptHits: searchResult?.hits,
+  }
+
+  if (deps.trackC?.scaffold) {
+    const tc = deps.trackC.scaffold
+    const repoRoot = tc.getRepoRoot()
+    const novelty = await evaluateFilingNovelty({
+      userQuestion: message,
+      assistantAnswer: agentReply,
+      scaffold: tc,
+      evidence: filingEvidence,
+    })
+    yield {
+      ...base(),
+      type: 'trace',
+      stage: 'filing_novelty',
+      decision: novelty.offer_filing ? 'offer' : 'suppress',
+      details: {
+        distinct_source_count: novelty.distinct_source_count,
+        reasons: novelty.reasons,
+        wiki_top_score: novelty.wiki_top_score,
+        wiki_top_path: novelty.wiki_top_path,
+      },
+    }
+
+    if (!novelty.offer_filing) {
+      try {
+        const { keys } = collectDistinctEvidenceSources(agentReply, filingEvidence)
+        await appendSkippedFilingQueryEvent(repoRoot, {
+          question: message,
+          reasons: novelty.reasons,
+          distinct_source_count: novelty.distinct_source_count,
+          citations_compact: compactCitationList(agentReply, keys),
+          trace_id: request.trace_id,
+          conversation_id: request.conversation_id,
+        })
+        yield {
+          ...base(),
+          type: 'trace',
+          stage: 'filing_skip_log',
+          decision: 'appended',
+          details: { path: 'wiki/log.md' },
+        }
+      } catch (error) {
+        yield {
+          ...base(),
+          type: 'trace',
+          stage: 'filing_skip_log',
+          decision: 'error',
+          details: { message: error instanceof Error ? error.message : String(error) },
+        }
+      }
+    } else {
+      const slug = slugifyFilingSegment(message)
+      const curator = await runFilingCuratorAgent({
+        repoRoot,
+        candidateBody: agentReply,
+        suggestedSlug: slug,
+        title: message.slice(0, 120),
+        nowIsoDate: now().toISOString().slice(0, 10),
+        write: false,
+      })
+      yield {
+        ...base(),
+        type: 'trace',
+        stage: 'filing_curator',
+        decision: curator.action === 'merge_suggestion' ? 'merge_suggestion' : 'create_draft',
+        details: {
+          action: curator.action,
+          ...(curator.action === 'merge_suggestion'
+            ? { target: curator.target_relative_path, similarity: curator.similarity, note: curator.note }
+            : { relative_path: curator.relative_path, wrote: curator.wrote }),
+        },
+      }
+    }
+  }
+
   yield {
     ...base(),
     type: 'trace',
