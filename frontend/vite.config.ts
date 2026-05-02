@@ -249,6 +249,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     alias: {
       '@aws-sdk/client-s3': path.resolve(__dirname, 'node_modules/@aws-sdk/client-s3'),
       '@aws-sdk/s3-request-presigner': path.resolve(__dirname, 'node_modules/@aws-sdk/s3-request-presigner'),
+      pg: path.resolve(__dirname, 'node_modules/pg'),
     },
   },
   plugins: [

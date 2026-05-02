@@ -15,6 +15,9 @@ vi.mock('@aws-sdk/client-s3', () => ({
   GetObjectCommand: class GetObjectCommand {
     constructor(public input: Record<string, unknown>) {}
   },
+  HeadObjectCommand: class HeadObjectCommand {
+    constructor(public input: Record<string, unknown>) {}
+  },
 }))
 
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
@@ -142,6 +145,40 @@ describe('createSpacesArtifactClient', () => {
     expect(call.input.Bucket).toBe('b')
     expect(call.input.Key).toBe('t/20260101/a.png')
     expect(call.input.ContentType).toBe('image/png')
+  })
+
+  it('headObjectExists returns false when HEAD returns NotFound', async () => {
+    const notFound = Object.assign(new Error('NotFound'), {
+      name: 'NotFound',
+      $metadata: { httpStatusCode: 404 },
+    })
+    sendMock.mockRejectedValueOnce(notFound)
+    const client = createSpacesArtifactClient(
+      {
+        accessKeyId: 'k',
+        secretAccessKey: 's',
+        endpoint: 'https://nyc3.digitaloceanspaces.com',
+        bucket: 'b',
+        region: 'nyc3',
+      },
+      { signedUrlTtlSeconds: 60 },
+    )
+    await expect(client.headObjectExists('missing/key')).resolves.toBe(false)
+  })
+
+  it('headObjectExists returns true on successful HEAD', async () => {
+    sendMock.mockResolvedValueOnce({})
+    const client = createSpacesArtifactClient(
+      {
+        accessKeyId: 'k',
+        secretAccessKey: 's',
+        endpoint: 'https://nyc3.digitaloceanspaces.com',
+        bucket: 'b',
+        region: 'nyc3',
+      },
+      { signedUrlTtlSeconds: 60 },
+    )
+    await expect(client.headObjectExists('t/20260101/a.png')).resolves.toBe(true)
   })
 
   it('presignGetObject calls getSignedUrl with expiresIn from options', async () => {
