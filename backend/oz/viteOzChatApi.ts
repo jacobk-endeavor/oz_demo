@@ -249,6 +249,9 @@ export function ozChatApiPlugin() {
               runtime: config.chat.runtime,
               agentic: config.chat.agentic ?? null,
             },
+            sandbox: {
+              imageDigest: config.sandbox?.imageDigest ?? null,
+            },
             agentic_available: resolution.provider !== null,
             agentic_provider: resolution.provider, // 'openai' | 'anthropic' | null
             providers_available: {
