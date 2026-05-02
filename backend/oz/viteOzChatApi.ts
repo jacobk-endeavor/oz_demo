@@ -31,7 +31,9 @@ function ensureOzPathDefault(envKey: string, fallback: string): void {
 ensureOzPathDefault('OZ_REPO_ROOT', REPO_ROOT)
 ensureOzPathDefault('OZ_WIKI_ROOT_PATH', path.join(REPO_ROOT, 'wiki'))
 ensureOzPathDefault('OZ_KB_EXTRACTS_ROOT', path.join(REPO_ROOT, 'kb_extracts'))
-ensureOzPathDefault('OZ_PRODUCT_CATALOG_PATH', path.join(REPO_ROOT, 'product_catalog.json'))
+// product_catalog_flat.json is the array-of-SKU shape the scaffold expects;
+// product_catalog.json (hierarchical: product_lines→sub_categories→products) does not match.
+ensureOzPathDefault('OZ_PRODUCT_CATALOG_PATH', path.join(REPO_ROOT, 'product_catalog_flat.json'))
 ensureOzPathDefault('OZ_RECOMMENDATIONS_PATH', path.join(REPO_ROOT, 'recommendations.json'))
 
 // TrackCToolScaffold's kb_search reads from DATABASE_READONLY_URL || DATABASE_URL.
@@ -52,12 +54,33 @@ function buildDatabaseUrlFromPgVars(): string | undefined {
   const database = get('PGDATABASE') || 'defaultdb'
   if (!host || !user || !password) return undefined
   const port = get('PGPORT') || '5432'
-  const sslmode = get('PGSSLMODE') || 'require'
+  // Managed Postgres providers (DigitalOcean, etc.) use a custom CA that Node's
+  // default trust store doesn't include. pg-connection-string's `sslmode=require`
+  // currently aliases to `verify-full` and rejects the chain, even when we pass
+  // `ssl: { rejectUnauthorized: false }` to Pool — its own parsing wins. Use
+  // `no-verify` (pg's escape hatch) so TLS is on but the chain isn't checked,
+  // matching what psycopg does in ingest_kb.py with sslmode=require.
+  const requested = (get('PGSSLMODE') || 'require').toLowerCase()
+  const strict = process.env.PGSSL_REJECT_UNAUTHORIZED === '1'
+  const sslmode = strict ? requested : 'no-verify'
   return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslmode}`
 }
 if (!process.env.DATABASE_URL && !process.env.DATABASE_READONLY_URL) {
   const url = buildDatabaseUrlFromPgVars()
   if (url) process.env.DATABASE_URL = url
+}
+
+// Managed Postgres providers (e.g. DigitalOcean) issue certs from a custom CA;
+// when the Node runtime doesn't bundle that CA, the pg client throws
+// "self-signed certificate in certificate chain" even though the connection
+// is otherwise correct (psycopg in ingest_kb.py allows it because sslmode=require
+// there does not verify the chain). Mirror that behavior in JS unless an explicit
+// override (PGSSL_REJECT_UNAUTHORIZED=1) is set.
+function buildPoolSsl(connectionString: string): undefined | { rejectUnauthorized: boolean } {
+  const wantsTls = /sslmode=(require|verify-ca|verify-full)/i.test(connectionString)
+  if (!wantsTls) return undefined
+  if (process.env.PGSSL_REJECT_UNAUTHORIZED === '1') return { rejectUnauthorized: true }
+  return { rejectUnauthorized: false }
 }
 
 const trackCScaffold = new TrackCToolScaffold({
@@ -69,6 +92,7 @@ const trackCScaffold = new TrackCToolScaffold({
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 15_000,
       application_name: 'oz-track-c-tools-readonly',
+      ssl: buildPoolSsl(connectionString),
     }),
 })
 const initTrackCScaffold = trackCScaffold.initialize()
