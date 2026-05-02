@@ -23,6 +23,10 @@ export type OzConfig = {
     /** Immutable digest from CI (e.g. `sha256:…`) for `oz-sandbox`; rollback = change digest + redeploy. */
     imageDigest?: string
   }
+  /** Chat artifact downloads: optional presigned URL lifetime override (seconds). Env `OZ_SPACES_SIGNED_URL_TTL_SECONDS` wins when set. */
+  artifacts?: {
+    signedUrlTtlSeconds?: number
+  }
 }
 
 const DEFAULT_CONFIG: OzConfig = {
@@ -106,7 +110,18 @@ export function parseOzConfigYaml(text: string): OzConfig {
   const digest = digestRaw?.trim()
   const sandbox =
     digest && digest.length > 0 ? { imageDigest: digest } : undefined
-  return { chat: { runtime, agentic }, ...(sandbox ? { sandbox } : {}) }
+  const ttlRaw = getValue(root, 'artifacts.signedUrlTtlSeconds')
+  let signedUrlTtlSeconds: number | undefined
+  if (ttlRaw?.trim()) {
+    const n = Number(ttlRaw.trim())
+    if (Number.isFinite(n) && n > 0) signedUrlTtlSeconds = Math.floor(n)
+  }
+  const artifacts = signedUrlTtlSeconds ? { signedUrlTtlSeconds } : undefined
+  return {
+    chat: { runtime, agentic },
+    ...(sandbox ? { sandbox } : {}),
+    ...(artifacts ? { artifacts } : {}),
+  }
 }
 
 let cached: { mtimeMs: number; config: OzConfig } | null = null

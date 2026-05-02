@@ -14,7 +14,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@aws-sdk/client-s3": ["node_modules/@aws-sdk/client-s3"],
+      "@aws-sdk/s3-request-presigner": ["node_modules/@aws-sdk/s3-request-presigner"]
+    }
   },
   "include": ["src", "vite.config.ts"]
 }
