@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
@@ -11,6 +12,7 @@ import {
   type ReactNode,
 } from 'react'
 import { OzThreadDirectionModal } from '../../features/oz/OzThreadDirectionModal'
+import { getOzPanelPayload } from '../../features/oz/useOzChatStream'
 import { matchStockUpLikelyBuyersIntent } from '../../features/leadGen/stockUpBuyerIntents'
 import {
   postOzChatUploadsIfAvailable,
@@ -19,7 +21,62 @@ import {
 import type { TableRowContextAttachment } from '../tableRowContext'
 import { ArrowUpIcon, PaperclipIcon } from './icons'
 import { SimpleAssistantMarkdown, type AssistantMarkdownInlineRenderer } from './SimpleAssistantMarkdown'
+import {
+  OzChatPanelMessageContext,
+  OzChatPanelShellContext,
+  createOzPanelAwareInlineRenderer,
+  type OzChatPanelShellState,
+} from './ozChatPanelUi'
+import { SlideOutPanel } from './SlideOutPanel'
 import { joinClasses, type Tone } from './visualSystem'
+
+function OzSlideOutMount({
+  threadId,
+  openPanel,
+  onClose,
+}: {
+  threadId: string
+  openPanel: OzChatPanelShellState['openPanel']
+  onClose: () => void
+}) {
+  const payloadRecord = openPanel ? getOzPanelPayload(threadId, openPanel.messageId) : undefined
+  const result = payloadRecord?.result as Record<string, unknown> | undefined
+  const kind =
+    openPanel?.kind ?? (typeof result?.kind === 'string' && result.kind.trim() ? result.kind : 'table')
+  const propsPayload =
+    payloadRecord?.tool === 'display_panel' &&
+    result &&
+    typeof result.props === 'object' &&
+    result.props !== null &&
+    !Array.isArray(result.props)
+      ? result.props
+      : result
+  const propsObj =
+    result && typeof result.props === 'object' && result.props !== null && !Array.isArray(result.props)
+      ? (result.props as Record<string, unknown>)
+      : undefined
+  const title =
+    (typeof result?.title === 'string' && result.title.trim() ? result.title : '') ||
+    (propsObj && typeof propsObj.title === 'string' ? propsObj.title : '') ||
+    String(kind).replace(/_/g, ' ')
+  const open = openPanel != null
+  const payload =
+    openPanel && payloadRecord?.ok === false
+      ? null
+      : openPanel
+        ? (propsPayload ?? result ?? null)
+        : null
+
+  return (
+    <SlideOutPanel
+      open={open}
+      onClose={onClose}
+      panelKind={kind}
+      payload={payload}
+      title={title.trim() ? title : undefined}
+    />
+  )
+}
 
 export type OzMessageRole = 'user' | 'oz' | 'system'
 
@@ -781,6 +838,27 @@ export function OzAssistantPanel({
   const [directionModalOpen, setDirectionModalOpen] = useState(false)
   const autoDirOpenedForRef = useRef<string | null>(null)
 
+  const [panelShellOpen, setPanelShellOpen] = useState<OzChatPanelShellState['openPanel']>(null)
+
+  const shellApi = useMemo(
+    (): OzChatPanelShellState => ({
+      threadId: chatThreadId ?? '',
+      openPanel: panelShellOpen,
+      togglePanel: (messageId, panelId, kind) => {
+        setPanelShellOpen((prev) =>
+          prev?.messageId === messageId && prev.panelId === panelId ? null : { messageId, panelId, kind },
+        )
+      },
+      closePanel: () => setPanelShellOpen(null),
+    }),
+    [chatThreadId, panelShellOpen],
+  )
+
+  const assistantInline = useMemo(
+    () => createOzPanelAwareInlineRenderer(renderAssistantInline),
+    [renderAssistantInline],
+  )
+
   const seedSignature = assistantSeedSignature(seed)
   useEffect(() => {
     setTranscript(buildInitialTranscript(seed, hideWelcome))
@@ -1125,44 +1203,55 @@ export function OzAssistantPanel({
 
   if (isCentered && !hasThread) {
     return (
-      <aside
-        className={joinClasses(
-          'flex h-full min-h-0 w-full max-w-2xl flex-col justify-center bg-transparent',
-          className,
-        )}
-        aria-label="Oz chat"
-      >
-        <h2 className="sr-only">Start a conversation with Oz</h2>
-        {chatThreadId ? (
-          <ThreadDirectionToolbar onOpen={() => setDirectionModalOpen(true)} />
-        ) : null}
-        <div
-          role="region"
-          className="flex w-full flex-col items-center justify-center gap-2 px-2"
-          aria-label="Oz conversation"
-        >
-          {composerAccessory ? (
-            <div className="w-full max-w-md md:max-w-lg">{composerAccessory}</div>
-          ) : null}
-          {sharedComposer({
-            size: 'hero',
-            className: 'max-w-md md:max-w-lg',
-            inputId: 'oz-chat-input-hero',
-          })}
-        </div>
-        {chatThreadId ? (
-          <OzThreadDirectionModal
-            open={directionModalOpen}
-            threadId={chatThreadId}
-            onClose={() => setDirectionModalOpen(false)}
-          />
-        ) : null}
-      </aside>
+      <>
+        <OzChatPanelShellContext.Provider value={shellApi}>
+          <aside
+            className={joinClasses(
+              'flex h-full min-h-0 w-full max-w-2xl flex-col justify-center bg-transparent',
+              className,
+            )}
+            aria-label="Oz chat"
+          >
+            <h2 className="sr-only">Start a conversation with Oz</h2>
+            {chatThreadId ? (
+              <ThreadDirectionToolbar onOpen={() => setDirectionModalOpen(true)} />
+            ) : null}
+            <div
+              role="region"
+              className="flex w-full flex-col items-center justify-center gap-2 px-2"
+              aria-label="Oz conversation"
+            >
+              {composerAccessory ? (
+                <div className="w-full max-w-md md:max-w-lg">{composerAccessory}</div>
+              ) : null}
+              {sharedComposer({
+                size: 'hero',
+                className: 'max-w-md md:max-w-lg',
+                inputId: 'oz-chat-input-hero',
+              })}
+            </div>
+            {chatThreadId ? (
+              <OzThreadDirectionModal
+                open={directionModalOpen}
+                threadId={chatThreadId}
+                onClose={() => setDirectionModalOpen(false)}
+              />
+            ) : null}
+          </aside>
+        </OzChatPanelShellContext.Provider>
+        <OzSlideOutMount
+          threadId={chatThreadId ?? ''}
+          openPanel={panelShellOpen}
+          onClose={() => setPanelShellOpen(null)}
+        />
+      </>
     )
   }
 
   return (
-    <aside
+    <>
+      <OzChatPanelShellContext.Provider value={shellApi}>
+        <aside
       className={joinClasses(
         isDocked
           ? 'flex max-h-[min(38vh,360px)] min-h-[200px] shrink-0 flex-col overflow-hidden border-t border-zinc-200 bg-white text-zinc-900'
@@ -1205,7 +1294,7 @@ export function OzAssistantPanel({
                 onKnowledgePreambleSequenceComplete={notifyKnowledgePreambleComplete}
                 align={isCentered ? 'center' : 'sides'}
                 reducedMotion={reducedMotion}
-                renderAssistantInline={renderAssistantInline}
+                renderAssistantInline={assistantInline}
               />
             ))}
           </div>
@@ -1238,7 +1327,14 @@ export function OzAssistantPanel({
           onClose={() => setDirectionModalOpen(false)}
         />
       ) : null}
-    </aside>
+        </aside>
+      </OzChatPanelShellContext.Provider>
+      <OzSlideOutMount
+        threadId={chatThreadId ?? ''}
+        openPanel={panelShellOpen}
+        onClose={() => setPanelShellOpen(null)}
+      />
+    </>
   )
 }
 
@@ -1376,6 +1472,13 @@ function ChatMessage({
   const roleLabel = isUser ? 'You' : isSystem ? 'System' : 'Oz'
   const centered = align === 'center'
 
+  const wrapOzAssistantMarkdown =
+    !isUser && !isSystem && message.role === 'oz'
+      ? (node: ReactNode) => (
+          <OzChatPanelMessageContext.Provider value={{ messageId: message.id }}>{node}</OzChatPanelMessageContext.Provider>
+        )
+      : (node: ReactNode) => node
+
   const pillSrLabel =
     knowledgePillKind === 'knowledge_web'
       ? ' · Searching the web'
@@ -1419,7 +1522,7 @@ function ChatMessage({
             onSequenceComplete={onKnowledgePreambleSequenceComplete}
           />
         </div>
-      ) : isThinking ? (
+          ) : isThinking ? (
         <div
           className={joinClasses(
             'flex h-5 items-center px-1',
@@ -1448,65 +1551,64 @@ function ChatMessage({
               </span>
             </div>
           ) : null}
-          <div
-            className={joinClasses(
-              'text-sm leading-relaxed',
-              centered && isUser
-                ? 'max-w-[90%]'
-                : centered
-                  ? 'w-full min-w-0 max-w-2xl'
-                  : 'max-w-[90%]',
-              isUser
-                ? 'rounded-2xl bg-zinc-100 px-3 py-2 text-zinc-900'
-                : isSystem
-                  ? 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900'
-                  : 'text-zinc-800',
-              !isUser && !isSystem && 'cursor-chat-reply-bubble rounded-2xl border border-zinc-200/80 bg-zinc-50/90 px-3 py-2',
-              centered && 'text-left', // long replies stay left-aligned in the block for readability
-            )}
-          >
-          {isUser && message.rowAttachments?.length ? (
+          {wrapOzAssistantMarkdown(
             <div
-              className="mb-1.5 flex flex-wrap justify-end gap-1.5"
-              aria-hidden
+              className={joinClasses(
+                'text-sm leading-relaxed',
+                centered && isUser
+                  ? 'max-w-[90%]'
+                  : centered
+                    ? 'w-full min-w-0 max-w-2xl'
+                    : 'max-w-[90%]',
+                isUser
+                  ? 'rounded-2xl bg-zinc-100 px-3 py-2 text-zinc-900'
+                  : isSystem
+                    ? 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900'
+                    : 'text-zinc-800',
+                !isUser && !isSystem && 'cursor-chat-reply-bubble rounded-2xl border border-zinc-200/80 bg-zinc-50/90 px-3 py-2',
+                centered && 'text-left',
+              )}
             >
-              {message.rowAttachments.map((r) => (
-                <span
-                  key={r.id}
-                  className="inline-flex max-w-full min-w-0 rounded-md border border-sky-300/50 bg-white/60 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-sky-900"
-                >
-                  {r.label}
+              {isUser && message.rowAttachments?.length ? (
+                <div className="mb-1.5 flex flex-wrap justify-end gap-1.5" aria-hidden>
+                  {message.rowAttachments.map((r) => (
+                    <span
+                      key={r.id}
+                      className="inline-flex max-w-full min-w-0 rounded-md border border-sky-300/50 bg-white/60 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-sky-900"
+                    >
+                      {r.label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {isUser && message.fileAttachments?.length ? (
+                <div className="mb-1.5 flex flex-wrap justify-end gap-1.5" aria-hidden>
+                  {message.fileAttachments.map((r) => (
+                    <span
+                      key={r.id}
+                      className="inline-flex max-w-full min-w-0 rounded-md border border-violet-300/55 bg-white/70 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-violet-950"
+                    >
+                      {r.label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {useTypewriter ? (
+                <span aria-live="off" className="block">
+                  <StreamedText
+                    text={body}
+                    reducedMotion={reducedMotion}
+                    onComplete={() => onStreamEnd?.(message.id)}
+                    renderAssistantInline={renderAssistantInline}
+                  />
                 </span>
-              ))}
-            </div>
-          ) : null}
-          {isUser && message.fileAttachments?.length ? (
-            <div className="mb-1.5 flex flex-wrap justify-end gap-1.5" aria-hidden>
-              {message.fileAttachments.map((r) => (
-                <span
-                  key={r.id}
-                  className="inline-flex max-w-full min-w-0 rounded-md border border-violet-300/55 bg-white/70 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-violet-950"
-                >
-                  {r.label}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          {useTypewriter ? (
-            <span aria-live="off" className="block">
-              <StreamedText
-                text={body}
-                reducedMotion={reducedMotion}
-                onComplete={() => onStreamEnd?.(message.id)}
-                renderAssistantInline={renderAssistantInline}
-              />
-            </span>
-          ) : !isUser && !isSystem && typeof message.content === 'string' ? (
-            <SimpleAssistantMarkdown text={body} renderInline={renderAssistantInline} />
-          ) : (
-            message.content
+              ) : !isUser && !isSystem && typeof message.content === 'string' ? (
+                <SimpleAssistantMarkdown text={body} renderInline={renderAssistantInline} />
+              ) : (
+                message.content
+              )}
+            </div>,
           )}
-          </div>
         </>
       )}
     </article>

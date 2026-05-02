@@ -90,6 +90,25 @@ function summarizeForTelemetry(value: unknown): string {
   }
 }
 
+/** Escape for double-quoted XML attributes in `<panel …/>` injected on the SSE stream. */
+function escapeOzPanelXmlAttr(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/** Backend-owned `<panel/>` sentinel token after a successful display_* tool_result (§12.2.2). */
+function panelInjectionToken(name: string, result: unknown): string | null {
+  if (name !== 'display_table' && name !== 'display_panel') return null
+  if (!result || typeof result !== 'object') return null
+  const rec = result as Record<string, unknown>
+  const pid = typeof rec.panel_id === 'string' ? rec.panel_id.trim() : ''
+  if (!pid) return null
+  const kindRaw = typeof rec.kind === 'string' ? rec.kind.trim() : ''
+  const kind =
+    kindRaw ||
+    (name === 'display_table' ? 'table' : 'chart')
+  return `<panel id="${escapeOzPanelXmlAttr(pid)}" kind="${escapeOzPanelXmlAttr(kind)}"/>`
+}
+
 async function executeToolOnSurface(
   surface: OzToolSurface,
   name: string,
@@ -284,6 +303,8 @@ export async function* runOzChatLoopAgentic(
 
   const conversation: AnthropicMessage[] = [{ role: 'user', content: userText }]
   let finalText = ''
+  /** Appended after answer validation so sanitize doesn't mangle `<panel …/>` sentinels. */
+  const panelSuffixFragments: string[] = []
   let stopReason: string = 'end_turn'
   const startedAt = Date.now()
 
@@ -386,6 +407,10 @@ export async function* runOzChatLoopAgentic(
       }
       try {
         const result = await executeToolOnSurface(surface, toolUse.name, toolUse.input)
+        const panelMeta =
+          toolUse.name === 'display_table' || toolUse.name === 'display_panel'
+            ? (result as Record<string, unknown>)
+            : undefined
         yield {
           ...ev(),
           type: 'tool_result',
@@ -393,6 +418,12 @@ export async function* runOzChatLoopAgentic(
           name: toolUse.name,
           ok: true,
           summary: summarizeForTelemetry(result),
+          ...(panelMeta ? { result_meta: panelMeta } : {}),
+        }
+        const injected = panelInjectionToken(toolUse.name, result)
+        if (injected) {
+          panelSuffixFragments.push(injected)
+          yield { ...ev(), type: 'token', delta: injected }
         }
         toolResults.push({
           type: 'tool_result',
@@ -459,6 +490,10 @@ export async function* runOzChatLoopAgentic(
         outputMessage = sanitizeOzAnswer(outputMessage, secondPass)
       }
     }
+  }
+
+  if (panelSuffixFragments.length > 0) {
+    outputMessage = `${outputMessage}${panelSuffixFragments.join('')}`
   }
 
   yield {

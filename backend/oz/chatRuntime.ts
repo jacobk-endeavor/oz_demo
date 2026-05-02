@@ -35,6 +35,7 @@ import type {
   WikiReadResult,
 } from './trackCToolScaffold'
 import { createTranscriptToolRegistry, type TranscriptReadResult, type TranscriptSearchResult } from './transcriptRagTools'
+import { randomUUID } from 'node:crypto'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
 import { OZ_CHAT_SYSTEM_PROMPT_VERSION, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import {
@@ -234,6 +235,15 @@ export type OzToolSurface = {
   compare: (request: { targets: string[]; dimensions?: string[] }) => Promise<OzBundledLayer3Result>
   wiki_compare: (request: { slugs: string[] }) => Promise<OzBundledLayer3Result>
   drift_check: (request: { target: string }) => Promise<OzBundledLayer3Result>
+  /** Model-callable slide-out: tabular rows + stable ids (see docs/oz-chat-contract-schema.md). */
+  display_table: (request: {
+    title: string
+    columns: unknown
+    rows: unknown
+    scope?: string
+  }) => Promise<Record<string, unknown>>
+  /** Model-callable slide-out: registered rich panels (`invoice_preview`, …). */
+  display_panel: (request: { kind: string; props?: Record<string, unknown> }) => Promise<Record<string, unknown>>
 }
 
 function nowMs(now: () => Date): number {
@@ -574,6 +584,30 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
         'Bundled drift_check requires TrackCToolScaffold; contrast sources manually.',
         { target: String(payload.target ?? '') },
       )
+    },
+    async display_table(payload) {
+      const panel_id = `pan_${randomUUID().replace(/-/g, '')}`
+      return {
+        ok: true,
+        panel_id,
+        kind: 'table',
+        title: String(payload.title ?? ''),
+        columns: payload.columns ?? [],
+        rows: payload.rows ?? [],
+        ...(typeof payload.scope === 'string' && payload.scope.trim()
+          ? { scope: payload.scope.trim() }
+          : {}),
+      }
+    },
+    async display_panel(payload) {
+      const panel_id = `pan_${randomUUID().replace(/-/g, '')}`
+      const kind = String(payload.kind ?? '').trim() || 'chart'
+      return {
+        ok: true,
+        panel_id,
+        kind,
+        props: payload.props && typeof payload.props === 'object' && !Array.isArray(payload.props) ? payload.props : {},
+      }
     },
   }
 

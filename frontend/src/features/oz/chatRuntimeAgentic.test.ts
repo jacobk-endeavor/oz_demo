@@ -191,4 +191,64 @@ describe('runOzChatLoopAgentic', () => {
     expect(payload.system ?? '').toContain('Prefer cedar references')
     expect(payload.system ?? '').toContain('Thread direction')
   })
+
+  it('injects <panel/> token and result_meta after display_table tool success', async () => {
+    const firstResponse = buildSseStream([
+      frame({ type: 'message_start', message: { id: 'msg_1' } }),
+      frame({
+        type: 'content_block_start',
+        index: 0,
+        content_block: { type: 'tool_use', id: 'tu_panel', name: 'display_table', input: {} },
+      }),
+      frame({
+        type: 'content_block_delta',
+        index: 0,
+        delta: { type: 'input_json_delta', partial_json: '{"title":"T","columns":[],"rows":[]}' },
+      }),
+      frame({ type: 'content_block_stop', index: 0 }),
+      frame({ type: 'message_delta', delta: { stop_reason: 'tool_use' } }),
+      frame({ type: 'message_stop' }),
+    ])
+    const secondResponse = buildSseStream([
+      frame({ type: 'message_start', message: { id: 'msg_2' } }),
+      frame({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } }),
+      frame({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'Done.' } }),
+      frame({ type: 'content_block_stop', index: 0 }),
+      frame({ type: 'message_delta', delta: { stop_reason: 'end_turn' } }),
+      frame({ type: 'message_stop' }),
+    ])
+    let callIdx = 0
+    const fakeFetch = (async () => {
+      const body = callIdx === 0 ? firstResponse : secondResponse
+      callIdx += 1
+      return new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } })
+    }) as unknown as typeof fetch
+
+    const events = await collect(
+      runOzChatLoopAgentic(
+        { message: 'show table', contract_version: 'test' },
+        { anthropic: { apiKey: 'sk-test', fetchImpl: fakeFetch, model: 'claude-test' } },
+      ),
+    )
+
+    const toolResult = events.find((e) => e.type === 'tool_result' && e.name === 'display_table')
+    expect(toolResult?.type).toBe('tool_result')
+    if (toolResult?.type === 'tool_result') {
+      expect(toolResult.ok).toBe(true)
+      expect(toolResult.result_meta).toBeDefined()
+      const meta = toolResult.result_meta as { panel_id?: string; kind?: string }
+      expect(typeof meta.panel_id).toBe('string')
+      expect(meta.kind).toBe('table')
+    }
+    const panelToken = events
+      .filter((e) => e.type === 'token')
+      .map((e) => (e.type === 'token' ? e.delta : ''))
+      .join('')
+    expect(panelToken).toMatch(/<panel id="pan_[^"]+" kind="table"\/>/)
+    const done = events.at(-1)
+    expect(done?.type).toBe('done')
+    if (done?.type === 'done') {
+      expect(done.message).toMatch(/<panel id="pan_/)
+    }
+  })
 })
