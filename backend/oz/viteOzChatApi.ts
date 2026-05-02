@@ -537,6 +537,11 @@ export function ozChatApiPlugin() {
         },
         trackC: { scaffold: trackCScaffold },
         audit: auditDep,
+        artifacts: {
+          repoRoot: REPO_ROOT,
+          tenant: resolveOzTenant(readEnv),
+          readEnv,
+        },
       }
 
       let runtimeIter: AsyncIterable<OzChatStreamEvent>

@@ -3,7 +3,7 @@
  * Spec: docs/wiki-kb/track-c-chat-integration.md — descriptions act as routing logic; no separate classifier.
  */
 
-export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-track-c-4qh' as const
+export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-track-c-makes' as const
 
 /** Full system prompt appended before tool definitions in an OpenAI-style chat completion. */
 export const OZ_CHAT_SYSTEM_PROMPT = [
@@ -283,6 +283,78 @@ export function ozChatOpenAiToolDefinitions(): OzOpenAiStyleTool[] {
         description:
           'Load an extracted figure/diagram from kb_extracts for vision or detailed explanation.',
         parameters: jsonParameters({ path: { type: 'string' } }, ['path']),
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'make_spreadsheet',
+        description:
+          'Generate a multi-sheet Excel workbook from a structured JSON payload (openpyxl). Prefer when rows/columns are fixed; uploads artifact server-side. Returns id, kind xlsx, title, size_bytes, optional signed_url — cite with <artifact id="…"/>.',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Optional cover title.' },
+            notes: { type: 'string', description: 'Optional cover notes.' },
+            sheets: {
+              type: 'array',
+              description: 'Data sheets; may be empty if title/notes provide a cover-only workbook.',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  columns: { type: 'array', items: { type: 'string' } },
+                  rows: { type: 'array', description: 'Row-major cell values.' },
+                  formats: { type: 'array', description: 'Optional per-column Excel number format codes.' },
+                },
+                required: ['name', 'columns', 'rows'],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ['sheets'],
+          additionalProperties: false,
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'make_docx',
+        description:
+          'Generate a Word document from a sectioned JSON payload (headings, paragraphs, tables). Returns docx artifact metadata for <artifact/> tags.',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Document title (optional; also emitted as heading level 0).' },
+            sections: {
+              type: 'array',
+              items: { type: 'object', description: 'Block: heading|paragraph|table|image (see report_docx).' },
+            },
+          },
+          required: ['sections'],
+          additionalProperties: false,
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'make_pdf',
+        description:
+          'Generate a PDF from the same sectioned JSON grammar as make_docx (ReportLab). Returns pdf artifact metadata for <artifact/> tags.',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string' },
+            sections: {
+              type: 'array',
+              items: { type: 'object' },
+            },
+          },
+          required: ['sections'],
+          additionalProperties: false,
+        },
       },
     },
     {

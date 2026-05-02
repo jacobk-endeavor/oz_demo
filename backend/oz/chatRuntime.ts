@@ -43,7 +43,17 @@ import {
   type DataRef,
   type PythonSandboxResult,
 } from './pythonSandbox'
-import { getOzChatSandboxTraceDetails, isOzSandboxToolsUnavailable, ozSandboxStartupHealth } from './ozSandboxAvailability'
+import {
+  makeDocxArtifact,
+  makePdfArtifact,
+  makeSpreadsheetArtifact,
+  type TypedArtifactResult,
+} from './hostTemplateArtifacts'
+import {
+  getOzChatSandboxTraceDetails,
+  isOzSandboxToolsUnavailable,
+  ozSandboxStartupHealth,
+} from './ozSandboxAvailability'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
 import { OZ_CHAT_SYSTEM_PROMPT_VERSION, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import {
@@ -156,6 +166,12 @@ export type RuntimeDependencies = {
   trackC?: {
     scaffold?: TrackCToolScaffold
   }
+  /** Host-mode typed artifact pipeline (sandboxTemplates + Spaces + oz_artifacts). */
+  artifacts?: {
+    repoRoot: string
+    tenant: string
+    readEnv: () => Record<string, string>
+  }
   /** Optional audit sink for tool latency / summaries (PII-redacted args). Spec: Q&A §9. */
   audit?: {
     onComplete?: (payload: OzToolAuditOnCompletePayload) => void
@@ -260,6 +276,12 @@ export type OzToolSurface = {
     upload_ids?: string[]
     timeout_s?: number
   }) => Promise<PythonSandboxResult>
+  /** Typed xlsx generator (host Python openpyxl); requires {@link RuntimeDependencies.artifacts}. */
+  make_spreadsheet: (request: Record<string, unknown>) => Promise<TypedArtifactResult>
+  /** Typed docx generator (host Python python-docx). */
+  make_docx: (request: Record<string, unknown>) => Promise<TypedArtifactResult>
+  /** Typed pdf generator (host Python reportlab). */
+  make_pdf: (request: Record<string, unknown>) => Promise<TypedArtifactResult>
   /** Model-callable slide-out: tabular rows + stable ids (see docs/oz-chat-contract-schema.md). */
   display_table: (request: {
     title: string
@@ -698,6 +720,24 @@ export function createOzToolSurface(request: OzChatRequest, deps: RuntimeDepende
         resolveDataRef: async () => null,
         image,
       })
+    },
+    async make_spreadsheet(payload: Record<string, unknown>) {
+      if (!deps.artifacts) {
+        return { ok: false, error: 'artifact_pipeline_unconfigured' }
+      }
+      return makeSpreadsheetArtifact(deps.artifacts, payload)
+    },
+    async make_docx(payload: Record<string, unknown>) {
+      if (!deps.artifacts) {
+        return { ok: false, error: 'artifact_pipeline_unconfigured' }
+      }
+      return makeDocxArtifact(deps.artifacts, payload)
+    },
+    async make_pdf(payload: Record<string, unknown>) {
+      if (!deps.artifacts) {
+        return { ok: false, error: 'artifact_pipeline_unconfigured' }
+      }
+      return makePdfArtifact(deps.artifacts, payload)
     },
     async display_table(payload) {
       const panel_id = `pan_${randomUUID().replace(/-/g, '')}`
