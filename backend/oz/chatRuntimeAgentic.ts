@@ -22,7 +22,7 @@ import { truncateForToolResult } from './toolResultTruncate'
 const DEFAULT_MODEL = 'claude-sonnet-4-6'
 const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
-const MAX_AGENT_ITERATIONS = 12
+const MAX_AGENT_ITERATIONS = 16
 const MAX_TOKENS_PER_RESPONSE = 4096
 
 export type AgenticDependencies = RuntimeDependencies & {

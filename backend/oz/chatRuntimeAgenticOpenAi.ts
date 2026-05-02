@@ -23,7 +23,7 @@ import { truncateForToolResult } from './toolResultTruncate'
 
 const DEFAULT_MODEL = 'gpt-4o-mini'
 const OPENAI_CHAT_URL = 'https://api.openai.com/v1/chat/completions'
-const MAX_AGENT_ITERATIONS = 12
+const MAX_AGENT_ITERATIONS = 16
 
 export type OpenAiAgenticDependencies = RuntimeDependencies & {
   openai: {
