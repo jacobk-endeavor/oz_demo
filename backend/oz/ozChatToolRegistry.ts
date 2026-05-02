@@ -3,7 +3,7 @@
  * Spec: docs/wiki-kb/track-c-chat-integration.md — descriptions act as routing logic; no separate classifier.
  */
 
-export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-track-c-0aw' as const
+export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-track-c-0bx' as const
 
 /** Full system prompt appended before tool definitions in an OpenAI-style chat completion. */
 export const OZ_CHAT_SYSTEM_PROMPT = [
@@ -11,6 +11,9 @@ export const OZ_CHAT_SYSTEM_PROMPT = [
   'Routing is entirely via tool choice: read each tool description and pick the smallest set that answers the user. Prefer structured catalog/recommendations tools when the user names a SKU, product line code, or asks for numeric rollups; prefer kb_search for verbatim document/call retrieval; prefer wiki_* when the question is about synthesized markdown knowledge or change history.',
   'Citations in answers must use the canonical forms returned by tools (e.g. [doc:…], [call:…], [catalog:sku=…], [[wiki:slug/path]]).',
   'When the user prefixes with /vector, /wiki, /catalog, or /calls, a separate system note already biased your substrate — honor it before exploring other surfaces.',
+  'Sandbox and artifact tools (when present): Prefer typed generators — make_spreadsheet, make_docx, make_pdf — when the tabular or document schema is already known; use run_python to explore, transform, plot, or iterate before that shape is settled.',
+  'Files returned by artifact tools must be shown to the user only as self-closing <artifact …/> tags matching tool_result fields (id, kind, title, size_bytes as applicable). Never paste raw signed URLs or bare download links from tool output. For display_table / display_panel, embed the slide-out affordance with <panel …/> the same way — never invent panel ids.',
+  'Every <artifact id="…"/> and <panel id="…"/> value must be copied verbatim from a tool_result in the same assistant message turn (same assistant_message_id); ids from earlier assistant messages are invalid and must not be reused. See docs/code-sandbox-and-artifact-generation.md sections 2.2, 3, and 12.2.2.',
   `Prompt package: ${OZ_CHAT_SYSTEM_PROMPT_VERSION}`,
 ].join('\n')
 
