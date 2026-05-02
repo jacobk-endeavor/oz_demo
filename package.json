@@ -3,8 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "description": "Oz + Nebula demo workspace",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.721.0",
+    "busboy": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/busboy": "^1.5.4"
+  },
   "scripts": {
-    "setup": "npm --prefix frontend install --include=dev",
+    "setup": "npm install --include=dev && npm --prefix frontend install --include=dev",
     "dev": "npm run setup && npm --prefix frontend run dev -- --host 0.0.0.0",
     "build": "npm run setup && npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
