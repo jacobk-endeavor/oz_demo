@@ -10,6 +10,7 @@ import { ozEmailApiPlugin } from './vite.ozEmailApi'
 import { ozRagCallsApiPlugin } from './vite.ozRagCallsApi'
 import { kbIngestApiPlugin } from '../backend/oz/viteKbIngestApi'
 import { ozChatApiPlugin } from '../backend/oz/viteOzChatApi'
+import { ozChatUploadsApiPlugin } from '../backend/oz/viteOzChatUploadsApi'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 /** Monorepo / demo: keep `.env` in the repo root (same folder as this file’s parent). */
@@ -254,6 +255,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
   },
   plugins: [
     kbIngestApiPlugin(),
+    ozChatUploadsApiPlugin(),
     ozChatApiPlugin(),
     ozRagCallsApiPlugin(mode),
     react(),
