@@ -123,4 +123,31 @@ describe('postOzChat SSE stream parsing', () => {
     expect(result.telemetry.toolFailures).toBe(1)
     expect(result.telemetry.toolLatencies.length).toBe(1)
   })
+
+  it('invokes onPanelToolResult for each tool_result SSE frame', async () => {
+    const seen: Record<string, unknown>[] = []
+    const fetchMock = vi.fn(async () => {
+      return new Response(
+        createSseBody([
+          'data: {"type":"tool_call","name":"display_table","tool_call_id":"t-panel"}\n\n',
+          'data: {"type":"tool_result","name":"display_table","tool_call_id":"t-panel","ok":true,"summary":"x"}\n\n',
+          'data: {"type":"done","reply":"done"}\n\n',
+        ]),
+        { headers: { 'content-type': 'text/event-stream' } },
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await postOzChat({
+      text: 'show table',
+      context: { priorUserMessages: [], priorExchanges: [] },
+      ragScope: 'Jacob',
+      onPanelToolResult: (ev) => {
+        seen.push(ev)
+      },
+    })
+
+    expect(seen.length).toBe(1)
+    expect(seen[0]?.name).toBe('display_table')
+  })
 })

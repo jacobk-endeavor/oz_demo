@@ -61,7 +61,7 @@ import { BackgroundAgentsPage } from './features/backgroundAgents/BackgroundAgen
 import { KnowledgeBasePage } from './features/oz/KnowledgeBasePage'
 import { NebulaHubPage } from './features/oz/NebulaHubPage'
 import { createOzCitationInlineRenderer } from './features/oz/citationChatInline'
-import { useOzChatStream } from './features/oz/useOzChatStream'
+import { clearOzPanelPayloadsForThread, useOzChatStream } from './features/oz/useOzChatStream'
 import { OzChatRuntimeTogglePanel } from './features/oz/OzChatRuntimeTogglePanel'
 import { DashboardGeneratorPage } from './features/dashboardGenerator/DashboardGeneratorPage'
 import { FieldNotesPage } from './features/fieldNotes/FieldNotesPage'
@@ -216,6 +216,15 @@ export default function App() {
 
   useEffect(() => {
     setTableChatAttachments([])
+  }, [ragCallsScopeSelect])
+
+  const prevRagScopeForPanelsRef = useRef(ragCallsScopeSelect)
+  useEffect(() => {
+    const prev = prevRagScopeForPanelsRef.current
+    if (prev !== ragCallsScopeSelect) {
+      clearOzPanelPayloadsForThread(prev)
+      prevRagScopeForPanelsRef.current = ragCallsScopeSelect
+    }
   }, [ragCallsScopeSelect])
 
   useEffect(() => {
@@ -1032,6 +1041,7 @@ export default function App() {
               contextSummary: meta.subtitle ?? '',
               messages: OZ_ASSISTANT_NO_SEED,
               transcriptResetKey: ragCallsScopeSelect,
+              chatThreadId: ragCallsScopeSelect,
               onUserMessage,
               pendingAssistantPlaceholder: pendingLumberyardKnowledgeUi,
               composerContextAttachments: tableChatAttachments,
