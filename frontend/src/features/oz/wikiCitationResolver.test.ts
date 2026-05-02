@@ -8,6 +8,7 @@ import {
   extractCitations,
   extractGrammarNodes,
   resolveCitations,
+  splitOzAssistantInlineLine,
   type CitationLookupTables,
 } from './wikiCitationResolver'
 
@@ -142,6 +143,13 @@ describe('extractGrammarNodes (artifact + panel)', () => {
     const text = '<artifact id="art_known"/> [[wiki:concepts/decking-width-tradeoff]]'
     const cites = extractCitations(text)
     expect(cites.map((c) => c.kind)).toEqual(['wiki'])
+  })
+})
+
+describe('splitOzAssistantInlineLine', () => {
+  it('interleaves bracket cites and XML grammar tags on one line', () => {
+    const segs = splitOzAssistantInlineLine('[doc:abc123_p007_00002] mid <artifact id="art_known"/>')
+    expect(segs.map((s) => s.type)).toEqual(['cite', 'text', 'grammar'])
   })
 })
 

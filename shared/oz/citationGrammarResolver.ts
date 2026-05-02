@@ -263,6 +263,84 @@ export function extractGrammarNodes(input: string): ParsedGrammarNode[] {
   return spans.map((s) => s.node)
 }
 
+/** Segments for assistant markdown inline pass (bracket cites + `<artifact/>` / `<panel/>`). */
+export type OzAssistantInlineSegment =
+  | { type: 'text'; text: string }
+  | { type: 'cite'; raw: string }
+  | { type: 'grammar'; raw: string; node: ParsedGrammarNode }
+
+/**
+ * Split a single line into plain text, bracket/wiki citation tokens, and XML artifact/panel tags
+ * (document order; overlapping spans drop later hits — same spirit as bracket citation splitting).
+ */
+export function splitOzAssistantInlineLine(line: string): OzAssistantInlineSegment[] {
+  type Span =
+    | { start: number; end: number; t: 'cite'; raw: string }
+    | { start: number; end: number; t: 'grammar'; raw: string; node: ParsedGrammarNode }
+
+  const spans: Span[] = []
+
+  const reInline = new RegExp(INLINE_PATTERN.source, 'g')
+  let m: RegExpExecArray | null
+  while ((m = reInline.exec(line)) !== null) {
+    if (m.index !== undefined) {
+      spans.push({ start: m.index, end: m.index + m[0].length, t: 'cite', raw: m[0] })
+    }
+  }
+  const reWiki = new RegExp(WIKI_PATTERN.source, 'g')
+  while ((m = reWiki.exec(line)) !== null) {
+    if (m.index !== undefined) {
+      spans.push({ start: m.index, end: m.index + m[0].length, t: 'cite', raw: m[0] })
+    }
+  }
+
+  let pos = 0
+  while (pos < line.length) {
+    const lt = line.indexOf('<', pos)
+    if (lt < 0) break
+    const tail = line.slice(lt, lt + 64)
+    if (!/^<\s*(artifact|panel)\b/i.test(tail)) {
+      pos = lt + 1
+      continue
+    }
+    const close = findClosingAngleBracket(line, lt)
+    if (close < 0) break
+    const raw = line.slice(lt, close + 1)
+    const node = parseArtifactOrPanelTag(raw)
+    if (node != null) {
+      spans.push({ start: lt, end: close + 1, t: 'grammar', raw, node })
+    }
+    pos = close + 1
+  }
+
+  spans.sort((a, b) => a.start - b.start || a.end - b.end)
+  const kept: Span[] = []
+  let guard = -1
+  for (const s of spans) {
+    if (s.start < guard) continue
+    kept.push(s)
+    guard = s.end
+  }
+
+  const out: OzAssistantInlineSegment[] = []
+  let cursor = 0
+  for (const s of kept) {
+    if (s.start > cursor) {
+      out.push({ type: 'text', text: line.slice(cursor, s.start) })
+    }
+    if (s.t === 'cite') {
+      out.push({ type: 'cite', raw: s.raw })
+    } else {
+      out.push({ type: 'grammar', raw: s.raw, node: s.node })
+    }
+    cursor = s.end
+  }
+  if (cursor < line.length) {
+    out.push({ type: 'text', text: line.slice(cursor) })
+  }
+  return out
+}
+
 export function extractCitations(input: string): Exclude<ParsedGrammarNode, { kind: 'artifact' | 'panel' }>[] {
   return extractGrammarNodes(input).filter(isBracketCitation)
 }
