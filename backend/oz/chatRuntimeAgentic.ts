@@ -17,6 +17,12 @@ import {
 } from './chatRuntime'
 import { OZ_CHAT_SYSTEM_PROMPT, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
+import {
+  buildAnswerAmendmentUserMessage,
+  sanitizeOzAnswer,
+  validateOzAnswer,
+  type OzAnswerValidationReport,
+} from '../../shared/oz/ozAnswerValidation'
 
 const DEFAULT_MODEL = 'claude-sonnet-4-6'
 const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages'
@@ -154,6 +160,45 @@ async function* parseAnthropicSseStream(stream: ReadableStream<Uint8Array>): Asy
       }
     }
   }
+}
+
+function textFromAnthropicContent(content: Array<{ type: string; text?: string }> | undefined): string {
+  if (!content?.length) return ''
+  const parts: string[] = []
+  for (const block of content) {
+    if (block.type === 'text' && typeof block.text === 'string') parts.push(block.text)
+  }
+  return parts.join('\n').trim()
+}
+
+async function amendAnthropicAnswerText(
+  fetchImpl: typeof fetch,
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  conversation: AnthropicMessage[],
+  report: OzAnswerValidationReport,
+): Promise<string | null> {
+  const userContent = buildAnswerAmendmentUserMessage(report)
+  const response = await fetchImpl(ANTHROPIC_MESSAGES_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': ANTHROPIC_VERSION,
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: MAX_TOKENS_PER_RESPONSE,
+      system: systemPrompt,
+      messages: [...conversation, { role: 'user', content: userContent }],
+      stream: false,
+    }),
+  })
+  if (!response.ok) return null
+  const json = (await response.json()) as { content?: Array<{ type: string; text?: string }> }
+  const text = textFromAnthropicContent(json.content)
+  return text.length > 0 ? text : null
 }
 
 async function callAnthropicMessagesStream(
@@ -363,6 +408,52 @@ export async function* runOzChatLoopAgentic(
     conversation.push({ role: 'user', content: toolResults })
   }
 
+  let outputMessage = finalText.trim()
+  if (!outputMessage) {
+    outputMessage = '[Agent returned no text content.]'
+  } else {
+    const firstPass = validateOzAnswer(outputMessage)
+    yield {
+      ...ev(),
+      type: 'trace',
+      stage: 'answer_validation',
+      decision: firstPass.ok ? 'ok' : 'retry',
+      details: {
+        naked_numeric_sentences: firstPass.nakedNumericSentences.length,
+        uncited_quote_spans: firstPass.uncitedQuoteSpans.length,
+      },
+    }
+    if (!firstPass.ok) {
+      try {
+        const amended = await amendAnthropicAnswerText(
+          fetchImpl,
+          apiKey,
+          model,
+          systemPrompt,
+          conversation,
+          firstPass,
+        )
+        if (amended) outputMessage = amended
+      } catch {
+        /* amendment failed — sanitize below */
+      }
+      const secondPass = validateOzAnswer(outputMessage)
+      if (!secondPass.ok) {
+        yield {
+          ...ev(),
+          type: 'trace',
+          stage: 'answer_validation',
+          decision: 'sanitize',
+          details: {
+            naked_numeric_sentences: secondPass.nakedNumericSentences.length,
+            uncited_quote_spans: secondPass.uncitedQuoteSpans.length,
+          },
+        }
+        outputMessage = sanitizeOzAnswer(outputMessage, secondPass)
+      }
+    }
+  }
+
   yield {
     ...ev(),
     type: 'trace',
@@ -373,7 +464,7 @@ export async function* runOzChatLoopAgentic(
   yield {
     ...ev(),
     type: 'done',
-    message: finalText.trim() || '[Agent returned no text content.]',
+    message: outputMessage,
     finish_reason: stopReason,
   }
 }

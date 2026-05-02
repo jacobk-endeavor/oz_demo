@@ -19,6 +19,12 @@ import {
 } from './chatRuntime'
 import { OZ_CHAT_SYSTEM_PROMPT, ozChatOpenAiToolDefinitions } from './ozChatToolRegistry'
 import { parseOzChatRoutePrefix } from './ozChatRoutePrefixes'
+import {
+  buildAnswerAmendmentUserMessage,
+  sanitizeOzAnswer,
+  validateOzAnswer,
+  type OzAnswerValidationReport,
+} from '../../shared/oz/ozAnswerValidation'
 
 const DEFAULT_MODEL = 'gpt-4o-mini'
 const OPENAI_CHAT_URL = 'https://api.openai.com/v1/chat/completions'
@@ -129,6 +135,32 @@ async function* parseOpenAiSseStream(stream: ReadableStream<Uint8Array>): AsyncG
       }
     }
   }
+}
+
+async function amendOpenAiAnswerText(
+  fetchImpl: typeof fetch,
+  apiKey: string,
+  model: string,
+  messages: OpenAiMessage[],
+  report: OzAnswerValidationReport,
+): Promise<string | null> {
+  const userContent = buildAnswerAmendmentUserMessage(report)
+  const response = await fetchImpl(OPENAI_CHAT_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [...messages, { role: 'user', content: userContent }],
+      stream: false,
+    }),
+  })
+  if (!response.ok) return null
+  const json = (await response.json()) as { choices?: Array<{ message?: { content?: string | null } }> }
+  const content = json?.choices?.[0]?.message?.content
+  return typeof content === 'string' && content.trim().length > 0 ? content.trim() : null
 }
 
 async function callOpenAiChatStream(
@@ -322,6 +354,45 @@ export async function* runOzChatLoopAgenticOpenAi(
     }
   }
 
+  let outputMessage = finalText.trim()
+  if (!outputMessage) {
+    outputMessage = '[Agent returned no text content.]'
+  } else {
+    const firstPass = validateOzAnswer(outputMessage)
+    yield {
+      ...ev(),
+      type: 'trace',
+      stage: 'answer_validation',
+      decision: firstPass.ok ? 'ok' : 'retry',
+      details: {
+        naked_numeric_sentences: firstPass.nakedNumericSentences.length,
+        uncited_quote_spans: firstPass.uncitedQuoteSpans.length,
+      },
+    }
+    if (!firstPass.ok) {
+      try {
+        const amended = await amendOpenAiAnswerText(fetchImpl, apiKey, model, messages, firstPass)
+        if (amended) outputMessage = amended
+      } catch {
+        /* amendment failed — sanitize below */
+      }
+      const secondPass = validateOzAnswer(outputMessage)
+      if (!secondPass.ok) {
+        yield {
+          ...ev(),
+          type: 'trace',
+          stage: 'answer_validation',
+          decision: 'sanitize',
+          details: {
+            naked_numeric_sentences: secondPass.nakedNumericSentences.length,
+            uncited_quote_spans: secondPass.uncitedQuoteSpans.length,
+          },
+        }
+        outputMessage = sanitizeOzAnswer(outputMessage, secondPass)
+      }
+    }
+  }
+
   yield {
     ...ev(),
     type: 'trace',
@@ -332,7 +403,7 @@ export async function* runOzChatLoopAgenticOpenAi(
   yield {
     ...ev(),
     type: 'done',
-    message: finalText.trim() || '[Agent returned no text content.]',
+    message: outputMessage,
     finish_reason: stopReason,
   }
 }
