@@ -10,6 +10,13 @@ import { runOzChatLoopAgentic } from './chatRuntimeAgentic'
 import { runOzChatLoopAgenticOpenAi } from './chatRuntimeAgenticOpenAi'
 import { loadOzConfig, type OzChatAgenticProvider, type OzChatRuntimeKind } from './ozConfig'
 import { TrackCToolScaffold } from './trackCToolScaffold'
+import type { OzThreadDirectionPutInput } from './threadDirectionNormalize'
+import { resolveOzTenant, sanitizeThreadDirectionPut } from './threadDirectionNormalize'
+import {
+  fetchOzThreadDirection,
+  getOzThreadDirectionDb,
+  upsertOzThreadDirection,
+} from './threadDirectionPg'
 
 // Canonical API route for the unified Oz runtime.
 const OZ_CHAT_PATH = '/api/oz/chat'
@@ -104,6 +111,23 @@ function normalizedUrlPath(url: string | undefined): string {
   const pathOnly = url?.split('?')[0] ?? ''
   const trimmed = pathOnly.replace(/\/+$/, '')
   return trimmed === '' ? '/' : trimmed
+}
+
+/** GET/PUT /api/oz/chat/thread/<id>/direction (prefix-safe: matches .../api/oz/chat/... in preview). */
+function parseOzThreadDirectionPath(urlPath: string): { threadId: string } | null {
+  const trimmed = urlPath.replace(/\/+$/, '')
+  const needle = '/api/oz/chat/thread/'
+  const idx = trimmed.lastIndexOf(needle)
+  if (idx === -1) return null
+  const rest = trimmed.slice(idx + needle.length)
+  const segments = rest.split('/').filter(Boolean)
+  if (segments.length !== 2 || segments[1] !== 'direction') return null
+  try {
+    const threadId = decodeURIComponent(segments[0])
+    return threadId ? { threadId } : null
+  } catch {
+    return null
+  }
 }
 
 function isOzChatPost(req: IncomingMessage): boolean {
@@ -262,6 +286,61 @@ export function ozChatApiPlugin() {
         res.setHeader('Content-Type', 'application/json; charset=utf-8')
         res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }))
       }
+      return
+    }
+
+    const pathForExtras = normalizedUrlPath(req.url)
+    const threadDirection = parseOzThreadDirectionPath(pathForExtras)
+    if (threadDirection && (req.method === 'GET' || req.method === 'PUT')) {
+      try {
+        const db = getOzThreadDirectionDb(readEnv)
+        if (!db) {
+          res.statusCode = 503
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.setHeader('Cache-Control', 'no-store')
+          res.end(JSON.stringify({ error: 'oz_thread_direction requires DATABASE_URL' }))
+          return
+        }
+        const tenant = resolveOzTenant(readEnv)
+        if (req.method === 'GET') {
+          const row = await fetchOzThreadDirection(db, threadDirection.threadId, tenant)
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.setHeader('Cache-Control', 'no-store')
+          res.end(row === null ? 'null' : JSON.stringify(row))
+          return
+        }
+        const raw = await readBody(req)
+        let parsedBody: unknown = {}
+        if (String(raw ?? '').trim()) {
+          try {
+            parsedBody = JSON.parse(String(raw)) as unknown
+          } catch {
+            res.statusCode = 400
+            res.setHeader('Content-Type', 'application/json; charset=utf-8')
+            res.end(JSON.stringify({ error: 'Invalid JSON body' }))
+            return
+          }
+        }
+        const sanitized = sanitizeThreadDirectionPut((parsedBody ?? {}) as OzThreadDirectionPutInput)
+        const row = await upsertOzThreadDirection(db, threadDirection.threadId, tenant, sanitized)
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-store')
+        res.end(JSON.stringify(row))
+        return
+      } catch (error) {
+        res.statusCode = 500
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }))
+        return
+      }
+    }
+    if (threadDirection) {
+      res.statusCode = 405
+      res.setHeader('Allow', 'GET, PUT')
+      res.setHeader('Content-Type', 'application/json; charset=utf-8')
+      res.end(JSON.stringify({ error: 'Method not allowed' }))
       return
     }
 
