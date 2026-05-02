@@ -13,6 +13,7 @@
     "lint": "npm run setup && npm --prefix frontend run lint",
     "typecheck": "npm run setup && npm --prefix frontend run typecheck",
     "test": "npm run setup && npm --prefix frontend run test",
-    "validate": "npm run guardrails:arch && npm run typecheck && npm run lint && npm run test && npm run build"
+    "validate": "npm run guardrails:arch && npm run typecheck && npm run lint && npm run test && npm run build",
+    "wiki:schema-review": "node scripts/wiki-schema-review.mjs --repoRoot ."
   }
 }

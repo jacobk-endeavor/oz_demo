@@ -48,6 +48,12 @@ Additional required fields by page kind:
 - `concept`: `concept_kind`
 - `synthesis`: no extra required fields
 
+Optional fields on `source` pages (from Track A ingest manifest when present):
+
+- `brand` — string (or pipeline placeholder when unknown)
+- `year` — number or string year label when known
+- `product_line` — string product line name when known
+
 ## Citation Grammar
 
 Every factual claim ends with at least one citation token:
