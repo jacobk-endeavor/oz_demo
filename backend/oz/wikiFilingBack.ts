@@ -78,8 +78,13 @@ function citationEvidenceKey(c: ParsedCitation): string | null {
   if (c.kind === 'image') return `image:${c.path}`
   if (c.kind === 'catalog') return `catalog:${c.keyType}:${c.key.toUpperCase()}`
   if (c.kind === 'wiki') return `wiki:${c.slug}`
-  if ('method' in c) return `recs:method:${c.method}`
-  return `recs:${c.recKind}:${c.key}`
+  if (c.kind === 'artifact') return `artifact:${c.id}`
+  if (c.kind === 'panel') return `panel:${c.id}`
+  if (c.kind === 'recs') {
+    if ('method' in c) return `recs:method:${c.method}`
+    return `recs:${c.recKind}:${c.key}`
+  }
+  return null
 }
 
 export function collectDistinctEvidenceSources(
