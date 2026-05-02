@@ -46,6 +46,14 @@ raw/*
 # KB UI raw uploads — streamed to disk before ingest (dev server)
 incoming/kb-ui-raw/
 
+# Terraform — Spaces artifact buckets (infra/spaces-artifacts)
+infra/spaces-artifacts/.terraform/
+infra/spaces-artifacts/*.tfstate
+infra/spaces-artifacts/*.tfstate.*
+infra/spaces-artifacts/terraform.tfvars
+infra/spaces-artifacts/*.tfvars
+!infra/spaces-artifacts/terraform.tfvars.example
+
 docs/palantir-ontology/
 kb_extracts/*
 recommendations_flat.json

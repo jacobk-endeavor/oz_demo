@@ -294,7 +294,7 @@ Recommended start: co-located, behind a runner abstraction (`SandboxBackend` int
 | Path | Role |
 |---|---|
 | `backend/oz/pythonSandbox.ts` | Spawn / manage / tear down sandbox container; mount inputs; harvest outputs. |
-| `backend/oz/artifactStorage.ts` | DO Spaces client (s3-compatible). `putArtifact(bytes, kind, meta) → {id, url, signedUrl}`. Key layout: `s3://<bucket>/artifacts/<tenant>/<yyyymmdd>/<art_id>.<ext>`. |
+| `backend/oz/artifactStorage.ts` | DO Spaces client (s3-compatible). `putArtifact(bytes, kind, meta) → {id, url, signedUrl}`. Key layout: `s3://oz-artifacts-<env>/<tenant>/<yyyymmdd>/<art_id>.<ext>` (see [docs/infra/oz-artifacts-spaces.md](infra/oz-artifacts-spaces.md)). |
 | `backend/oz/artifactRegistry.ts` | In-memory + Postgres-backed table `oz_artifacts (id, tenant, kind, title, key, sha256, bytes, created_at, ttl_at)`. Source of truth for "is this id valid in this turn". |
 | `backend/oz/sandboxTemplates/` | Server-side Python templates for `make_spreadsheet`, `make_docx`, `make_pdf`. Model never sees these. |
 | `frontend/src/shared/ui/ArtifactPill.tsx` | Renders `<artifact …/>` — fetches the title/size/kind from registry, shows a download button. |
@@ -318,8 +318,8 @@ Recommended start: co-located, behind a runner abstraction (`SandboxBackend` int
 ### 6.3 Infrastructure / ops
 
 - **Chat uploads bucket** — `oz-uploads-<env>` (e.g. `oz-uploads-dev`), separate from artifacts; CORS allow only the chat origin; lifecycle rule expiring objects after 24 h (provisioned as **1-day** S3-compatible lifecycle — see [`infra/digitalocean/README.md`](../infra/digitalocean/README.md)). Object keys: `s3://oz-uploads-<env>/<tenant>/<conv_id>/<upload_id>.<ext>` (§12.1.2).
-- **DO Spaces bucket** — one per env (`oz-artifacts-dev`, `oz-artifacts-prod`); CORS allow only the chat origin; lifecycle rule expiring `artifacts/*` after 30 days.
-- **Signed URLs** — short TTL (1 h default, configurable on `putArtifact`). Rotate access keys quarterly.
+- **Artifacts bucket** — `oz-artifacts-<env>` (e.g. `oz-artifacts-dev`, `oz-artifacts-prod`); **CORS** allow only the chat app origin(s); **lifecycle** rule expiring objects after **30 days** (object keys follow `<tenant>/<yyyymmdd>/<art_id>.<ext>`). Provisioning: [docs/infra/oz-artifacts-spaces.md](infra/oz-artifacts-spaces.md) and [infra/spaces-artifacts/](../infra/spaces-artifacts/).
+- **Signed URLs** — short TTL (1 h default, configurable on `putArtifact`). The Node service holds Spaces keys and returns presigned `GetObject` URLs; the model never sees long-lived credentials. Rotate access keys quarterly.
 - **Sandbox image** — a small `Dockerfile` next to [Dockerfile](Dockerfile) (or a multi-stage in the existing one) producing `oz-sandbox:<sha>`. Pin all package versions; rebuild on dependabot bumps; CI publishes to a private registry.
 - **Telemetry** — extend the `OZ_TOOL_AUDIT=1` log line in [chatRuntime.ts](backend/oz/chatRuntime.ts) so sandbox calls log `{tool, latency_ms, exit_code, container_image_sha, sandbox_egress_bytes, artifacts_emitted}`. Critical for billing / abuse / debugging.
 

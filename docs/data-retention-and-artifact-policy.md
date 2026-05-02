@@ -28,6 +28,10 @@ The following are treated as disposable artifacts and must be ignored or removed
 - If a generated file must be retained for reproducibility, document the reason and generation command in the owning module docs before commit.
 - Before closing cleanup tasks, verify no new generated artifacts are tracked and that ignore rules cover common Oz runtime/build outputs.
 
+## Runtime chat artifacts (DigitalOcean Spaces)
+
+Generated exports intended for user download (see [code-sandbox-and-artifact-generation.md](code-sandbox-and-artifact-generation.md) §6.3) live in **Spaces**, not git. Buckets `oz-artifacts-<env>` use a **30-day** lifecycle at the object layer; **presigned URLs** should use a short TTL (for example one hour). Operational setup is documented in [docs/infra/oz-artifacts-spaces.md](infra/oz-artifacts-spaces.md).
+
 ## Validation checklist
 
 - `git status --short` has no unexpected generated files in Oz-owned paths.
