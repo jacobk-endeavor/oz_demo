@@ -92,3 +92,22 @@ Use contradiction blocks instead of destructive rewrites:
 - Keep `_drafts/` out of commits (`wiki/_drafts/.gitkeep` only in scaffold)
 - Prefer additive edits; preserve provenance and citations
 - If confidence is `low`, include explicit uncertainty language in `## Summary`
+
+## Automation modes
+
+Human / agent trust defaults are documented in [track-b-wiki-layer.md §14](../docs/wiki-kb/track-b-wiki-layer.md#§14-human-workflow--trust). The fenced block below is parsed by wiki tooling (`wikiAutomationConfig.ts`). **`ingest_mode: threshold`** keeps Ingest (and Diff, which follows Ingest) **assisted** until `wiki_source_page_count` reaches `autonomous_after_sources`, then switches both to **autonomous**. Omit `ingest` and `diff` under `agents` to use that rule; set them explicitly to pin modes. Curator and Schema are always **assisted** in code regardless of overrides.
+
+```yaml
+# wiki-automation-config
+ingest_mode: threshold
+autonomous_after_sources: 50
+agents:
+  linker: autonomous
+  index: autonomous
+  synthesizer: autonomous
+  lint: autonomous
+  curator: assisted
+  schema: assisted
+```
+
+Queue local extracts without a source page: `npx tsx scripts/wiki-ingest-queue.ts --repoRoot . --next` or `--all` (see script header).
