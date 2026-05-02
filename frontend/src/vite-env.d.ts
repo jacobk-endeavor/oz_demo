@@ -14,3 +14,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+declare module 'gpt-tokenizer' {
+  export function encode(text: string): number[]
+  export function decode(tokens: readonly number[] | number[]): string
+}

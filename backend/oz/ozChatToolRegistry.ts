@@ -3,7 +3,7 @@
  * Spec: docs/wiki-kb/track-c-chat-integration.md — descriptions act as routing logic; no separate classifier.
  */
 
-export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-track-c-0bx' as const
+export const OZ_CHAT_SYSTEM_PROMPT_VERSION = '2026-05-track-c-1zl' as const
 
 /** Full system prompt appended before tool definitions in an OpenAI-style chat completion. */
 export const OZ_CHAT_SYSTEM_PROMPT = [

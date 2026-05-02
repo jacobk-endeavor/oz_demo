@@ -245,10 +245,14 @@ export async function* runOzChatLoopAgentic(
 
   const surface = createOzToolSurface(request, deps)
   const parsedRoute = parseOzChatRoutePrefix(String(request.message ?? ''))
-  const systemPrompt =
-    parsedRoute.systemNote != null
-      ? `${OZ_CHAT_SYSTEM_PROMPT}\n\n${parsedRoute.systemNote}`
-      : OZ_CHAT_SYSTEM_PROMPT
+  let systemPrompt = OZ_CHAT_SYSTEM_PROMPT
+  const dirSummary = request.thread_direction_summary?.trim()
+  if (dirSummary) {
+    systemPrompt = `${systemPrompt}\n\n${dirSummary}`
+  }
+  if (parsedRoute.systemNote != null) {
+    systemPrompt = `${systemPrompt}\n\n${parsedRoute.systemNote}`
+  }
   const userText = parsedRoute.bareMessage || String(request.message ?? '')
   const tools = convertOpenAiToolsToAnthropic()
 
@@ -266,6 +270,15 @@ export async function* runOzChatLoopAgentic(
       stage: 'route_prefix',
       decision: parsedRoute.kind,
       details: { systemNote: parsedRoute.systemNote },
+    }
+  }
+  if (dirSummary) {
+    yield {
+      ...ev(),
+      type: 'trace',
+      stage: 'thread_direction_summary',
+      decision: 'injected',
+      details: { chars: dirSummary.length },
     }
   }
 

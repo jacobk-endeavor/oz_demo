@@ -12,6 +12,7 @@ import { loadOzConfig, type OzChatAgenticProvider, type OzChatRuntimeKind } from
 import { TrackCToolScaffold } from './trackCToolScaffold'
 import type { OzThreadDirectionPutInput } from './threadDirectionNormalize'
 import { resolveOzTenant, sanitizeThreadDirectionPut } from './threadDirectionNormalize'
+import { buildOzThreadDirectionSummaryBlock, resolveOzChatThreadId } from './threadDirectionPrompt'
 import {
   fetchOzThreadDirection,
   getOzThreadDirectionDb,
@@ -355,7 +356,11 @@ export function ozChatApiPlugin() {
 
     let parsed: OzChatRequest
     try {
-      parsed = JSON.parse(await readBody(req)) as OzChatRequest
+      const rawBody = JSON.parse(await readBody(req)) as Record<string, unknown>
+      // Never trust client-supplied direction injection (server loads oz_thread_direction).
+      delete rawBody.thread_direction_summary
+      delete rawBody.direction_summary
+      parsed = rawBody as OzChatRequest
     } catch {
       res.statusCode = 400
       res.setHeader('Content-Type', 'application/json')
@@ -373,7 +378,7 @@ export function ozChatApiPlugin() {
 
     const contractVersion = parsed.contract_version || OZ_CHAT_CONTRACT_VERSION
     // Normalize request so downstream runtime always receives required, clean metadata.
-    const request: OzChatRequest = {
+    let request: OzChatRequest = {
       ...parsed,
       message,
       contract_version: contractVersion,
@@ -396,6 +401,21 @@ export function ozChatApiPlugin() {
       const dbQuery = trackCScaffold.readOnlyDbQuery()
       const config = await loadOzConfig(REPO_ROOT)
       const resolved = resolveRuntimeKind(parsed.mode, config.chat.runtime)
+
+      if (resolved.kind === 'agentic') {
+        const threadId = resolveOzChatThreadId(request)
+        if (threadId) {
+          const dirDb = getOzThreadDirectionDb(readEnv)
+          if (dirDb) {
+            const tenant = resolveOzTenant(readEnv)
+            const row = await fetchOzThreadDirection(dirDb, threadId, tenant)
+            const built = row ? buildOzThreadDirectionSummaryBlock(row) : null
+            if (built) {
+              request = { ...request, thread_direction_summary: built.block }
+            }
+          }
+        }
+      }
       const auditDep =
         process.env.OZ_TOOL_AUDIT === '1'
           ? {

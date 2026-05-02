@@ -242,8 +242,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
   },
   /**
    * pdfjs: one build for `react-pdf` main thread + worker `?url` import.
-   * AWS SDK: `backend/oz/*` imports resolve from repo-relative paths; alias so packages resolve from
-   * `frontend/node_modules` (same pattern as other backend middleware deps like `pg`).
+   * AWS SDK / pg / gpt-tokenizer: `backend/oz/*` resolves packages from `frontend/node_modules`.
    */
   resolve: {
     dedupe: ['pdfjs-dist'],
@@ -251,6 +250,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
       '@aws-sdk/client-s3': path.resolve(__dirname, 'node_modules/@aws-sdk/client-s3'),
       '@aws-sdk/s3-request-presigner': path.resolve(__dirname, 'node_modules/@aws-sdk/s3-request-presigner'),
       pg: path.resolve(__dirname, 'node_modules/pg'),
+      'gpt-tokenizer': path.resolve(__dirname, 'node_modules/gpt-tokenizer'),
     },
   },
   plugins: [
