@@ -71,6 +71,10 @@ export const STALE_OR_INVALID_ARTIFACT_ID = 'Stale or invalid artifact id'
 /** Shown when `<panel id="…"/>` is not present in the registry oracle (symmetric with artifact). */
 export const STALE_OR_INVALID_PANEL_ID = 'Stale or invalid panel id'
 
+/** Exported for split/render pipelines (chat UI, Obsidian HTML wrapper). */
+export const OZ_CITATION_INLINE_PATTERN = INLINE_PATTERN
+export const OZ_CITATION_WIKI_PATTERN = WIKI_PATTERN
+
 function parseInlineCitation(raw: string): ParsedCitation | null {
   const body = raw.slice(1, -1).trim()
   const separator = body.indexOf(':')
@@ -121,6 +125,13 @@ function parseWikiCitation(raw: string): ParsedCitation | null {
   const slug = body.slice(prefix.length).trim()
   if (slug.length === 0) return null
   return { kind: 'wiki', raw, slug }
+}
+
+/** Parse a single citation token (`[doc:…]` / `[[wiki:…]]`). */
+export function parseOzCitationToken(raw: string): ParsedCitation | null {
+  const t = raw.trim()
+  if (t.startsWith('[[')) return parseWikiCitation(t)
+  return parseInlineCitation(t)
 }
 
 function statusOf(record: Record<string, unknown> | undefined): string | null {

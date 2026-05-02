@@ -60,6 +60,7 @@ import {
 import { BackgroundAgentsPage } from './features/backgroundAgents/BackgroundAgentsPage'
 import { KnowledgeBasePage } from './features/oz/KnowledgeBasePage'
 import { NebulaHubPage } from './features/oz/NebulaHubPage'
+import { createOzCitationInlineRenderer } from './features/oz/citationChatInline'
 import { useOzChatStream } from './features/oz/useOzChatStream'
 import { OzChatRuntimeTogglePanel } from './features/oz/OzChatRuntimeTogglePanel'
 import { DashboardGeneratorPage } from './features/dashboardGenerator/DashboardGeneratorPage'
@@ -176,6 +177,9 @@ export default function App() {
   const knowledgePreambleWaitRef = useRef<(() => void) | null>(null)
   /** On Oz, customer-demand charts open only after the Excel + Endeavor in-chat pill finishes. */
   const customerDemandOpenAfterPillRef = useRef<{ includePnl: boolean } | null>(null)
+
+  /** Track C citation chips (`[doc:…]`, `[[wiki:…]]`, …); lookup tables wired when chat runtime exposes them. */
+  const ozCitationInlineRenderer = useMemo(() => createOzCitationInlineRenderer(undefined), [])
 
   useEffect(() => {
     return () => {
@@ -1054,6 +1058,7 @@ export default function App() {
                 finish?.()
                 setLumberyardKbHidingContext(false)
               },
+              renderAssistantInline: ozCitationInlineRenderer,
             }
       }
     >

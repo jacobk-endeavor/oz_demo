@@ -95,7 +95,15 @@ function renderBoldInPlain(s: string, keyBase: string): ReactNode {
   return parts.length ? <>{parts}</> : s
 }
 
-function renderInline(s: string, keyBase = 'i'): ReactNode {
+export type AssistantMarkdownInlineRenderer = (line: string, keyBase: string) => ReactNode
+
+/** Default CommonMark-ish inline pass (bold/italic/links); used when no custom renderer is supplied. */
+export function renderAssistantMarkdownInlineDefault(line: string, keyBase: string): ReactNode {
+  if (!line) return null
+  return renderLinksAndItalic(line, keyBase)
+}
+
+function renderInlineDefault(s: string, keyBase = 'i'): ReactNode {
   if (!s) return null
   return renderLinksAndItalic(s, keyBase)
 }
@@ -222,11 +230,15 @@ const HTag = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const
 export function SimpleAssistantMarkdown({
   text,
   streamMode = false,
+  renderInline: renderInlineProp,
 }: {
   text: string
   /** When true, tables render in full; typing cadence is handled by the parent stream. */
   streamMode?: boolean
+  /** Replace inline rendering (e.g. Oz citation chips). Default: bold/italic/links only. */
+  renderInline?: AssistantMarkdownInlineRenderer
 }) {
+  const renderInline = renderInlineProp ?? renderInlineDefault
   const blocks = parseBlocks(text)
   return (
     <div
