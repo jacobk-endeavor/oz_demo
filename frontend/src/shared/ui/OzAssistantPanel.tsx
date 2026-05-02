@@ -11,7 +11,7 @@ import {
 import { matchStockUpLikelyBuyersIntent } from '../../features/leadGen/stockUpBuyerIntents'
 import type { TableRowContextAttachment } from '../tableRowContext'
 import { ArrowUpIcon } from './icons'
-import { SimpleAssistantMarkdown } from './SimpleAssistantMarkdown'
+import { SimpleAssistantMarkdown, type AssistantMarkdownInlineRenderer } from './SimpleAssistantMarkdown'
 import { joinClasses, type Tone } from './visualSystem'
 
 export type OzMessageRole = 'user' | 'oz' | 'system'
@@ -120,6 +120,11 @@ export interface OzAssistantPanelProps {
    * Use when switching contexts such as transcript/RAG user scope so prior messages are not reused.
    */
   transcriptResetKey?: string | number
+  /**
+   * Custom inline markdown renderer (e.g. Track C `[doc:…]` / `[[wiki:…]]` citation affordances).
+   * When unset, chat uses the default bold/italic/link pass only.
+   */
+  renderAssistantInline?: AssistantMarkdownInlineRenderer
 }
 
 function makeId() {
@@ -242,12 +247,14 @@ function StreamedText({
   onComplete,
   className,
   reducedMotion = false,
+  renderAssistantInline,
 }: {
   text: string
   onComplete: () => void
   className?: string
   /** When set, one-shot render with no per-line delay (e.g. system prefers reduced motion). */
   reducedMotion?: boolean
+  renderAssistantInline?: AssistantMarkdownInlineRenderer
 }) {
   const [shown, setShown] = useState('')
   const systemReduced = usePrefersReducedMotion()
@@ -305,7 +312,11 @@ function StreamedText({
       className={joinClasses('flex w-full min-w-0 items-end gap-0.5', className)}
     >
       <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-        <SimpleAssistantMarkdown text={shown} streamMode />
+        <SimpleAssistantMarkdown
+          text={shown}
+          streamMode
+          renderInline={renderAssistantInline}
+        />
       </div>
       {typing ? (
         <span
@@ -578,6 +589,7 @@ export function OzAssistantPanel({
   onAfterUserMessage,
   composerAccessory,
   transcriptResetKey,
+  renderAssistantInline,
 }: OzAssistantPanelProps) {
   const [transcript, setTranscript] = useState<OzAssistantMessage[]>(() =>
     buildInitialTranscript(seed, hideWelcome),
@@ -909,6 +921,7 @@ export function OzAssistantPanel({
                 onKnowledgePreambleSequenceComplete={notifyKnowledgePreambleComplete}
                 align={isCentered ? 'center' : 'sides'}
                 reducedMotion={reducedMotion}
+                renderAssistantInline={renderAssistantInline}
               />
             ))}
           </div>
@@ -1033,6 +1046,7 @@ function ChatMessage({
   onKnowledgePreambleSequenceComplete,
   align = 'sides',
   reducedMotion = false,
+  renderAssistantInline,
 }: {
   message: OzAssistantMessage
   onStreamEnd?: (id: string) => void
@@ -1041,6 +1055,7 @@ function ChatMessage({
   /** `center` — thread is one centered column; `sides` — user right, assistant left. */
   align?: 'sides' | 'center'
   reducedMotion?: boolean
+  renderAssistantInline?: AssistantMarkdownInlineRenderer
 }) {
   const isUser = message.role === 'user'
   const isSystem = message.role === 'system'
@@ -1163,10 +1178,11 @@ function ChatMessage({
                 text={body}
                 reducedMotion={reducedMotion}
                 onComplete={() => onStreamEnd?.(message.id)}
+                renderAssistantInline={renderAssistantInline}
               />
             </span>
           ) : !isUser && !isSystem && typeof message.content === 'string' ? (
-            <SimpleAssistantMarkdown text={body} />
+            <SimpleAssistantMarkdown text={body} renderInline={renderAssistantInline} />
           ) : (
             message.content
           )}

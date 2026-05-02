@@ -1,0 +1,25 @@
+/*
+  Oz wiki citation affordances in Obsidian Reading view.
+  Plain `[doc:…]` / `[[wiki:…]]` text does not get tooltips until wrapped with HTML spans.
+  Use `wrapOzCitationsForObsidianHtml` (frontend/src/features/oz/citationUi.ts) on export,
+  or paste HTML spans with `class="oz-cite oz-cite-<kind>"` and `title="…"`.
+*/
+span.oz-cite {
+  cursor: help;
+  border-bottom: 1px dotted color-mix(in srgb, var(--text-accent) 45%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+span.oz-cite-wiki {
+  color: var(--text-accent);
+}
+
+span.oz-cite-doc,
+span.oz-cite-call,
+span.oz-cite-image,
+span.oz-cite-catalog,
+span.oz-cite-recs {
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: 0.88em;
+}
