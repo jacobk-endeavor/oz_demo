@@ -60,7 +60,7 @@ import {
 import { BackgroundAgentsPage } from './features/backgroundAgents/BackgroundAgentsPage'
 import { KnowledgeBasePage } from './features/oz/KnowledgeBasePage'
 import { NebulaHubPage } from './features/oz/NebulaHubPage'
-import { createOzCitationInlineRenderer } from './features/oz/citationChatInline'
+import { createOzCitationInlineRenderer, type OzSlidePanelOpenDetail } from './features/oz/citationChatInline'
 import { clearOzPanelPayloadsForThread, useOzChatStream } from './features/oz/useOzChatStream'
 import { OzChatRuntimeTogglePanel } from './features/oz/OzChatRuntimeTogglePanel'
 import { DashboardGeneratorPage } from './features/dashboardGenerator/DashboardGeneratorPage'
@@ -73,6 +73,7 @@ import {
   matchWarehouseBackfillPnlIntent,
 } from './features/dashboardGenerator/profitGraphIntent'
 import { OzWorkflowShell, PlaceholderSubtabPage, type OzAssistantMessage, type OzChatTurnContext } from './shared/ui'
+import { SlideOutPanel } from './shared/ui/SlideOutPanel'
 import { augmentUserMessageWithTableContext, type TableRowContextAttachment } from './shared/tableRowContext'
 import {
   getPageMeta,
@@ -178,8 +179,15 @@ export default function App() {
   /** On Oz, customer-demand charts open only after the Excel + Endeavor in-chat pill finishes. */
   const customerDemandOpenAfterPillRef = useRef<{ includePnl: boolean } | null>(null)
 
-  /** Track C citation chips (`[doc:…]`, `[[wiki:…]]`, …); lookup tables wired when chat runtime exposes them. */
-  const ozCitationInlineRenderer = useMemo(() => createOzCitationInlineRenderer(undefined), [])
+  /** Track C citation chips + `<artifact/>` / `<panel/>` pills; oracle tables wired when runtime exposes them. */
+  const [ozSlideOutPanel, setOzSlideOutPanel] = useState<OzSlidePanelOpenDetail | null>(null)
+  const ozCitationInlineRenderer = useMemo(
+    () =>
+      createOzCitationInlineRenderer(undefined, {
+        onOpenSlidePanel: setOzSlideOutPanel,
+      }),
+    [],
+  )
 
   useEffect(() => {
     return () => {
@@ -1098,6 +1106,15 @@ export default function App() {
             </div>
           </div>
         </div>
+      ) : null}
+      {ozSlideOutPanel != null ? (
+        <SlideOutPanel
+          open
+          onClose={() => setOzSlideOutPanel(null)}
+          panelKind={ozSlideOutPanel.panelKind}
+          payload={ozSlideOutPanel.payload}
+          title={ozSlideOutPanel.title}
+        />
       ) : null}
     </>
   )
