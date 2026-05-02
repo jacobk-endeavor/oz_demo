@@ -240,7 +240,13 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     allowedHosts: true,
   },
   /** One pdfjs build for `react-pdf` main thread + our worker `?url` import. */
-  resolve: { dedupe: ['pdfjs-dist'] },
+  resolve: {
+    dedupe: ['pdfjs-dist'],
+    // backend/oz imports resolve from repo-relative paths; pin tokenizer to frontend/node_modules.
+    alias: {
+      'gpt-tokenizer': path.resolve(__dirname, 'node_modules/gpt-tokenizer'),
+    },
+  },
   plugins: [
     kbIngestApiPlugin(),
     ozChatApiPlugin(),

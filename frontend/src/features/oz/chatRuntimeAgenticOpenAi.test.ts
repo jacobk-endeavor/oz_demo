@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { runOzChatLoopAgenticOpenAi } from './chatRuntimeAgenticOpenAi'
-import type { OzChatStreamEvent } from './chatRuntime'
+import { runOzChatLoopAgenticOpenAi } from '../../../../backend/oz/chatRuntimeAgenticOpenAi'
+import type { OzChatStreamEvent } from '../../../../backend/oz/chatRuntime'
 
 function buildSseStream(frames: string[]): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
@@ -141,5 +141,37 @@ describe('runOzChatLoopAgenticOpenAi', () => {
       expect(done.finish_reason).toBe('stop')
       expect(done.message).toBe('Found it.')
     }
+  })
+
+  it('includes thread_direction_summary in the OpenAI system message when provided', async () => {
+    const stream = buildSseStream([
+      frame({ choices: [{ index: 0, delta: { content: 'Ok.' } }] }),
+      frame({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] }),
+      'data: [DONE]\n\n',
+    ])
+    const bodies: string[] = []
+    const fakeFetch = (async (_url: RequestInfo | URL, init?: RequestInit) => {
+      if (typeof init?.body === 'string') bodies.push(init.body)
+      return new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream' } })
+    }) as unknown as typeof fetch
+
+    await collect(
+      runOzChatLoopAgenticOpenAi(
+        {
+          message: 'hi',
+          contract_version: 'test',
+          thread_direction_summary: '## Thread direction (oz_thread_direction)\n\nStay focused on trim.',
+        },
+        { openai: { apiKey: 'sk-test', fetchImpl: fakeFetch } },
+      ),
+    )
+
+    expect(bodies.length).toBeGreaterThan(0)
+    const payload = JSON.parse(bodies[0] as string) as {
+      messages?: Array<{ role?: string; content?: string }>
+    }
+    const system = payload.messages?.find((m) => m.role === 'system')?.content ?? ''
+    expect(system).toContain('Stay focused on trim')
+    expect(system).toContain('Thread direction')
   })
 })

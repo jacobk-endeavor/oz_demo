@@ -60,6 +60,11 @@ export type OzChatRequest = {
   ragScope?: string
   /** Per-request override of config/oz.yaml's chat.runtime. UI toggle sets this. */
   mode?: 'scaffold' | 'agentic'
+  /**
+   * Server-only: appended to agentic system prompts after loading `oz_thread_direction`.
+   * Stripped from inbound JSON; never trust client-supplied values.
+   */
+  thread_direction_summary?: string
 }
 
 type OzChatBaseEvent = {
