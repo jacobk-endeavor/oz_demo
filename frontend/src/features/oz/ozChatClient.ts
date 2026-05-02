@@ -34,6 +34,11 @@ export type OzChatClientRequest = {
   traceId?: string
   /** Per-turn override of server-side YAML default. */
   mode?: OzChatRuntimeKind
+  /**
+   * When unified chat streams `tool_result` events, invoked for each frame after telemetry accounting.
+   * Used to stash `display_table` / `display_panel` payloads (see useOzChatStream).
+   */
+  onPanelToolResult?: (event: Record<string, unknown>) => void
 }
 
 export type OzChatClientResponse = {
@@ -107,6 +112,7 @@ function parseSseDataLine(dataLine: string): ParsedSseLine {
 
 async function readSseReply(
   stream: ReadableStream<Uint8Array>,
+  options?: { onPanelToolResult?: (event: Record<string, unknown>) => void },
 ): Promise<{ reply: string; traceId?: string; telemetry: OzChatClientResponse['telemetry'] }> {
   const reader = stream.getReader()
   const decoder = new TextDecoder()
@@ -161,6 +167,7 @@ async function readSseReply(
               pendingToolCalls.delete(event.tool_call_id)
             }
           }
+          options?.onPanelToolResult?.(event as Record<string, unknown>)
           continue
         }
         // Policy gate trace gives quick insight into hardcoded vs agent routing.
@@ -215,7 +222,9 @@ export async function postOzChat(request: OzChatClientRequest): Promise<OzChatCl
   const contentType = response.headers.get('content-type') ?? ''
   if (contentType.includes('text/event-stream')) {
     if (!response.body) throw new Error('Unified chat stream missing response body')
-    const parsed = await readSseReply(response.body)
+    const parsed = await readSseReply(response.body, {
+      onPanelToolResult: request.onPanelToolResult,
+    })
     return {
       reply: parsed.reply,
       // Prefer server trace id if present, then header, then generated client id.

@@ -24,6 +24,13 @@ export interface OzChatTurnContext {
   priorExchanges: { role: 'user' | 'oz' | 'system'; text: string }[]
   /** Current-turn focused table rows (from composer); not in transcript until send. */
   tableContextAttachments?: TableRowContextAttachment[]
+  /**
+   * Transcript / RAG thread scope (e.g. rep pick). With {@link assistantMessageId}, keys panel
+   * payloads from `display_table` / `display_panel` so scope switches cannot collide.
+   */
+  threadId?: string
+  /** Assistant placeholder message id for this send; correlates streamed tool_result with panels. */
+  assistantMessageId?: string
 }
 export type OzActionVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
@@ -120,6 +127,11 @@ export interface OzAssistantPanelProps {
    * Use when switching contexts such as transcript/RAG user scope so prior messages are not reused.
    */
   transcriptResetKey?: string | number
+  /**
+   * When set, forwarded as {@link OzChatTurnContext.threadId} so unified chat can key slide-out
+   * panel payloads per transcript scope.
+   */
+  chatThreadId?: string
 }
 
 function makeId() {
@@ -578,6 +590,7 @@ export function OzAssistantPanel({
   onAfterUserMessage,
   composerAccessory,
   transcriptResetKey,
+  chatThreadId,
 }: OzAssistantPanelProps) {
   const [transcript, setTranscript] = useState<OzAssistantMessage[]>(() =>
     buildInitialTranscript(seed, hideWelcome),
@@ -678,10 +691,6 @@ export function OzAssistantPanel({
       }
 
       const att = composerContextAttachments
-      const turnCtx: OzChatTurnContext = {
-        ...transcriptToContext(transcript),
-        tableContextAttachments: att?.length ? att : undefined,
-      }
       const userMessage: OzAssistantMessage = {
         id: makeId(),
         role: 'user',
@@ -693,6 +702,12 @@ export function OzAssistantPanel({
         id: makeId(),
         role: 'oz',
         content: placeholderForPendingKind(pendingKind),
+      }
+      const turnCtx: OzChatTurnContext = {
+        ...transcriptToContext(transcript),
+        tableContextAttachments: att?.length ? att : undefined,
+        assistantMessageId: placeholder.id,
+        ...(chatThreadId ? { threadId: chatThreadId } : {}),
       }
       const isKnowledgePreamble = isKnowledgePillKind(pendingKind)
       const knowledgeSequenceMs = isKnowledgePreamble ? variantSequenceMs(pendingKind) : 0
@@ -768,6 +783,7 @@ export function OzAssistantPanel({
       }, extra)
     },
     [
+      chatThreadId,
       composerContextAttachments,
       contextSummary,
       isPending,
